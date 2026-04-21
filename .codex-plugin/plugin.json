@@ -1,0 +1,31 @@
+{
+  "name": "aeko-plugin",
+  "version": "0.1.0",
+  "description": "AEKO skills for Codex — AEO workflows (PDP optimization, content briefs, JSON-LD, brand kit, action center). Pair with the AEKO MCP connector for backend tool access.",
+  "author": {
+    "name": "AEKO",
+    "url": "https://aeko-intelligence.com"
+  },
+  "homepage": "https://aeko-intelligence.com",
+  "repository": "https://github.com/AEKO-Intelligence/aeko-plugin",
+  "license": "MIT",
+  "keywords": ["aeo", "ai-visibility", "ecommerce", "codex", "skills"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AEKO",
+    "shortDescription": "AEO skills for ecommerce — PDP, content, schema, brand kit",
+    "longDescription": "AEKO skills guide Codex through AEO (AI Engine Optimization) workflows for cross-border ecommerce: optimize product pages for ChatGPT/Claude/Gemini/Perplexity citations, draft persona-targeted content from live suggestions, generate JSON-LD structured data, manage your brand kit, and execute action items. Requires the AEKO MCP connector for backend access.",
+    "developerName": "AEKO",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Write"],
+    "websiteURL": "https://aeko-intelligence.com",
+    "privacyPolicyURL": "https://aeko-intelligence.com/en/privacy",
+    "termsOfServiceURL": "https://aeko-intelligence.com/en/terms",
+    "defaultPrompt": [
+      "Run an AEO audit on this product page.",
+      "Generate Product JSON-LD for this PDP.",
+      "Show me my AEKO action items."
+    ],
+    "brandColor": "#0F766E"
+  }
+}

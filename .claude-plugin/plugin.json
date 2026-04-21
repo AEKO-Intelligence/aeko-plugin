@@ -1,0 +1,13 @@
+{
+  "name": "aeko-plugin",
+  "version": "0.1.0",
+  "description": "AEKO skills for Claude — AEO workflows (PDP optimization, content briefs, JSON-LD, brand kit, action center). Pair with the AEKO MCP connector at https://aeko-intelligence.com/mcp for backend tool access.",
+  "author": {
+    "name": "AEKO",
+    "url": "https://aeko-intelligence.com"
+  },
+  "homepage": "https://aeko-intelligence.com",
+  "license": "MIT",
+  "keywords": ["aeo", "ai-visibility", "ecommerce", "skills"],
+  "skills": "./skills/"
+}

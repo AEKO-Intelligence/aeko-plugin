@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "aeko-plugin",
+  "description": "AEKO skills for Claude — AEO workflows for ecommerce. Pair with the AEKO custom connector for backend tool access.",
+  "owner": {
+    "name": "AEKO"
+  },
+  "plugins": [
+    {
+      "name": "aeko-plugin",
+      "description": "AEKO skills for Claude — AEO workflows (PDP optimization, content briefs, JSON-LD, brand kit, action center).",
+      "version": "0.1.0",
+      "source": "./"
+    }
+  ]
+}
