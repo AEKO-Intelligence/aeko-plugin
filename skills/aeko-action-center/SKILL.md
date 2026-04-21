@@ -11,10 +11,7 @@ allowed-tools: aeko_list_action_items, aeko_list_technical_items, aeko_get_domai
 
 # AEKO Action Center
 
-> ⚠️ **Stage-1 preview.** Depends on new tools `aeko_list_action_items` / `aeko_list_technical_items` (see `docs/contracts/action-item-contract.md`). Not runnable until Stage 1 tool stubs land.
-
-
-Router for the new three-tab Optimize model. You help the user pick one pending item and hand off to the correct executor skill. You do NOT generate artifacts, call write-back tools, or mark items complete.
+Router for the Action + Technical Optimize tabs. You help the user pick one pending item and hand off to the correct executor skill. You do NOT generate artifacts, call write-back tools, or mark items complete.
 
 Contract reference: `docs/contracts/action-item-contract.md`.
 
