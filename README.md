@@ -6,6 +6,14 @@ This repo ships **skills only**. Backend access (tools like `aeko_get_domain_inf
 
 ## Install
 
+### Prerequisite — filesystem + shell access
+
+Most skills read files, write artifacts (HTML, markdown, JSON), or shell out to open previews. Your MCP host needs filesystem + shell tools for these to work:
+
+- **Claude Code:** native — `Read`, `Write`, `Glob`, `Bash` are built-in.
+- **Claude Desktop:** install `@modelcontextprotocol/server-filesystem` (or equivalent) alongside the AEKO connector. Skills that save local artifacts will fail without it.
+- **Codex / Cursor:** verify per-host filesystem tooling before install.
+
 ### Claude Desktop (recommended)
 
 **Step 1 — Add the AEKO MCP custom connector** (for backend tools):
@@ -51,38 +59,49 @@ See [`skills/`](skills/). Each is a self-contained SKILL.md consumed by Claude o
 
 **Entry points:**
 
-- `/aeko-action-center` — router: list pending Action + Technical items for a domain, hand off to executor
-- `/aeko-run-action` — executor: run one Action item end-to-end (PDP rewrite / content draft / shadow write)
-- `/aeko-fix-technical` — executor: run one Technical item (llms.txt, robots.txt, site-level JSON-LD)
-- `/aeko-brand-kit` — view or edit your domain's brand kit (voice, guardrails, must-include / forbidden)
+- `/aeko-action-center [domain_id] [category]` — router: lists pending items in three categories (Technical / PDP / Content generation) and prints ready-to-copy executor commands
+- `/aeko-update-pdp <item_id>` — PDP executor. Fetches Plan.md, asks image strategy, WebFetches the live page, generates responsive HTML + JSON-LD, writes to store (shadow-by-default) with audit trail
+- `/aeko-fix-technical <item_id>` — Technical executor. Generates llms.txt / robots.txt patches / site-level JSON-LD with embedded spec rules
+- `/aeko-create-content <item_id>` — Content executor. Pulls tracked-prompt citation forensics to mimic winning source structures; saves locally, never writes to store
+- `/aeko-brand-kit <domain_id>` — view or edit your domain's brand kit (voice, guardrails, must-include / forbidden)
 
-**Content + research:**
+**Research + discovery:**
 
-- `/aeko-create-own-content` — draft own-site content from a v2 brief
-- `/aeko-create-external-content` — draft content for external media placements
-- `/aeko-competitive-pdp-input` — competitor-focused research input for a PDP rewrite
-- `/aeko-fix-store-level` — generate llms.txt, robots fixes, sitemap, schema
-- `/competitive-research` — analyze competitor AI visibility gaps
+- `/aeko-find-prompts-to-track [domain_id]` — filter the research library, rank candidates for your brand, track selected prompts
+- `/aeko-prompt-deep-dive <prompt_id> [window]` — citation-forensics on one tracked prompt (which competitors win it, which sources AI cites, what to mirror)
+- `/aeko-brand-competitor-analysis [domain_id] <competitor>` — brand-level positioning via WebSearch + Wikipedia/Wikidata + AEKO citation data
+- `/aeko-product-competitor-analysis <product_id> [urls...]` — product-level property-by-property comparison against 3-5 competing PDPs
 
-**Audit + reporting:**
+**Maintenance + reporting:**
 
-- `/aeo-audit` — audit a single URL or HTML for AI-citability
-- `/aeo-audit-local` — batch-audit local content files
-- `/create-visibility-report` — generate a comprehensive AI visibility report
+- `/aeko-refresh-jsonld <product_id>` — periodic JSON-LD refresh (review counts, ratings) via read-patch-write. Designed for `/schedule`
+- `/aeko-visibility-report [domain_id] [window] [depth]` — on-demand report. `window=7d|14d|30d|90d`, `depth=summary|full`
+- `/aeo-audit <url>` — generic AEO readiness audit for any URL (uses Claude's reasoning; no AEKO data dependency)
 
-### Retired (2026-04)
+### Retired
 
-The 2026-04 consolidation retired 8 skills. If you have muscle memory for one of them, use the replacement:
+Retired across the 2026-04 (v0.4.0) and 2026-04 v0.5.0 consolidations. If you have muscle memory for one of them, use the replacement:
 
 | Retired | Use instead |
 |---|---|
-| `/aeko-optimize-pdp`, `/aeko-update-pdp`, `/aeo-optimize` | `/aeko-action-center` → `/aeko-run-action <item_id>` |
-| `/generate-faq`, `/generate-jsonld` | Handled inline by `/aeko-run-action` or `/aeko-fix-technical` |
-| `/create-blog-article`, `/create-social-content`, `/create-marketing-materials` | `/aeko-create-own-content <suggestion_key>` (brand-kit-grounded, tracked-prompt-seeded) |
+| `/aeko-run-action` | Split: `/aeko-update-pdp` (PDP items) + `/aeko-create-content` (content items) + `/aeko-fix-technical` (technical items). `/aeko-action-center` dispatches to the right one. |
+| `/aeko-optimize-pdp`, `/aeo-optimize` | `/aeko-action-center` → `/aeko-update-pdp <item_id>` |
+| `/generate-faq`, `/generate-jsonld` | Handled inline by executor skills. `/aeko-refresh-jsonld` for periodic review-count refresh. |
+| `/aeko-create-own-content`, `/aeko-create-external-content` | `/aeko-create-content <item_id>` (venue determined by Plan.md `artifact_type`) |
+| `/aeko-competitive-pdp-input` | Research absorbed into `/aeko-update-pdp` (product context) and `/aeko-brand-competitor-analysis` (standalone) |
+| `/aeko-fix-store-level` | `/aeko-fix-technical <item_id>` |
+| `/aeo-audit-local` | Deprecated — file-level citability lint isn't reliably doable from bare text |
+| `/competitive-research` | Split: `/aeko-brand-competitor-analysis` + `/aeko-product-competitor-analysis` |
+| `/create-visibility-report` | Merged into `/aeko-visibility-report [domain_id] [window] depth=full` |
+| `/create-blog-article`, `/create-social-content`, `/create-marketing-materials` | `/aeko-create-content` (brand-kit-grounded, tracked-prompt-seeded) |
 
-### Ecosystem rule
+**Note on `/aeko-update-pdp`:** v0.4.0 retired it as a deprecated wrapper; v0.5.0 revives the name as a Plan.md-driven executor. Check `CHANGELOG.md` in `aeko-mcp` for the history.
 
-If a skill does not call at least one AEKO MCP tool, it should not be an AEKO skill. Generic writing / audit skills that don't ground in your AEKO data (brand kit, tracked prompts, citability scores, visibility evidence) belong outside this plugin — use vanilla Claude for those.
+### Skill operating principle
+
+An AEKO skill earns its slot if it **compresses useful workflow** — stringing together AEKO tools + Claude's reasoning into a repeatable single-command flow. Most AEKO skills call at least one `aeko_*` MCP tool (brand kit, tracked prompts, action items, store writes), but it isn't a hard rule. `/aeo-audit` is the exception: it operationalizes AEO audit heuristics as a workflow even though it uses no AEKO backend data.
+
+Bug fix if a skill's prose references AEKO primitives its `allowed-tools` doesn't actually list — that's credibility debt. Either ground the skill or retire it.
 
 ## Relationship to other AEKO repos
 
