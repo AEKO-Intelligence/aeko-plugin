@@ -111,7 +111,9 @@ Read `prose` for voice/structure guidance, `frontmatter.pdp_responsive_contract.
 - "X is a Y that Z" structures for core claims.
 - Include specific numbers / dimensions / years where possible.
 
-**`[VERIFY: <field>]` markers** — when a factual value is absent from OCR/brand kit/prose, emit `[VERIFY: <field>]` inline in the visible HTML (never in JSON-LD; omit missing JSON-LD keys entirely). Collect all markers for the user summary.
+**Pending-verification handling** — when a factual value is absent from OCR/brand kit/prose, do NOT emit `[VERIFY: <field>]` badges in the visible HTML and do NOT introduce a `.aeko-verify` style class. Production HTML must never carry visible VERIFY markers. Instead, append an entry to an in-memory `pending_verifications` list (each entry: `{field, section, suggested_value_if_any, why_needed}`) and resolve it interactively with the user in Step 5b before finalizing the artifact. Never include unresolved values in JSON-LD (omit missing JSON-LD keys entirely).
+
+Plan-level structural warnings (e.g. `prompts_to_rank_on_missing` from the FAQ thin-input exception) are different — they cannot be filled in by a user-supplied value, so they bypass Step 5b and are surfaced as plan warnings in Step 9 summary.
 
 **Strategy branches:**
 
@@ -138,7 +140,7 @@ Read `prose` for voice/structure guidance, `frontmatter.pdp_responsive_contract.
   <div>...</div>
 </section>
 <section class="aeko-cta">
-  <h2>구매하기</h2>
+  <h2>구매 안내</h2> <!-- KO; EN: "Purchase info". Section is for price / return / warranty / contact prose. NOT a CTA — see "No action elements" rule below. -->
   <p>...</p>
 </section>
 <script type="application/ld+json">{...Product schema...}</script>
@@ -153,13 +155,55 @@ Read `prose` for voice/structure guidance, `frontmatter.pdp_responsive_contract.
 - Semantic tags only: `<section>`, `<h2>`, `<h3>`, `<p>`, `<ul>`, `<ol>`, `<li>`.
 - No executable JS (no `<script>` without `type` attr, no `on*` handlers, no `javascript:` URLs, no external CSS/`<link>`). Inline styles or single scoped `<style>` only.
 - **Product JSON-LD mandatory** when `pdp_responsive_contract.json_ld_required == true`. Minimum: `@context`, `@type: "Product"`, `name`, `description`, `image[]`, `brand.name`. Populate `offers`, `sku`, `mpn`, `aggregateRating` when data is available — omit keys entirely otherwise (never `null` / empty string).
-- **FAQPage JSON-LD mandatory** when `pdp_responsive_contract.faq_jsonld_required == true` AND `faq` in `sections_required`. `@type: "FAQPage"` + `mainEntity[]` ≥ 3 Question objects. Every Q&A in JSON-LD must also appear as visible HTML. If prose didn't surface FAQ content, derive 3-5 questions from `frontmatter.prompts_to_rank_on` verbatim.
+- **FAQPage JSON-LD mandatory** when `pdp_responsive_contract.faq_jsonld_required == true` AND `faq` in `sections_required`. `@type: "FAQPage"` + `mainEntity[]` ≥ 3 Question objects. Every Q&A in JSON-LD must also appear as visible HTML.
+  - **FAQ source priority** (use the first that yields ≥ 3 product-relevant questions):
+    1. Prose body — explicit FAQ guidance from the Plan.
+    2. `frontmatter.prompts_to_rank_on` — use verbatim, in order, capped at 5.
+    3. Product-specific signals only — derive from OCR copy, brand-kit voice, and `frontmatter.must_include`. Keep questions tightly scoped to *this* product.
+  - **Never** call `aeko_get_tracked_prompts` to fill an empty `prompts_to_rank_on`. Tracked prompts span the whole domain (multiple products, personas) and force-mapping them dilutes citation quality and produces off-product FAQ entries.
+  - **Never** call `aeko_search_research_prompts` either, for the same reason — PDP FAQ must be product-specific, not domain-wide.
+  - If after all three sources fewer than 3 product-relevant questions surface: treat this as a **thin-input exception** to the FAQ requirement. Omit the FAQPage JSON-LD entirely (do not emit a 1- or 2-question FAQPage), skip the visible FAQ section, **do not fail the `sections_required` acceptance gate for `faq`** (this exception supersedes the gate below for the FAQ branch only), and append `prompts_to_rank_on_missing — re-run /aeko-create-plan with keywords or curated prompt IDs` to the **Plan warnings** block in the Step 9 summary (this is a plan-level structural warning, not a field-level pending verification — it bypasses Step 5b).
 - **Review JSON-LD** when `pdp_responsive_contract.review_jsonld_when_available == true` AND `reviews_payload` non-empty. Include `aggregateRating` + `review[]` (≤5 top). Tie to Product via `Product.aggregateRating` + `Product.review[]`. Skip silently if reviews are absent or look synthetic — never fabricate.
 - All JSON-LD: valid JSON, no trailing commas, no comments. `type="application/ld+json"` exactly.
+- **No action elements anywhere in the output.** This skill produces AEO citability content for the PDP description block — not a CTA layer. The host platform (Cafe24, Shopify) already provides the native "구매하기/장바구니" button and every other action UI in the product page. Do NOT emit `<a href>` or `<button>` elements anywhere in the rendered HTML, regardless of destination (same product page, size guide, brand story, separate landing page). This rule applies to every section, not just `aeko-cta`. Inline anchors that are clearly informational rather than action-driving (e.g. `<a href="mailto:...">` for a contact email, or a phone-number link wrapped in prose) are allowed only when prose explicitly requests them; in doubt, omit. CSS classes like `.aeko-cta-buttons` and any related styling must not be emitted. The `aeko-cta` section heading is "구매 안내" (KO) / "Purchase info" (EN), never "구매하기" / "Buy now".
 
 Honor `frontmatter.must_include` (every string present) + `forbidden` (none present). Acceptance gate for `sections_required`: every entry maps to a `<section>` heading (case-insensitive, trimmed). Missing → iterate or fail; do NOT call `aeko_complete_action_item`.
 
-Write HTML to `./aeko-artifacts/<frontmatter.domain_id>/<frontmatter.item_id>/pdp.html`.
+Keep the draft HTML in memory at this point — do NOT write it to disk yet. Disk write happens at the end of Step 5b after pending verifications are resolved.
+
+## Step 5b — Resolve pending verifications with the user
+
+If `pending_verifications` is empty after Step 5, skip this step.
+
+Otherwise, pause and ask the user in `target_language`. Show a numbered list of every pending field with: which `<section>` it appears in, why it's needed (one short phrase), and any candidate value derived from prose/brand-kit/OCR (if none, say "확인 안 됨" / "not found").
+
+**KO prompt template:**
+
+```
+이 PDP에서 확인이 필요한 정보가 N개 있습니다. 각 항목에 대해 답해 주세요:
+
+1. <field_label> — <section_label> 섹션에 들어갈 <one-line description>.
+   현재 추정값: <suggested_value or "확인 안 됨">.
+   응답: 값을 직접 입력하거나, "빼기"(해당 문장 제거) 또는 "두기"(나중에 직접 채우도록 HTML 주석으로 보존) 중 선택.
+2. ...
+
+전부 한 번에 같은 처리를 원하면 "전부 빼기" 또는 "전부 두기"로 답해 주세요.
+```
+
+**EN prompt template:** same structure with English copy ("Reply with a value, or `omit` to remove the sentence, or `leave` to preserve as an HTML comment.").
+
+For each item, the user can reply:
+- **A concrete value** → substitute into the in-memory draft, replacing the placeholder. The surrounding sentence remains visible.
+- **`빼기` / `omit`** → cleanly remove the sentence (or list item, or attribute) that contained the placeholder. Preserve paragraph flow; if the entire `<p>` becomes empty, drop the `<p>` too.
+- **`두기` / `leave`** → replace the placeholder with `<!-- pending: <field> -->` (HTML comment, invisible to end users). Track in `left_pending` for the Step 9 summary.
+
+Batch shortcuts: `전부 빼기` / `omit all` and `전부 두기` / `leave all` apply the same action to every remaining pending item.
+
+After collecting all answers, apply substitutions in-memory. Re-validate `must_include` (every required string still present) and `forbidden` (no banned strings introduced). If a substitution drops a `must_include` string, surface the conflict and re-ask only that item.
+
+The final artifact must contain ZERO `[VERIFY: <field>]` badges in visible HTML and ZERO `.aeko-verify`-style decorations. The only acceptable unresolved-state form is HTML comments produced by the explicit `두기` / `leave` reply.
+
+Write the finalized HTML to `./aeko-artifacts/<frontmatter.domain_id>/<frontmatter.item_id>/pdp.html`.
 
 ## Step 6 — Local preview
 
@@ -201,16 +245,22 @@ Only complete if:
 
 ```
 ✔ PDP update complete
-  Write mode:   <write_mode>
-  Audit ID:     <audit_id>         (revert: aeko_revert_store_write("<audit_id>"))
-  Admin URL:    <admin_url>
-  Artifact:     <pdp.html path>
-  OCR:          ingested N, skipped M (decorative / oversize)
+  Write mode:    <write_mode>
+  Audit ID:      <audit_id>         (revert: aeko_revert_store_write("<audit_id>"))
+  Admin URL:     <admin_url>
+  Artifact:      <pdp.html path>
+  OCR:           ingested N, skipped M (decorative / oversize)
+  Verifications: resolved N items via Step 5b (V values, O omits, L left as HTML comments)
 
-[VERIFY] markers to resolve before going live (N):
-  - [VERIFY: weight_grams]  — 무게 / weight in grams
+Plan warnings (N):
+  - prompts_to_rank_on_missing — re-run /aeko-create-plan with keywords or curated prompt IDs
   - ...
-(Omit the block when no markers were emitted.)
+(Omit the block when no plan-level warnings were raised.)
+
+HTML comments left for later fill-in (N):
+  - <!-- pending: weight_grams --> in section "사용 방법"
+  - ...
+(Omit the block when none were left as comments. These are invisible to end users; they exist only for the user to find and fill in via Cafe24 admin.)
 
 Next: /aeko-action-center <domain_id> pdp
 ```
