@@ -12,7 +12,7 @@ description: >
   never auto-publishes. Splits the content branch out of the retired
   `/aeko-run-action`.
 argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_tracked_prompt, aeko_search_research_prompts, aeko_complete_action_item, Read, Write, WebFetch, WebSearch
+allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_tracked_prompt, aeko_search_research_prompts, aeko_crawl_url, aeko_list_own_content, aeko_complete_action_item, Read, Write, WebFetch, WebSearch
 ---
 
 # AEKO Create Content
@@ -58,27 +58,73 @@ If `frontmatter.requires_brand_kit == true`:
 
 This is what makes AEKO-grounded content beat vanilla Claude. Build a structural model of what AI engines currently cite for this topic, then mimic — across one OR many channels.
 
-1. Read `frontmatter.prompts_to_rank_on` (list of prompt IDs or text). For each prompt ID (up to 5 — top-5 by priority if prose indicates ordering):
-   - Call `aeko_get_tracked_prompt(prompt_id, window="30d")` for the forensics payload.
-   - Across the responses, collect the cited sources: source URL, domain, source_type, position_in_response, and the crawled metadata (`extracted_text`, `json_ld` types, `source_analysis.citability_score`).
-2. Rank the aggregated sources by citation frequency × average position (lower position = better). Surface the top 5-10 source domains and their canonical URLs.
-3. For each top source, note structural signals:
-   - Average paragraph length.
-   - Heading hierarchy depth.
-   - Presence of bulleted lists, numbered steps, Q&A blocks.
-   - JSON-LD types present on the page (if any).
-   - Citability score if the backend surfaced one.
-4. **Auto-detect channels.** For each top source, classify the domain into a channel slug:
-   - `reddit.com/*` → `reddit`
-   - `*.blog.naver.com` / `m.blog.naver.com` → `naver_blog`
-   - `*.tistory.com` → `tistory`
-   - `wikipedia.org` → `wikipedia`
-   - news / partner-media domains (heuristic: `news.*`, `*.co.kr/news/*`, established publication TLDs) → `partner_media`
-   - else → `web_article` (generic)
-   Deduplicate. Carry `auto_detected_channels[]` into Step 4.
-5. Build a per-channel **structural template** the draft should mimic. **You are not copying text** — you are matching format: if Reddit threads win, the draft reads like a Q&A with lived-experience tone; if Naver 블로그 wins, it reads like a first-person informal review with in-line images; if partner-media wins, it reads like a comparison article with product callouts. Carry `structural_template_by_channel{}` into Step 5.
+### 3.1 Pull the snapshot
 
-If `prompts_to_rank_on` is empty OR `aeko_get_tracked_prompt` 404s on every prompt ID → fall back: pull 3-5 candidate prompts via `aeko_search_research_prompts` using `frontmatter.keywords` + `frontmatter.target_country`, derive the structural template from those, and tell the user forensics fell back. `auto_detected_channels[]` may be empty — that's fine; user picks formats manually in Step 4.
+Read `frontmatter.prompts_to_rank_on` (list of prompt IDs or text). For each prompt ID (up to 5 — top-5 by priority if prose indicates ordering):
+
+- Call `aeko_get_tracked_prompt(prompt_id, window="30d")` for the forensics payload.
+- Across the responses, harvest **per response**: the full response body (the `Response body` block — falls back to a 300-char `Snippet` line if the backend hasn't shipped full bodies yet) so you can see how cited sources get woven into AI answers, not just the citation snippet.
+- Per citation, harvest: `domain`, `source_url`, `source_type`, `position_in_response`, `context_snippet`, the `JSON-LD: …@types` line, the `Citability: …` score, and the `Extracted: …` body slice.
+
+### 3.2 Rank cited sources
+
+Rank the aggregated sources by **citation frequency × inverse average position × citability score** (when the score is present). Surface the top 5-10 source domains and their canonical URLs.
+
+### 3.3 Auto-detect channels
+
+For each top source, classify the domain into a channel slug:
+
+- `reddit.com/*` → `reddit`
+- `*.blog.naver.com` / `m.blog.naver.com` → `naver_blog`
+- `*.tistory.com` → `tistory`
+- `wikipedia.org` → `wikipedia`
+- news / partner-media domains (heuristic: `news.*`, `*.co.kr/news/*`, established publication TLDs) → `partner_media`
+- else → `web_article` (generic)
+
+Deduplicate. Carry `auto_detected_channels[]` into Step 4.
+
+### 3.4 Live re-crawl the top sources per channel
+
+The tracked-prompt snapshot can be days or weeks old by the time this skill runs, and it does not include the page's current title / meta description / OG fields / current paragraph stats. For each channel in `auto_detected_channels`, pick the top 3 cited URLs and call `aeko_crawl_url(url, force_refresh=true)` on each — the whole point of this substep is to beat snapshot staleness, so accept the latency cost of bypassing the 24h cache. Build the per-channel `cited_url_allowlist[]` from these URLs as you go (Step 6.1 references it).
+
+Merge the crawl payload into a per-channel structural template:
+
+- **Numeric targets** (override snapshot when fresher): `paragraphs.avg_word_count`, `paragraphs.median_word_count`, heading count + max depth, `lists.ul_count`/`ol_count`/`total_items`, `images.count`, `images.with_alt`.
+- **Schema signal**: collect `json_ld[]` raw blocks across the top sources; aggregate `@type`s. Drives the editorial-channel HTML JSON-LD recipe in Step 5 (e.g., if cited articles are `NewsArticle`, the partner_media draft's JSON-LD mirrors that, not a generic `Article`).
+- **Title / meta seeds**: use `title` and `meta_description` to seed the draft's own title and meta when the channel has metadata slots.
+- **Visual seeds**: `og.image` and `images.alt_examples` feed back into the Step 5.4 `media_specs:` block when the user skipped media — gives the designer/imagegen tool a real reference.
+- **Tone signal**: combined with `crawl.extracted_text` from §3.1, the live crawl's title + meta + first heading establish the cited source's diction; carry into Step 5.3.
+
+Cap: 3 crawls per channel × N channels. On crawl failure (4xx/5xx, connect error), log a single warning line and keep going on the snapshot signal alone — recrawl is enriching, not gating.
+
+### 3.5 Build the per-channel structural template
+
+For each `auto_detected_channels` entry, finalize `structural_template_by_channel[channel]` by combining:
+
+1. Snapshot signals from §3.1 (citability score, JSON-LD `@type`s, extracted-text tone).
+2. Live crawl signals from §3.4 (numeric targets, raw JSON-LD blocks, OG fields).
+3. JSON-LD `@type` lock — when an `@type` dominates the channel's top sources, lock the recipe to it:
+   - `QAPage` / `DiscussionForumPosting` → reddit recipe locked to Q&A
+   - `Article` / `NewsArticle` → tistory / partner_media calibrated to measured paragraph + heading stats
+   - `Recipe` / `HowTo` → step-list scaffold
+   - `Review` → comparison / scoring scaffold
+
+**You are not copying text** — you are matching format: if Reddit threads win, the draft reads like a Q&A with lived-experience tone; if Naver 블로그 wins, it reads like a first-person informal review with in-line images; if partner-media wins, it reads like a comparison article with product callouts. Carry `structural_template_by_channel{}` into Step 5.
+
+**Initialize `cited_url_allowlist[]`** with every `source_url` harvested in §3.1 plus every URL recrawled in §3.4. Steps 3.6 and 4d will append to it; Step 6.1 reads it as the source of truth for "no invented URLs."
+
+### 3.6 In-store content signature
+
+In parallel with the cited-source forensics, sample the brand's *own* on-site content so the draft can mimic in-house tone and dedupe against existing pages:
+
+- Call `aeko_list_own_content(domain_id, type="blog", limit=10)` and `aeko_list_own_content(domain_id, type="pdp", limit=5)`.
+- For up to 3 blog posts, run `aeko_crawl_url(url)` (cached default — in-store pages don't change as fast and a 24h cache is fine here) to capture: title length, paragraph length, heading style, list density. Build `in_store_tone_signature{}` carried into Step 5.3. Append these URLs to `cited_url_allowlist[]` so the brand's own pages count as authorized links per Step 6.1.
+- Build `in_store_topic_index[]` — the (title, url) pairs returned. Used in Step 4d to flag duplication: if the working draft title is ≥80% token-overlap with an existing page, surface the conflict at Step 4e and offer a pivot.
+- New domain with no in-store content → both calls return empty; skip silently and note "no in-store signature — drafting from cited-source signal only" in Step 4a confidence output. This is non-fatal.
+
+### 3.7 Forensics fallback (no tracked prompts available)
+
+If `prompts_to_rank_on` is empty OR `aeko_get_tracked_prompt` 404s on every prompt ID → fall back: pull 3-5 candidate prompts via `aeko_search_research_prompts` using `frontmatter.keywords` + `frontmatter.target_country`, derive the structural template from those, and tell the user forensics fell back. `auto_detected_channels[]` may be empty — that's fine; user picks formats manually in Step 4. §3.4 (live recrawl) and §3.6 (in-store signature) still run when at least one URL or own-content row is available.
 
 ## Step 4 — Channel & media selection (interactive)
 
@@ -86,13 +132,33 @@ This step is the v2 fanout. Always run; respect `skip` / `none` for empty select
 
 ### 4a. Print forensics summary
 
+Print the enriched forensics table so the user can tell at a glance whether forensics is grounded. Use the snapshot fields from §3.1 + the live recrawl signal from §3.4.
+
+**Confidence band:**
+- `high` — ≥3 prompts × ≥3 distinct cited domains × **≥50% of attempted live crawls succeeded** (the recrawl rate is the freshness gate; one 200 isn't enough).
+- `medium` — ≥1 prompt × ≥2 cited domains, regardless of crawl success.
+- `low` — anything weaker, or if the §3.7 forensics fallback was used.
+
 ```
-Top cited source domains for this prompt set:
-  1. reddit.com/r/<sub>           (cited N× · avg position X · Q&A format)
-  2. blog.naver.com/<author>      (cited N× · avg position X · 1인칭 review)
-  3. <partner-media>.com          (cited N× · avg position X · 비교 article)
-Auto-detected channels: <comma list, or 'none — forensics fallback used'>
+Top cited source domains (top 5):
+  1. reddit.com/r/sleeptips    · cited 5× · pos 2.1 · citability 0.81 · @types: [QAPage]      · "여름철 침구 추천..."
+  2. blog.naver.com/<author>   · cited 3× · pos 3.4 · citability 0.74 · @types: []            · "1인칭 후기..."
+  3. <partner-media>.com       · cited 2× · pos 4.0 · citability 0.69 · @types: [NewsArticle] · "비교 리뷰..."
+
+Structural targets (median across top sources per channel):
+  reddit:        ~340 words · 0 headings · Q&A pairs ~3
+  naver_blog:    ~1500자 · 5 images · 2 H2 sections
+  partner_media: ~1800 words · 4 H2 · 2 product callouts
+
+Auto-detected channels:  reddit, naver_blog, partner_media
+In-store signature:      derived from 3 existing posts (or "no in-store signature — new domain")
+Live re-crawl:           7/9 succeeded · 2 failed (continuing on snapshot)
+Forensics confidence:    high (5 prompts × 12 cited sources, 4 distinct domains, JSON-LD on 8/12)
 ```
+
+If `Forensics confidence: low`, warn before Step 4b: "the structural template will be thin — consider tracking more prompts first via `/aeko-find-prompts-to-track` for higher-quality output." User may still proceed.
+
+If §3.6 surfaced a likely duplicate (≥80% title token-overlap with an in-store page), append a single-line warning above the question in 4b: "⚠ This draft topic looks ≥80% similar to <existing-url> — consider pivoting the angle or canonicalizing in Step 4e."
 
 ### 4b. Confirm auto-detected channels
 
@@ -124,7 +190,7 @@ Validate:
 - Local path → `Read` to confirm exists; warn + allow if missing.
 - `skip` → record null.
 
-Record into `media_by_channel{}`.
+Record into `media_by_channel{}`. For every URL captured here (and every URL pasted into `other:<name>` references in §4c), append to `cited_url_allowlist[]` so Step 6.1's "no invented URLs" gate accepts the user-supplied media link.
 
 ### 4e. Confirm before generating
 
@@ -148,9 +214,9 @@ Loop over the final selected channel list. For each channel:
 
 ### 5.1 Pick the structural source
 
-- **Auto-detected channel**: use `structural_template_by_channel[channel]` from Step 3.
-- **Built-in addon** (`보도자료`, `magazine`, `instagram`, `tiktok`, `youtube`): use the inline recipe in §5.6.
-- **`other:<name>`**: if reference URLs were provided, fetch them via `WebFetch` and derive an ad-hoc template (mini-forensics: paragraph length, heading depth, list usage, tone signal). If only a description was given, use the description plus brand-voice defaults.
+- **Auto-detected channel**: use `structural_template_by_channel[channel]` from Step 3 (snapshot + live crawl already merged in §3.4 / §3.5).
+- **Built-in addon** (`보도자료`, `magazine`, `instagram`, `tiktok`, `youtube`): use the inline recipe in §5.6 (and §5.6.6 for editorial channels' HTML pair).
+- **`other:<name>`**: if reference URLs were provided, fetch them via `aeko_crawl_url(url)` and derive an ad-hoc template (mini-forensics: title, meta, paragraph length, heading depth, list usage, JSON-LD `@type`s). Fall back to `WebFetch` if the crawl tool returns 4xx/5xx — for `other:<name>` channels, JSON-LD signal is nice-to-have, not required. If only a description was given, use the description plus brand-voice defaults.
 
 ### 5.2 Optional research
 
@@ -161,14 +227,24 @@ If frontmatter prose requests external research OR an `other:<name>` channel nee
 
 ### 5.3 Draft the artifact
 
-Follow `frontmatter.output_artifact_format` (typically `markdown`) for prose channels, or the recipe-defined format for social channels. Enforce:
+**Output format per channel** (overridden by `frontmatter.output_artifact_format` when present):
+
+| channel | default format(s) |
+| `reddit`, `naver_blog`, `tistory`, `instagram`, `tiktok`, `youtube` | `markdown` |
+| `보도자료`, `magazine`, `partner_media` | `markdown` + `html` (both files written; HTML carries embedded JSON-LD per §5.6.6) |
+
+Enforce:
 - `frontmatter.must_include` — every string MUST appear in **at least one** generated artifact (not necessarily every channel — a brand name belongs in 보도자료 boilerplate but may not fit a TikTok beat).
 - `frontmatter.forbidden` — no string MAY appear in any artifact.
 - `frontmatter.sections_required` — applies to prose channels (forensics-detected, `보도자료`, `magazine`). Each entry MUST map to a heading or named section. Social channels (`instagram`, `tiktok`, `youtube`) use the recipe's required parts in place of `sections_required`.
 
-**Voice discipline:**
-- Brand kit `tone_of_voice` drives sentence-level register.
-- Brand kit `must_include` terms + `forbidden` terms override frontmatter if conflicting (surface the conflict to the user before resolving).
+**Voice discipline** (three sources, in priority order):
+
+1. **Brand kit** `tone_of_voice` drives sentence-level register; brand kit `must_include` and `forbidden` override frontmatter if conflicting (surface the conflict to the user before resolving).
+2. **Cited-source structural template** (Step 3.5) drives format: paragraph length, heading depth, list density, list-vs-prose split, Q&A patterning when locked.
+3. **In-store tone signature** (Step 3.6) — fills gaps when the brand kit's `tone_of_voice` is thin or absent. When brand kit and in-store conflict, brand kit wins; surface the conflict once at Step 4e.
+
+Plus the always-on rules:
 - Target audience from brand kit shapes word choice (beginner vs expert vocabulary).
 - For `보도자료` specifically: 합니다체 is required even if brand voice elsewhere is 요체 — the format wins; surface the conflict before resolving.
 - **No hard CTAs** ("Buy now" / "Click here" / promotional commands) in the body. Citability content earns the click via authority, not commands. Same principle as `/aeko-update-pdp`: AEKO injects citability content; the host channel owns the action UI.
@@ -180,26 +256,86 @@ Follow `frontmatter.output_artifact_format` (typically `markdown`) for prose cha
 
 ### 5.4 Embed media reference
 
-If `media_by_channel[channel]` is set:
+**Hard rule:** never emit `[Image #N]`, `[image placeholder]`, `[Image]`, `[photo]`, `[Video:` (without a real URL inside), `[Photo:`, `[graphic]`, or any unfilled `[…]` media marker in body text. Markdown image syntax (`![alt](url-or-path)`) is only permitted with a real URL or local path. If you find yourself wanting to write a placeholder, stop and use the `media_specs:` block below instead. The §6.1 hard gate scans for any `[Image`/`[image`/`[Video`/`[video`/`[Photo`/`[photo`/`[Graphic`/`[graphic`/`[placeholder` token followed by a non-URL — fail the artifact if any match.
+
+**If `media_by_channel[channel]` is set** (real URL or local path supplied):
+
 - Markdown channels → standard image / video markdown:
   - Image: `![<alt>](<url-or-path>)`
-  - Video: `[Video: <url-or-path>]` block with caption.
+  - Video: `[Video](<url-or-path>)` link with caption on the next line. Bracket form `[Video: <url>]` (with a colon and inlined URL) is **not** allowed because the §6.1 scanner would flag it; use the link form so the URL parses cleanly.
 - Instagram → `media:` field at the top of the file referencing the asset; alt text rendered in its own section.
 - TikTok → reference inside the relevant beat (`[on-screen]: image at <path>`).
 - YouTube → reference in description (`Thumbnail: <url-or-path>`).
 
 The skill **does not copy or upload** the media — references only.
 
+**If `media_by_channel[channel]` is null** (user replied `skip` in Step 4d):
+
+- **Visual-first channels** (`instagram`, `tiktok`, `youtube`, `magazine`, `naver_blog`, `tistory`, `partner_media`): write a fenced `yaml` code block at the top of the file (immediately after the `# <title>` heading) containing the `media_specs:` array — one entry per slot the recipe expects (typically `hero` + 0-3 `inline` slots; YouTube also `thumbnail`; TikTok one entry per major beat). Fenced so downstream consumers (designer tools, image-gen pipelines) can reliably extract it; an unfenced `- ` prefixed list breaks markdown rendering AND parsing.
+
+  Emit it exactly like this — opening and closing fences included:
+
+  ````markdown
+  ```yaml
+  media_specs:
+    - slot: hero
+      composition: "<one-line composition direction>"
+      subject: "<who/what is in the shot>"
+      copy_overlay: "<on-image text, or 'none'>"
+      alt_text: "<≤125 char alt text>"
+      aspect_ratio: "<e.g., 1:1, 9:16, 16:9>"
+      reference_image: "<og.image URL from §3.4 if available, else 'none'>"
+  ```
+  ````
+
+  Body references slots by name (`see media_specs.hero`) — never by `[Image #N]` or any other bracket marker. Seed the `reference_image` field from §3.4's `og.image` and `images.alt_examples` when they exist for a top cited source on this channel; otherwise emit `'none'`.
+- **Prose-only channels** (`reddit`, `보도자료`): no image references in body at all. Do not emit a `media_specs:` block — these channels are text-first and inserting visual specs creates noise. (`보도자료` may include media as a separate distribution attachment list at the bottom under `## 보도자료 첨부 참고`, but only if frontmatter prose explicitly requests it.)
+
 ### 5.5 Artifact path
 
-Always use channel-segmented paths in v2:
+**Always use channel-segmented paths.** Do not flatten artifacts into one folder — recent runs produced flat outputs because the slug rule was under-specified; fix is below.
 
-`./aeko-artifacts/<domain_id>/<item_id>/<channel_slug>/<slug>.<ext>`
+Path template:
 
-- Markdown channels: `.md` extension; `slug` derived from the Plan title.
-- Social channels: filename is the channel slug (`instagram.md`, `tiktok.md`, `youtube.md`) — single file containing caption / script / metadata sections.
+`./aeko-artifacts/<domain_id>/<item_id>/<channel_slug>/<filename>.<ext>`
 
-If frontmatter prose requests sibling files (JSON-LD, meta, social teaser), write them next to the channel's main file.
+**Slug derivation** (for prose channels and editorial HTML):
+
+1. Source: `frontmatter.title` (not Plan prose, not response text).
+2. Lowercase, ASCII-fold non-ASCII characters (Hangul → romanization via standard fold; if no fold available, drop the character).
+3. Replace any run of non-alphanumeric characters with a single hyphen.
+4. Truncate to **60 characters at the nearest word boundary** (don't truncate mid-word).
+5. Strip leading and trailing hyphens.
+6. On filename collision within the same channel directory, append `-2`, `-3`, … until unique.
+7. **Empty-slug fallback.** If steps 1–5 produce an empty string (most common cause: 100% Hangul title with no romanization fold available), use `<frontmatter.item_id>` as the slug. Never write to a hidden filename like `.md`. Example: title `여름철 침구 가이드` with no fold → `<slug>` becomes `<item_id>` (a UUID), so the file lands at `.../naver_blog/3f2c1a04-….md` rather than `.../naver_blog/.md`.
+
+**Filename rules per channel:**
+
+| channel | filename pattern | extension(s) |
+| `reddit`, `naver_blog`, `tistory`, `partner_media` | `<slug>` | `.md` |
+| `보도자료`, `magazine` | `<slug>` | `.md` AND `.html` (see §5.6.6) |
+| `instagram`, `tiktok`, `youtube` | the channel slug (literal `instagram` / `tiktok` / `youtube`) | `.md` |
+
+**Worked-example directory tree** the skill MUST produce when 9 channels are selected for a draft titled "Summer Cooling Bedding — 2026 Guide":
+
+```
+aeko-artifacts/
+  <domain_id>/
+    <item_id>/
+      reddit/summer-cooling-bedding-2026-guide.md
+      naver_blog/summer-cooling-bedding-2026-guide.md
+      tistory/summer-cooling-bedding-2026-guide.md
+      partner_media/summer-cooling-bedding-2026-guide.md
+      보도자료/summer-cooling-bedding-2026-guide.md
+      보도자료/summer-cooling-bedding-2026-guide.html
+      magazine/summer-cooling-bedding-2026-guide.md
+      magazine/summer-cooling-bedding-2026-guide.html
+      instagram/instagram.md
+      tiktok/tiktok.md
+      youtube/youtube.md
+```
+
+If frontmatter prose requests sibling files (JSON-LD, meta, social teaser), write them next to the channel's main file using the same `<slug>` stem (e.g., `<slug>.jsonld.json`, `<slug>.meta.json`).
 
 ### 5.6 Inline channel recipes
 
@@ -233,20 +369,186 @@ Use these structural recipes for built-in addon channels.
   - Description: first 200 chars = hook (above the fold), then full description, then chapter list (`00:00 Intro / …`), then tags
   - **Acceptance**: title ≤60 chars, ≥3 chapters, hook in first 200 chars.
 
+### 5.6.6 HTML + JSON-LD recipe (editorial channels)
+
+Applies to `보도자료`, `magazine`, and `partner_media`. These channels write **two** artifacts: the existing `<slug>.md` (canonical, human/editor-facing) AND a new `<slug>.html` (publish-ready, structured-data-bearing) at the same channel-segmented path. The `.md` remains the source of truth; the `.html` is generated from it.
+
+**HTML structure** — minimal semantic wrapper, no styling, no scripts beyond the JSON-LD block:
+
+```html
+<!doctype html>
+<html lang="<frontmatter.target_language>">
+<head>
+  <meta charset="utf-8">
+  <title><headline></title>
+  <meta name="description" content="<lead-sentence-or-meta>">
+  <link rel="canonical" href="<frontmatter.canonical_url-if-present>">
+</head>
+<body>
+  <article>
+    <header>
+      <h1><headline></h1>
+      <p class="lead"><lead></p>
+      <p class="byline">
+        <author> · <ISO datePublished>
+      </p>
+    </header>
+    <section>
+      <!-- markdown body rendered to HTML; preserve heading hierarchy -->
+    </section>
+    <!-- if media_specs: was used in lieu of real media, mirror it as an HTML comment block above <footer> -->
+    <footer>
+      <p class="boilerplate"><brand boilerplate from brand kit></p>
+      <p class="contact"><문의처 line for 보도자료, otherwise omit></p>
+    </footer>
+    <script type="application/ld+json">
+      <!-- channel-specific JSON-LD: see schemas below -->
+    </script>
+  </article>
+</body>
+</html>
+```
+
+If a real media URL exists (`media_by_channel[channel]` set), inject `<figure><img src=... alt=...></figure>` blocks at the natural insertion points (after the lead for hero, between sections for inline). Skip when only `media_specs:` was emitted — HTML preserves the YAML block as a leading comment so the publishing editor sees the spec without it polluting the rendered article.
+
+**JSON-LD schema per channel:**
+
+- **`보도자료` → `NewsArticle`**:
+  ```json
+  {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "headline": "<headline (≤110 chars per Schema.org guidance)>",
+    "datePublished": "<ISO 8601 date the press release is dated for>",
+    "dateModified": "<same as datePublished unless re-issued>",
+    "author": { "@type": "Person|Organization", "name": "<from brand kit or 'Press' if absent>" },
+    "publisher": {
+      "@type": "Organization",
+      "name": "<brand_kit.brand_name>",
+      "logo": { "@type": "ImageObject", "url": "<brand_kit.logo_url if present>" }
+    },
+    "articleBody": "<body text, with HTML stripped>",
+    "inLanguage": "<frontmatter.target_language>"
+  }
+  ```
+
+- **`magazine` → `Article`**:
+  ```json
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "<headline>",
+    "datePublished": "<ISO date>",
+    "author": { "@type": "Person|Organization", "name": "<from brand kit, or 'Editorial' if not specified>" },
+    "publisher": { "@type": "Organization", "name": "<brand_kit.brand_name>" },
+    "articleBody": "<body text>",
+    "inLanguage": "<frontmatter.target_language>",
+    "mentions": [
+      { "@type": "Brand", "name": "<parent or related brand if brand kit names one>" }
+    ]
+  }
+  ```
+  Omit the `mentions` array entirely if the brand kit doesn't surface a relationship — don't fabricate.
+
+- **`partner_media` → `Article`** (always) **+ `Review`** (when forensics-detected the draft is comparison-shaped, i.e., §3.5 locked the recipe to `Review` or detected `Review` as a top `@type`):
+  ```json
+  [
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "<headline>",
+      "datePublished": "<ISO date>",
+      "author": { "@type": "Person|Organization", "name": "<...>" },
+      "publisher": { "@type": "Organization", "name": "<brand_kit.brand_name>" },
+      "articleBody": "<body text>",
+      "inLanguage": "<frontmatter.target_language>"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "itemReviewed": {
+        "@type": "Product",
+        "name": "<the comparison subject named in the draft body — derive from the H1 / lead paragraph; do NOT invent>"
+      },
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "<numeric score the body actually substantiates, or omit>",
+        "bestRating": "5"
+      },
+      "author": { "@type": "Person|Organization", "name": "<...>" },
+      "reviewBody": "<the comparison summary paragraph>"
+    }
+  ]
+  ```
+  When emitting two blocks, use a JSON-LD array (top-level `[...]`) — schema.org and Google Rich Results both accept this.
+
+**JSON-LD validity rules** (mirror `aeko-update-pdp` and `aeko-refresh-jsonld`):
+
+- Valid JSON: parses with `json.loads(block)`.
+- No trailing commas.
+- No comments (`//` or `/* */`) inside the block.
+- The opening tag is exactly `<script type="application/ld+json">` — no additional attributes, no whitespace differences in `type=`.
+- `@context` is `https://schema.org` (not `http://`, not omitted).
+- For numeric fields like `ratingValue`, do not include them unless the body actually justifies a number.
+- **`inLanguage` must be a valid ISO-639-1 / BCP 47 code** (e.g. `"ko"`, `"en"`, `"en-US"`) — the contract pins `frontmatter.target_language` to ISO-639-1 (action-item-contract.md §3.1), but defensively normalize: if the field is `"Korean"`/`"한국어"` map to `"ko"`; `"English"`/`"영어"` map to `"en"`; if the value is unrecognized, fall back to `"ko"` (AEKO's primary market) and surface a one-line warning above the artifact summary.
+
+**HTML emission notes:**
+
+- The `media_specs:` YAML block (§5.4), when present, is mirrored into the HTML as an HTML comment above `<footer>`. Sanitize: replace any `--` sequence inside user-supplied strings with `- -` before wrapping in `<!-- … -->` so the comment can never close prematurely.
+- If `frontmatter.canonical_url` is absent, omit the `<link rel="canonical">` tag entirely — do not emit an empty `href`.
+- HTML files are minified-optional; readable indentation is fine. The skill never injects CSS or external `<script>` tags beyond the JSON-LD block.
+
+**Schema parity** with cited sources (Step 3.5 / 3.4): if `structural_template_by_channel[channel]` carries observed JSON-LD `@type`s from cited sources, the artifact's emitted `@type` SHOULD be in the same family. Mismatch is a soft warning at Step 6, not a hard fail — sometimes the editorial choice is to upgrade (cited sources are bare `Article` but you have data for `NewsArticle`).
+
 ## Step 6 — Citability self-check (per artifact)
 
 Run per artifact before completion.
 
-**Prose channels** (forensics-detected, `보도자료`, `magazine`) — apply the existing 5 dimensions:
+### 6.1 Universal hard gates (every channel)
+
+These fail the artifact immediately — one fix iteration, then leave the item `pending`:
+
+- **No image placeholders.** Zero occurrences of `[Image`, `[image`, `[Photo`, `[photo`, `[placeholder`, `[Placeholder`, or `TODO` in body text. Real markdown image syntax with a URL or path is allowed; `media_specs:` YAML is allowed (it's a distinct format).
+- **No invented URLs.** Every external URL in the artifact must appear in `cited_url_allowlist[]` — the union of: every cited `source_url` from Step 3.1, every URL passed to `aeko_crawl_url` in Step 3.4, every URL returned by `aeko_list_own_content` in Step 3.6, every URL in `media_by_channel{}` from Step 4d, plus any URL the user pasted into an `other:<name>` reference in Step 4c. Build this list explicitly in Step 3.5 (initial population) and Step 4d (final addition). Step 6's URL extractor scans the artifact for `https?://…` tokens and fails the artifact if any URL is not in the allowlist. Brand-internal anchor links (`#section`) and `mailto:` are exempt.
+- **Frontmatter `forbidden` list:** zero matches.
+
+### 6.2 Prose channels (forensics-detected, `보도자료`, `magazine`, `partner_media`)
+
+Apply the 5 citability dimensions:
 1. **Answer-block quality** — opening 1-2 sentences of each section directly answer a natural question.
 2. **Self-containment** — subject named in every paragraph; no pronoun opens.
 3. **Structural readability** — headings, lists, short paragraphs (≤167 words).
 4. **Statistical density** — specific numbers / dimensions / years where appropriate.
 5. **Uniqueness signals** — at least one claim or angle not obviously derivable from a generic search.
 
-**Social channels** (`instagram`, `tiktok`, `youtube`) — substitute the recipe's acceptance bullets in §5.6 as the gates.
+Plus the **structural-target deltas** from §3.5 / §3.4:
 
-Weak on a dimension → iterate that artifact's affected section. Cap at 2 iterations per artifact. If any artifact still fails after 2 iterations, leave the entire item `pending` (do NOT call `aeko_complete_action_item`) and surface which channels failed and which dimensions need work.
+- Median paragraph word count within ±25% of the channel's target.
+- Heading max-depth within ±1 of the target (e.g., target h3 → h2/h3/h4 OK, h5 not).
+- List density (lists per 1000 words) within ±25% of target.
+- Image count within ±1 of target (only when target > 0; not enforced if no media specs and target == 0).
+
+Out-of-band targets are **soft warnings** unless the deviation is ≥50%, which becomes a hard gate (one fix iteration).
+
+### 6.3 Editorial channels' HTML pair (`보도자료`, `magazine`, `partner_media`)
+
+Both `<slug>.md` AND `<slug>.html` must exist. The `.html` file:
+
+- Parses as HTML (well-formed enough for `lxml` / `html.parser` to accept).
+- Contains exactly one `<article>` root.
+- Each `<script type="application/ld+json">` block parses with `json.loads` after stripping the script wrapper.
+- Required JSON-LD fields are present per the schema in §5.6.6 (e.g., `NewsArticle` requires `headline`, `datePublished`, `author`, `publisher`).
+- **Schema parity** soft check: emitted top-level `@type` is in the same family as the cited sources' dominant `@type` (`Article` ⊇ `NewsArticle`/`BlogPosting`; `Review` ⊇ `Review`/`Recommendation`). Mismatch warns once.
+
+Any HTML-side hard-gate failure → one fix iteration → leave `pending`.
+
+### 6.4 Social channels (`instagram`, `tiktok`, `youtube`)
+
+Substitute the recipe's acceptance bullets in §5.6 as the gates. The §6.1 universal hard gates still apply.
+
+### 6.5 Iteration budget
+
+Weak on a soft-warning dimension → iterate that artifact's affected section. Cap at **2 soft iterations per artifact**. Hard-gate failures get **1 fix iteration** before failing the artifact. If any artifact still fails its hard gates, leave the entire item `pending` (do NOT call `aeko_complete_action_item`) and surface which channels failed and which dimensions need work.
 
 ## Step 7 — Mark complete
 
@@ -298,18 +600,23 @@ Next: /aeko-action-center <domain_id> content
 - Contract mismatch → stop.
 - Stale brand kit + user declines → stop.
 - No tracked prompts available AND research prompt fallback returns empty → tell user the skill needs at least one signal to mimic; stop and suggest `/aeko-find-prompts-to-track` first. Step 4 still runnable for fully-manual format choices, but the structural-template quality drops; warn before proceeding.
+- `aeko_crawl_url` 4xx/5xx or unavailable (backend route not yet shipped) → log a single warning line in §3.4 and §4a, continue on the snapshot signal alone. Live recrawl is enriching, not gating.
+- `aeko_list_own_content` 4xx/5xx or unavailable → log "no in-store signature — drafting from cited-source signal only" once, continue. In-store signature is enriching, not gating.
 - Step 4e returns 0 selected channels → stop without writing or completing.
 - User cancels at Step 4e → stop without writing or completing.
-- Citability self-check fails after 2 iterations on any artifact → leave item `pending`; surface failed channels + dimensions.
+- Citability self-check hard-gate fails after the §6.5 iteration budget on any artifact → leave item `pending`; surface failed channels + dimensions.
+- HTML emission fails on an editorial channel (markdown rendered, but JSON-LD won't validate) → write the `.md`, skip the `.html`, surface the JSON-LD error in the user summary, and treat the channel as failed for completion purposes.
 - Non-interactive caller (e.g., dispatched from another agent): if `frontmatter.non_interactive == true` (forward-compat), skip 4b/4c/4d asks and default to: all auto-detected channels, no addons, no media. If 0 auto-detected, stop with "non-interactive run needs at least one auto-detected channel".
 
 ## What this skill never does
 
 - Never writes to a connected store (PDP work is `/aeko-update-pdp`).
 - Never publishes to external media automatically — always leaves local files only.
-- Never copies or uploads media — only references URLs / paths the user supplies.
-- Never fabricates the citation forensics; if tracked prompts have no responses, fall back transparently.
-- Never copies text from cited sources verbatim; mimics format, not content.
+- Never copies or uploads media — only references URLs / paths the user supplies, plus the `media_specs:` YAML stubs when media was skipped.
+- Never emits `[Image #N]` / `[Image]` / `[placeholder]` / `[photo]` / `TODO` markers in body text. Real markdown image syntax with a URL or path, or a `media_specs:` block — nothing else.
+- Never fabricates the citation forensics; if tracked prompts have no responses, fall back transparently. Live `aeko_crawl_url` results never get faked when the backend is unavailable.
+- Never copies text from cited sources verbatim; mimics format, not content. Cited-source `extracted_text` is for tone calibration only — never paste.
+- Never invents URLs in artifacts — every URL must come from forensics, in-store content, live crawls, or user-supplied media.
 - Never regenerates the Plan.md.
 - Never reads machine values from prose.
 - Never echoes raw frontmatter.
