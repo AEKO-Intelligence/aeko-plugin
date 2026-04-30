@@ -12,7 +12,7 @@ description: >
   never auto-publishes. Splits the content branch out of the retired
   `/aeko-run-action`.
 argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_tracked_prompt, aeko_search_research_prompts, aeko_crawl_url, aeko_list_own_content, aeko_complete_action_item, Read, Write, WebFetch, WebSearch
+allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_crawl_url, aeko_list_own_content, aeko_complete_action_item, Read, Write, WebFetch, WebSearch
 ---
 
 # AEKO Create Content
@@ -58,9 +58,35 @@ If `frontmatter.requires_brand_kit == true`:
 
 This is what makes AEKO-grounded content beat vanilla Claude. Build a structural model of what AI engines currently cite for this topic, then mimic — across one OR many channels.
 
+### 3.0 Resolve `prompts_to_rank_on` to UUIDs
+
+`frontmatter.prompts_to_rank_on` may carry either UUIDs (preferred — newer Plan-builders write these directly) or raw prompt text (older Plan-builders + manually authored Plans). `aeko_get_tracked_prompt` only accepts UUIDs, so resolve text → UUID before §3.1.
+
+For each entry:
+
+1. **UUID detection.** If the entry matches `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$` (case-insensitive), it's already a UUID — pass through.
+2. **Text → UUID resolution.** If any entry is non-UUID text, call `aeko_get_tracked_prompts()` *once* (cache the result for the rest of this step). The response includes an `ID` column for every tracked prompt. Build a normalized lookup map: lowercase + strip punctuation + collapse whitespace, applied to both `prompt_en` and `prompt_ko`. Match each text entry against the map. Carry `(text → uuid, matched_via)` for §4a transparency.
+3. **Unresolved entries.** Collect any text entries that didn't match. Surface them in §4a as "unresolved prompts" (don't silently drop) — the user needs to know which prompts were skipped.
+
+**Hard precondition.** If zero entries resolve to UUIDs, stop here:
+
+```
+Forensics requires tracked prompts. None of `prompts_to_rank_on` resolved to a tracked UUID.
+
+Either:
+  • track these prompts first: /aeko-find-prompts-to-track <domain_id>
+  • or rewrite the Plan with UUIDs from `aeko_get_tracked_prompts`.
+
+Re-run /aeko-create-content <item_id> after.
+```
+
+Do not proceed to §3.1 with zero resolved UUIDs and do not fall back to research-prompt search — see §3.7.
+
+Cap `prompts_to_rank_on` to the top 5 resolved UUIDs (by Plan ordering) before §3.1.
+
 ### 3.1 Pull the snapshot
 
-Read `frontmatter.prompts_to_rank_on` (list of prompt IDs or text). For each prompt ID (up to 5 — top-5 by priority if prose indicates ordering):
+For each resolved UUID from §3.0:
 
 - Call `aeko_get_tracked_prompt(prompt_id, window="30d")` for the forensics payload.
 - Across the responses, harvest **per response**: the full response body (the `Response body` block — falls back to a 300-char `Snippet` line if the backend hasn't shipped full bodies yet) so you can see how cited sources get woven into AI answers, not just the citation snippet.
@@ -122,9 +148,11 @@ In parallel with the cited-source forensics, sample the brand's *own* on-site co
 - Build `in_store_topic_index[]` — the (title, url) pairs returned. Used in Step 4d to flag duplication: if the working draft title is ≥80% token-overlap with an existing page, surface the conflict at Step 4e and offer a pivot.
 - New domain with no in-store content → both calls return empty; skip silently and note "no in-store signature — drafting from cited-source signal only" in Step 4a confidence output. This is non-fatal.
 
-### 3.7 Forensics fallback (no tracked prompts available)
+### 3.7 No-tracked-prompts handling
 
-If `prompts_to_rank_on` is empty OR `aeko_get_tracked_prompt` 404s on every prompt ID → fall back: pull 3-5 candidate prompts via `aeko_search_research_prompts` using `frontmatter.keywords` + `frontmatter.target_country`, derive the structural template from those, and tell the user forensics fell back. `auto_detected_channels[]` may be empty — that's fine; user picks formats manually in Step 4. §3.4 (live recrawl) and §3.6 (in-store signature) still run when at least one URL or own-content row is available.
+§3.0 already hard-stops when zero entries resolve to UUIDs. The skill does **not** fall back to `aeko_search_research_prompts` — research prompts are unrelated to the user's tracked-prompt set, so their forensics carry the wrong structural signal (different cited sources, different `@type`s, different audience). Substituting them produces drafts that look forensics-grounded but optimize for the wrong queries.
+
+If §3.0 succeeded but every `aeko_get_tracked_prompt` call in §3.1 returns empty `responses[]` (tracked but never re-queried), surface this in §4a confidence as "tracked prompts exist but no response history yet — re-run after the next response cycle, or proceed with brand-kit-only drafting." The user decides at §4e whether to abort.
 
 ## Step 4 — Channel & media selection (interactive)
 
@@ -137,9 +165,13 @@ Print the enriched forensics table so the user can tell at a glance whether fore
 **Confidence band:**
 - `high` — ≥3 prompts × ≥3 distinct cited domains × **≥50% of attempted live crawls succeeded** (the recrawl rate is the freshness gate; one 200 isn't enough).
 - `medium` — ≥1 prompt × ≥2 cited domains, regardless of crawl success.
-- `low` — anything weaker, or if the §3.7 forensics fallback was used.
+- `low` — anything weaker (e.g. only 1 prompt resolved, or all prompts have empty response history).
 
 ```
+Prompt resolution (§3.0):
+  resolved:    3/4 prompts (1 by UUID, 2 matched by text)
+  unresolved:  "아토피 알레르기 이불 추천" — not in tracked set; track it via /aeko-find-prompts-to-track
+
 Top cited source domains (top 5):
   1. reddit.com/r/sleeptips    · cited 5× · pos 2.1 · citability 0.81 · @types: [QAPage]      · "여름철 침구 추천..."
   2. blog.naver.com/<author>   · cited 3× · pos 3.4 · citability 0.74 · @types: []            · "1인칭 후기..."
