@@ -658,6 +658,48 @@ External-media publish checklist (never auto-published):
 Next: /aeko-action-center <domain_id> content
 ```
 
+## Step 9 — Publish handoff (optional, forward-compat)
+
+This skill never publishes — Step 8 stops at local files plus the manual checklist. Publishing via the user's authenticated browser session is the job of a separate skill, `/aeko-publish` (planned, not yet shipped). This step adds a **read-only handoff line** at the very end of the user-facing summary so the path is visible from day one.
+
+### 9.1 Detect the Chrome bridge
+
+Check whether Claude for Chrome is connected on the current session. Reliable signals (any one is sufficient):
+
+- The session was started with `claude --chrome`.
+- The user invoked `/chrome` earlier and the bridge ack'd.
+- A previous tool call in this session used a Chrome-bridge tool successfully.
+
+If unsure, do not probe — silence is the safe default. Treat "unknown" as "not connected" for this step.
+
+### 9.2 Append one line to the Step 8 summary
+
+Insert immediately under the `Next:` line in §8.
+
+**If Chrome bridge is connected:**
+
+```
+Publish (optional): /aeko-publish <item_id>
+  ↳ uses your authenticated Chrome session to draft posts on the channels above.
+  ↳ skill is in development — if /aeko-publish is not yet installed, follow the checklist above.
+```
+
+**If Chrome bridge is NOT connected:**
+
+```
+Publish (optional): install Claude for Chrome and connect /chrome to enable the future
+  /aeko-publish handoff. Until then, follow the checklist above.
+```
+
+### 9.3 Hard rules for this step
+
+- **Never invoke** `/aeko-publish`, never simulate it, never click compose forms, never fill publish fields. This step is text-only — it adds two lines to the summary and stops.
+- **Never alter** the External-media publish checklist in §8. The checklist is the load-bearing fallback; the handoff is a hint about a future shortcut.
+- **Never widen** `allowed-tools` for this skill to include browser-bridge tools. Publishing capability lives in `/aeko-publish`'s own `allowed-tools`, not here.
+- **No retro-edits** when `/aeko-publish` ships — that skill's `allowed-tools` and acceptance gates are scoped there. The handoff line stays as-is.
+
+This keeps `aeko-create-content` honest about its boundary ("never auto-publishes") while making the publish path discoverable to users the moment it's available.
+
 ## Error paths
 
 - Plan endpoint unavailable / parse error → stop; surface detail.
