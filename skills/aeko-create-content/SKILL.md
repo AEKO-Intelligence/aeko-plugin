@@ -244,10 +244,48 @@ If the **total selected channels is 0**, stop with "no channels selected" and do
 
 Loop over the final selected channel list. For each channel:
 
+### 5.0 Load references (per-channel, on-demand)
+
+Reference content lives under `skills/aeko-create-content/references/` and is loaded **only when needed** per channel — Anthropic's progressive-disclosure model. SKILL.md stays small; recipes and brand-specific exemplars load when their channel runs.
+
+For each channel `C` in the selection, before drafting:
+
+1. **Load the recipe** (always, for built-in addon channels): `Read references/recipes/<C>.md`. Channel-to-file map:
+    - `보도자료` → `references/recipes/보도자료.md` (also load `references/recipes/editorial-html-jsonld.md`)
+    - `magazine` → `references/recipes/magazine.md` (also load `references/recipes/editorial-html-jsonld.md`)
+    - `partner_media` → forensics-derived; load `references/recipes/editorial-html-jsonld.md` for the HTML/JSON-LD pair
+    - `instagram` → `references/recipes/instagram.md`
+    - `tiktok` → `references/recipes/tiktok.md`
+    - `youtube` → `references/recipes/youtube.md`
+    - Auto-detected forensics channels (`reddit`, `naver_blog`, `tistory`) — no recipe file; structural template comes from Step 3.5.
+    - `other:<name>` — no recipe file; structural template comes from §5.1's mini-forensics.
+
+2. **Load the brand-specific exemplar** (if it exists, conditional). Filename pattern: `references/examples/<C>-*example*.md` or the explicit names in the table below. Use a `Read` with `Glob`/check-exists semantics — silently skip if absent. Treat each match as style guidance:
+
+    | channel | example file the skill scans for |
+    | --- | --- |
+    | `naver_blog`, `tistory` | `references/examples/blog-example.md` |
+    | `instagram` | `references/examples/instagram-post-example.md` |
+    | `보도자료` | `references/examples/press-release-example.md` |
+    | `tiktok` | `references/examples/tiktok-script-example.md` (optional) |
+    | `youtube` | `references/examples/youtube-description-example.md` (optional) |
+    | `magazine` | `references/examples/magazine-feature-example.md` (optional) |
+    | (any) | `references/examples/in-store-content-example.md` — voice signal across all channels |
+
+3. **Load voice overrides** (if it exists): `Read references/style/voice-overrides.md`. Filter to blocks scoped to `domain: <frontmatter.domain_id>` and/or `channel: <C>`. Skip silently if the file doesn't exist or no scoped block matches.
+
+**Example-file rules** (mirror §6.1 hard-gate intent):
+
+- Example files are loaded as **style reference**, not as cited content. Any URL inside an example file MUST NOT be carried into the artifact — the §6.1 "no invented URLs" gate still applies, scoped to `cited_url_allowlist[]`.
+- Example files may legitimately contain `[Image]` placeholders as part of demonstrating a brand's pattern. The §6.1 placeholder gate scans the *generated artifact*, not the example file.
+- Mimic structure (paragraph length, hook style, hashtag density, heading cadence) and tone (sensory verbs, register, glossary). Do not copy phrases verbatim — even your brand's own exemplar.
+
+The user-facing summary at Step 8 must list which reference files were loaded per channel so the user can verify their exemplars are picked up (e.g., `Mimicked: examples/instagram-post-example.md + recipes/instagram.md`).
+
 ### 5.1 Pick the structural source
 
 - **Auto-detected channel**: use `structural_template_by_channel[channel]` from Step 3 (snapshot + live crawl already merged in §3.4 / §3.5).
-- **Built-in addon** (`보도자료`, `magazine`, `instagram`, `tiktok`, `youtube`): use the inline recipe in §5.6 (and §5.6.6 for editorial channels' HTML pair).
+- **Built-in addon** (`보도자료`, `magazine`, `instagram`, `tiktok`, `youtube`): use the recipe loaded in §5.0 from `references/recipes/<channel>.md` (and `references/recipes/editorial-html-jsonld.md` for editorial channels' HTML pair).
 - **`other:<name>`**: if reference URLs were provided, fetch them via `aeko_crawl_url(url)` and derive an ad-hoc template (mini-forensics: title, meta, paragraph length, heading depth, list usage, JSON-LD `@type`s). Fall back to `WebFetch` if the crawl tool returns 4xx/5xx — for `other:<name>` channels, JSON-LD signal is nice-to-have, not required. If only a description was given, use the description plus brand-voice defaults.
 
 ### 5.2 Optional research
@@ -263,25 +301,27 @@ If frontmatter prose requests external research OR an `other:<name>` channel nee
 
 | channel | default format(s) |
 | `reddit`, `naver_blog`, `tistory`, `instagram`, `tiktok`, `youtube` | `markdown` |
-| `보도자료`, `magazine`, `partner_media` | `markdown` + `html` (both files written; HTML carries embedded JSON-LD per §5.6.6) |
+| `보도자료`, `magazine`, `partner_media` | `markdown` + `html` (both files written; HTML carries embedded JSON-LD per `references/recipes/editorial-html-jsonld.md`) |
 
 Enforce:
 - `frontmatter.must_include` — every string MUST appear in **at least one** generated artifact (not necessarily every channel — a brand name belongs in 보도자료 boilerplate but may not fit a TikTok beat).
 - `frontmatter.forbidden` — no string MAY appear in any artifact.
 - `frontmatter.sections_required` — applies to prose channels (forensics-detected, `보도자료`, `magazine`). Each entry MUST map to a heading or named section. Social channels (`instagram`, `tiktok`, `youtube`) use the recipe's required parts in place of `sections_required`.
 
-**Voice discipline** (three sources, in priority order):
+**Voice discipline** (priority order, highest first):
 
-1. **Brand kit** `tone_of_voice` drives sentence-level register; brand kit `must_include` and `forbidden` override frontmatter if conflicting (surface the conflict to the user before resolving).
-2. **Cited-source structural template** (Step 3.5) drives format: paragraph length, heading depth, list density, list-vs-prose split, Q&A patterning when locked.
-3. **In-store tone signature** (Step 3.6) — fills gaps when the brand kit's `tone_of_voice` is thin or absent. When brand kit and in-store conflict, brand kit wins; surface the conflict once at Step 4e.
+1. **Voice overrides** (`references/style/voice-overrides.md`, if present) — domain- or channel-scoped exception sheet. Wins over everything below for the scopes it names.
+2. **Brand-specific exemplar** (`references/examples/<channel>-*example*.md`, if present, loaded in §5.0) — drives structural mimicry (paragraph length, hook style, hashtag density, heading cadence) and channel-specific glossary. Recipe acceptance gates still apply on top.
+3. **Brand kit** `tone_of_voice` drives sentence-level register; brand kit `must_include` and `forbidden` override frontmatter if conflicting (surface the conflict to the user before resolving).
+4. **Cited-source structural template** (Step 3.5) drives format when no exemplar is present: paragraph length, heading depth, list density, list-vs-prose split, Q&A patterning when locked.
+5. **In-store tone signature** (Step 3.6) — fills gaps when the brand kit's `tone_of_voice` is thin or absent. When brand kit and in-store conflict, brand kit wins; surface the conflict once at Step 4e.
 
 Plus the always-on rules:
 - Target audience from brand kit shapes word choice (beginner vs expert vocabulary).
 - For `보도자료` specifically: 합니다체 is required even if brand voice elsewhere is 요체 — the format wins; surface the conflict before resolving.
 - **No hard CTAs** ("Buy now" / "Click here" / promotional commands) in the body. Citability content earns the click via authority, not commands. Same principle as `/aeko-update-pdp`: AEKO injects citability content; the host channel owns the action UI.
 
-**Structural discipline** (from Step 3 template or §5.6 recipe):
+**Structural discipline** (from Step 3 template or `references/recipes/<channel>.md`):
 - Match the winning-source format the forensics identified.
 - Be honest about what this is: Reddit-style Q&A is fine, but do NOT fake Reddit thread formatting or pretend the content is crowd-sourced.
 - Link out to the top cited sources where the draft genuinely benefits from them (prevents the "generic AEO mush" failure mode).
@@ -345,7 +385,7 @@ Path template:
 
 | channel | filename pattern | extension(s) |
 | `reddit`, `naver_blog`, `tistory`, `partner_media` | `<slug>` | `.md` |
-| `보도자료`, `magazine` | `<slug>` | `.md` AND `.html` (see §5.6.6) |
+| `보도자료`, `magazine` | `<slug>` | `.md` AND `.html` (see `references/recipes/editorial-html-jsonld.md`) |
 | `instagram`, `tiktok`, `youtube` | the channel slug (literal `instagram` / `tiktok` / `youtube`) | `.md` |
 
 **Worked-example directory tree** the skill MUST produce when 9 channels are selected for a draft titled "Summer Cooling Bedding — 2026 Guide":
@@ -369,39 +409,24 @@ aeko-artifacts/
 
 If frontmatter prose requests sibling files (JSON-LD, meta, social teaser), write them next to the channel's main file using the same `<slug>` stem (e.g., `<slug>.jsonld.json`, `<slug>.meta.json`).
 
-### 5.6 Inline channel recipes
+### 5.6 Channel recipes (loaded from `references/recipes/`)
 
-Use these structural recipes for built-in addon channels.
+Built-in addon channels each have a recipe file under `references/recipes/`. They were loaded in §5.0; apply them now. Acceptance bullets in each recipe file ARE the §6.4 social-channel gates and the §6.2 prose-channel structural-target source.
 
-- **`보도자료`** (Korean press release, 합니다체):
-  - Headline (≤40자) · 부제 · 리드 (5W1H in opening 2 sentences)
-  - 본문 3–4 단락 · 1 인용문 (CEO or product lead) · boilerplate (one paragraph about the brand — pull from `brand_kit.brand_voice_summary`; never hard-code "AEKO" since this skill drafts for the user's domain, not for AEKO itself)
-  - 문의처 line at bottom · embargo line at top if user supplies one
-  - **Acceptance**: 5W1H present in lead, 합니다체 throughout, ≥1 quote, boilerplate present.
+| channel | recipe file | output |
+| --- | --- | --- |
+| `보도자료` | `references/recipes/보도자료.md` + `references/recipes/editorial-html-jsonld.md` | `.md` + `.html` |
+| `magazine` | `references/recipes/magazine.md` + `references/recipes/editorial-html-jsonld.md` | `.md` + `.html` |
+| `partner_media` | forensics template (Step 3.5) + `references/recipes/editorial-html-jsonld.md` | `.md` + `.html` |
+| `instagram` | `references/recipes/instagram.md` | `.md` |
+| `tiktok` | `references/recipes/tiktok.md` | `.md` |
+| `youtube` | `references/recipes/youtube.md` | `.md` |
 
-- **`magazine`** (Vogue-style editorial; KO/EN per `target_language`):
-  - Hook quote (italic, ≤25 words) · editor's note (1 paragraph)
-  - 3–4 lifestyle scenes weaving the product/topic in (NOT a listicle)
-  - Subject named per paragraph; sensory verbs; minimal hashtags
-  - **Acceptance**: hook quote present, narrative scenes ≥3, no bullet lists.
-
-- **`instagram`** (KO default, EN if `target_language=en`):
-  - Caption: 1 hook line · 3–5 body lines · 5–12 hashtags (KO + EN mix)
-  - Alt text (≤125 chars, accessibility)
-  - Optional 5-slide carousel outline if forensics suggests carousel beats listicle
-  - **Acceptance**: hook ≤2 lines, hashtags 5–12, alt text present.
-
-- **`tiktok`**:
-  - 30–60 second script as numbered beats: `[0–3s] hook · [3–10s] context · …`
-  - On-screen text per beat · voiceover line per beat · 3–6 hashtags
-  - **Acceptance**: total runtime in 30–60s window, ≥1 hook beat ≤3s, every beat has both on-screen and voiceover lines.
-
-- **`youtube`**:
-  - Title (≤60 chars, includes prompt keyword)
-  - Description: first 200 chars = hook (above the fold), then full description, then chapter list (`00:00 Intro / …`), then tags
-  - **Acceptance**: title ≤60 chars, ≥3 chapters, hook in first 200 chars.
+If a brand-specific exemplar was loaded in §5.0, mimic its structure on top of the recipe — recipe gates still apply. See §5.3 voice-discipline precedence for conflict resolution.
 
 ### 5.6.6 HTML + JSON-LD recipe (editorial channels)
+
+Editorial channels (`보도자료`, `magazine`, `partner_media`) write a `.html` companion alongside the `.md`, with embedded JSON-LD. The full HTML wrapper, per-channel JSON-LD schema (`NewsArticle` / `Article` / `Article + Review`), validity rules, schema-parity rules, and emission notes live in `references/recipes/editorial-html-jsonld.md` — load it before drafting any editorial channel.
 
 Applies to `보도자료`, `magazine`, and `partner_media`. These channels write **two** artifacts: the existing `<slug>.md` (canonical, human/editor-facing) AND a new `<slug>.html` (publish-ready, structured-data-bearing) at the same channel-segmented path. The `.md` remains the source of truth; the `.html` is generated from it.
 
@@ -569,14 +594,14 @@ Both `<slug>.md` AND `<slug>.html` must exist. The `.html` file:
 - Parses as HTML (well-formed enough for `lxml` / `html.parser` to accept).
 - Contains exactly one `<article>` root.
 - Each `<script type="application/ld+json">` block parses with `json.loads` after stripping the script wrapper.
-- Required JSON-LD fields are present per the schema in §5.6.6 (e.g., `NewsArticle` requires `headline`, `datePublished`, `author`, `publisher`).
+- Required JSON-LD fields are present per the schema in `references/recipes/editorial-html-jsonld.md` (e.g., `NewsArticle` requires `headline`, `datePublished`, `author`, `publisher`).
 - **Schema parity** soft check: emitted top-level `@type` is in the same family as the cited sources' dominant `@type` (`Article` ⊇ `NewsArticle`/`BlogPosting`; `Review` ⊇ `Review`/`Recommendation`). Mismatch warns once.
 
 Any HTML-side hard-gate failure → one fix iteration → leave `pending`.
 
 ### 6.4 Social channels (`instagram`, `tiktok`, `youtube`)
 
-Substitute the recipe's acceptance bullets in §5.6 as the gates. The §6.1 universal hard gates still apply.
+Substitute the recipe's "Acceptance gates" section in `references/recipes/<channel>.md` as the gates. The §6.1 universal hard gates still apply.
 
 ### 6.5 Iteration budget
 
@@ -603,6 +628,11 @@ Only complete if:
   Domain:        <domain>
   Action item:   <item_id>
   Mimicked:      <top 2-3 source domains + format patterns>
+  Refs loaded:
+    - instagram    → recipes/instagram.md + examples/instagram-post-example.md
+    - 보도자료      → recipes/보도자료.md + recipes/editorial-html-jsonld.md
+    - naver_blog   → forensics-derived (no recipe file)
+    - …            (one line per channel; show "no exemplar" when example file absent)
   Artifacts:
     - reddit       → <path>
     - naver_blog   → <path>
@@ -611,6 +641,8 @@ Only complete if:
   Media refs:    <N attached, M skipped>
   Citability:    passed on N/N · failed on: <list or 'none'>
 ```
+
+The **Refs loaded** block exists so users can verify their `references/examples/<file>.md` is being picked up — if a channel's line shows only `recipes/<channel>.md` and no `examples/...`, their exemplar isn't matching the filename pattern.
 
 If any artifact targets external media, append a publish checklist:
 

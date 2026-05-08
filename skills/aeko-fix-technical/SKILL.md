@@ -63,76 +63,43 @@ If `frontmatter.requires_brand_kit == true`:
 
 ## Step 3 — Dispatch by artifact_type
 
-Each branch uses **embedded spec rules** instead of backend prepare-tools. Read the live brand kit (if requested) and domain info via `aeko_get_domain_info(domain_id)` for context.
+Each branch uses **embedded spec rules** loaded from `references/recipes/` instead of backend prepare-tools. Read the live brand kit (if requested) and domain info via `aeko_get_domain_info(domain_id)` for context.
 
-### 3a. `llms_txt`
+### 3.0 Load references (per-artifact, on-demand)
 
-**Spec rules (llmstxt.org):**
-- First line: `# <site name>` (single H1).
-- Optional blockquote summary on line 2-3.
-- Subsequent sections are H2 headings with markdown lists of links. Each link line: `- [title](url): optional description`.
-- Recommended sections: `## Docs`, `## Examples`, `## Optional`. Vertical-specific sections are fine (e.g. `## Products`, `## Guides`).
-- Keep URLs absolute, prefer canonical origin.
+Anthropic progressive-disclosure pattern — recipe detail loads only when its branch runs.
 
-**Generation:**
-1. Pull domain context from `aeko_get_domain_info(frontmatter.domain_id)`. Gather: `base_url`, `brand_keywords`, any `key_pages` or `product_urls` the backend surfaces.
-2. If the domain's key product pages aren't surfaced, do a light WebFetch on `base_url` to discover top navigation links. Do NOT crawl deeply — llms.txt is a hand-curated index, not a sitemap.
-3. Compose the file following the spec. Honor `frontmatter.must_include` (every string must appear) and `frontmatter.forbidden` (none may appear). For `sections_required` — every entry maps to an H2 heading, case-insensitive trim match. Missing section → iterate or fail; do NOT call `aeko_complete_action_item`.
-4. Write to `./aeko-artifacts/<frontmatter.domain_id>/<frontmatter.item_id>/llms.txt`.
-5. **Self-validation:** check H1 present, sections are `## ` + list items, URLs parse. Record findings in completion summary.
+For the dispatched `frontmatter.artifact_type`:
 
-### 3b. `robots_txt_patch`
+| `artifact_type` | Recipe(s) to load |
+| --- | --- |
+| `llms_txt` | `references/recipes/llms-txt.md` |
+| `robots_txt_patch` | `references/recipes/robots-txt-patch.md` |
+| `json_ld` | `references/recipes/json-ld.md` |
+| `technical_bundle` | All three of the above (per the prose's sub-artifact selection) |
 
-**Spec rules (AI-crawler coverage for AEO):**
-- The AI crawlers AEKO cares about: `GPTBot`, `ChatGPT-User`, `OAI-SearchBot`, `ClaudeBot`, `Claude-User`, `Google-Extended`, `PerplexityBot`, `PerplexityBot-User`, `Applebot-Extended`, `CCBot`, `Bytespider`.
-- **Allow** these crawlers by default unless the merchant has explicit reason to block.
-- Cafe24 hosting caveat: some Cafe24 plans auto-inject a restrictive `robots.txt` that blocks non-standard user agents. If the current file looks auto-generated (starts with `# Cafe24` or has a single `Disallow: /admin` block), advise the user that their robots.txt may need to be patched via the Cafe24 admin, not file upload.
+Always load `references/recipes/deploy-checklist.md` before Step 4 — it's the source for the per-platform DEPLOY.md.
 
-**Generation:**
-1. Resolve `site_base_url`:
-   - Required per contract §4.2. If missing or malformed → stop with: "site_base_url not set on this item; backend must populate the site origin."
-   - Derive `{site_base_url}/robots.txt`.
-2. Fetch current robots.txt via `WebFetch`. On 404 or empty → treat as empty baseline (legitimate case).
-3. On fetch failure (timeout, non-200, non-404) → ask user in `target_language`: "Couldn't read <url>. Paste your current robots.txt, or confirm the site has none."
-4. Parse the current file into rule groups (User-agent + Allow/Disallow blocks).
-5. Compute a patch that:
-   - Adds `User-agent: <crawler>\nAllow: /` blocks for each AI crawler missing from the current file (unless a `Disallow: /` rule explicitly targets that crawler — in which case surface the conflict and ask the user).
-   - Preserves all existing rules untouched.
-   - Adds a single comment header above the new section: `# AEKO: AI crawler allowlist`.
-6. Produce unified diff + final merged file. Honor `must_include` / `forbidden` / `sections_required` (each required section maps to a block with matching user-agent or comment-header label).
-7. Write both to `./aeko-artifacts/<frontmatter.domain_id>/<frontmatter.item_id>/` as `robots.txt.diff` and `robots.txt`.
+**Conditional loads** (silent skip if absent):
+- `references/examples/<artifact_type>-*example*.{txt,json,md}` — brand-specific exemplar; mimic its conventions on top of recipe rules.
+- `references/style/voice-overrides.md` — domain-scoped overrides (Korean section headings, glossary, deploy notes); filter to blocks where `domain: <frontmatter.domain_id>` matches.
 
-### 3c. `json_ld`
+**Precedence:** `voice-overrides` > `examples/*` > `recipes/*`. Recipe spec rules (llms.txt H1 line, robots.txt syntax, JSON-LD JSON validity) cannot be relaxed by examples — the skill fails the run if violated.
 
-**Spec rules (schema.org + AEO):**
-- `@context: "https://schema.org"` on every block.
-- Common types: `Organization`, `WebSite`, `Product`, `FAQPage`, `BreadcrumbList`, `Article`, `BlogPosting`, `Review`, `AggregateRating`.
-- Include `sameAs` on Organization when Wikipedia / Wikidata entity exists (use WebSearch to verify; don't fabricate).
-- No trailing commas, no comments — valid JSON only.
-- Script tag for embedding: `<script type="application/ld+json">...</script>`. `type` attribute exactly that string.
-- For Korean brands, include Korean and English forms via `alternateName` or `@graph` split.
+### 3a–3d. Apply
 
-**Generation:**
-1. Derive `schema_type` from prose + `frontmatter.validation_hints` (contract field for JSON-LD items).
-2. For `Organization` / `Brand` schemas: run a targeted `WebSearch` for "<brand name> Wikipedia" and "<brand name> Wikidata". If confident match found, add the canonical URL to `sameAs[]`. If uncertain, omit `sameAs` rather than guess.
-3. Pull brand fields from `aeko_get_brand_kit(domain_id)` (`brand_name`, `tagline`, `logo_url`, `brand_voice_summary`).
-4. For Product schemas: the skill won't have StoreProducts data here — if `frontmatter.product_id` is present it's a pointer, not a payload. Surface the constraint and recommend the user run `/aeko-update-pdp <item_id>` instead for product-specific JSON-LD.
-5. Emit pretty-printed JSON to `./aeko-artifacts/<frontmatter.domain_id>/<frontmatter.item_id>/schema.json`.
-6. Acceptance gate for `sections_required`: each entry is a top-level JSON-LD property (e.g. `name`, `sameAs`, `brand.name` — dotted paths permitted). Missing key → iterate or fail.
+Apply the recipe loaded for the dispatched `artifact_type`:
 
-### 3d. `technical_bundle`
+- **`llms_txt`** → see `references/recipes/llms-txt.md`. Output: `llms.txt` in the item directory.
+- **`robots_txt_patch`** → see `references/recipes/robots-txt-patch.md`. Output: `robots.txt.diff` + `robots.txt` in the item directory.
+- **`json_ld`** → see `references/recipes/json-ld.md`. Output: `schema.json` in the item directory. Note: site-level / brand-level JSON-LD only; product-level lives in `/aeko-update-pdp`.
+- **`technical_bundle`** → run the three branches above as the prose specifies. Each sub-artifact lands in the same item directory. Compose `./aeko-artifacts/<frontmatter.domain_id>/<frontmatter.item_id>/README.md` listing the sub-artifacts with deployment order. Acceptance gate for `sections_required`: each entry names a sub-artifact file. Missing file → iterate or fail.
 
-- Run 3a-3c as the prose specifies. Each sub-artifact lands in the same item directory.
-- Compose `./aeko-artifacts/<frontmatter.domain_id>/<frontmatter.item_id>/README.md` listing the sub-artifacts with deployment order.
-- Acceptance gate for `sections_required`: each entry names a sub-artifact file. Missing file in directory → iterate or fail.
+Honor frontmatter `must_include` / `forbidden` / `sections_required` per each recipe's specifics.
 
 ## Step 4 — Deploy checklist (never auto-deploy)
 
-For all technical artifact types, write a `DEPLOY.md` alongside the artifact describing the manual deploy steps per platform:
-
-- **llms.txt**: upload to site root. Cafe24: `/web/product/xxx` → upload via admin or FTP. Shopify: use a custom page at `/pages/llms-txt` + redirect from `/llms.txt` via theme.liquid (documentation link in the file). Plain hosting: drop in web root.
-- **robots.txt**: upload to site root. Cafe24 restricted — warn user their admin may override.
-- **JSON-LD**: inject into the target page's `<head>` via theme/template, OR add to a global include if the schema is Organization/WebSite.
+For all technical artifact types, write a `DEPLOY.md` alongside the artifact. Source: `references/recipes/deploy-checklist.md` (loaded in §3.0). If `references/examples/deploy-notes-example.md` exists, append its contents after the recipe's per-platform section.
 
 **No deploy path is wired into the MCP for v0.5.0.** Always instruct manual deploy.
 
@@ -153,10 +120,13 @@ Only call complete if every acceptance-gate check passed AND all artifacts were 
 
 ```
 ✔ Technical item complete: <artifact_type>
-  Artifacts: <paths>
+  Artifacts:       <paths>
+  Refs loaded:     recipes/<artifact_type>.md + recipes/deploy-checklist.md
+                   + examples/<artifact_type>-example.<ext>  (when present)
+                   + style/voice-overrides.md  (when present, scoped to this domain)
   Self-validation: <pass summary>
-  Deploy: see DEPLOY.md in the same directory
-  Next: /aeko-action-center <domain_id> technical
+  Deploy:          see DEPLOY.md in the same directory
+  Next:            /aeko-action-center <domain_id> technical
 ```
 
 ## Error paths

@@ -1,0 +1,21 @@
+# [Your site name]
+
+> [One-paragraph blockquote summary — what your site offers, who it's for. Optional but recommended.]
+
+## Docs
+
+- [Title 1](https://example.com/page-1): brief description
+- [Title 2](https://example.com/page-2): brief description
+
+## Examples
+
+- [Example title](https://example.com/example-1): what makes this page citation-worthy
+
+## Products
+
+- [Product 1](https://example.com/product-1): one-line description
+- [Product 2](https://example.com/product-2): one-line description
+
+## Optional
+
+- [Anything supplementary](https://example.com/extra): brief description

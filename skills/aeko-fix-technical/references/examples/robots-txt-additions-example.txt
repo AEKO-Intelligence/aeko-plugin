@@ -1,0 +1,13 @@
+# Custom robots.txt additions for your brand.
+#
+# These rules are appended AFTER the AEKO AI-crawler allowlist that the skill generates.
+# Do not duplicate AI-crawler rules here — the skill handles GPTBot, ChatGPT-User, ClaudeBot,
+# Claude-User, OAI-SearchBot, Google-Extended, PerplexityBot, PerplexityBot-User,
+# Applebot-Extended, CCBot, Bytespider.
+
+# Example: explicit disallow for a partner-only directory
+# User-agent: *
+# Disallow: /partners-only/
+
+# Example: site map declaration
+# Sitemap: https://example.com/sitemap.xml

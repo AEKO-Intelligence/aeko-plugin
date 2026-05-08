@@ -1,0 +1,31 @@
+{
+  "_comment": "Replace this with your preferred Organization / WebSite JSON-LD shape. The skill mimics @graph structure, optional fields, and your alternateName conventions. Required fields per the recipe still apply.",
+
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://example.com/#organization",
+      "name": "[Brand Name]",
+      "alternateName": "[영문명 / Korean name]",
+      "url": "https://example.com",
+      "logo": "https://example.com/logo.png",
+      "sameAs": [
+        "https://www.wikidata.org/wiki/Qxxxxx"
+      ],
+      "foundingDate": "20XX-XX-XX"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://example.com/#website",
+      "url": "https://example.com",
+      "name": "[Site Name]",
+      "publisher": { "@id": "https://example.com/#organization" },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://example.com/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+  ]
+}
