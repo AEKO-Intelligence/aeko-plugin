@@ -6,7 +6,15 @@ load_when: SKILL.md §5.1 selects channel=magazine
 
 # `magazine` — Editorial recipe
 
-Vogue-style editorial. Target language follows `frontmatter.target_language` (KO default, EN if `target_language=en`).
+## Audience scope
+
+Language-neutral channel. Output follows `frontmatter.target_language`:
+
+- **Korean ecommerce brands** (`target_language=ko`): Vogue-Korea-style editorial — 감각적 sensory verbs, 해요체 or 합니다체 per brand kit, KO-market cultural references (계절감, 라이프스타일 scene cues).
+- **Global sellers** (`target_language=en` or other): Vogue-US / Harper's Bazaar register — editorial English with sensory verbs, lifestyle scenes anchored to the global market the brand serves (don't fabricate cultural specificity; if the brand kit doesn't name a market, stay neutral).
+- Other languages: use the magazine register native to that market; the recipe's structural rules below (hook quote, lifestyle scenes, no listicles) apply regardless.
+
+Vogue-style editorial.
 
 ## Structure
 

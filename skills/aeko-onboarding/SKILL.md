@@ -168,7 +168,7 @@ If yes: ask the user to authorize navigation to **one specific domain** (e.g. `i
 
 **One-domain-per-confirmation gate.** Never navigate to a second domain without re-asking. The bridge runs against the user's full Chrome session, so silent roaming is unacceptable. If the user wants three platforms scraped, ask three separate times.
 
-**Read-only contract.** Never click compose, never fill a post form, never publish — even when the bridge is connected. Publishing belongs to a future `/aeko-publish` skill (see the handoff block in `/aeko-create-content`).
+**Read-only contract.** Never click compose, never fill a post form, never publish — even when the bridge is connected. Publishing belongs to `/aeko-publish-content` (for AEKO-owned channels: aeko.shop / Tistory / Naver Blog) and remains out of scope here for user-owned channels.
 
 **Tier B — Public URL paste**:
 
@@ -227,7 +227,7 @@ End with the docs link (`https://aeko-intelligence.com`) and an invitation to co
 
 - Never edits the AEKO source repository (`github.com/AEKO-Intelligence/aeko-plugin`). All Writes target the user's **local plugin install**.
 - Never executes `/aeko-update-pdp`, `/aeko-create-content`, `/aeko-fix-technical`, or any other executor on the user's behalf. Onboarding stops at the suggested-next-step line.
-- Never publishes content — even when the `/chrome` bridge is connected. Compose forms and publish buttons are out of scope; that lives in a future `/aeko-publish` skill.
+- Never publishes content — even when the `/chrome` bridge is connected. Compose forms and publish buttons are out of scope; AEKO-owned publishing lives in `/aeko-publish-content`.
 - Never mutates the brand kit. `aeko_get_brand_kit` is read-only for this skill; edits route to `/aeko-brand-kit`.
 - Never fabricates an MCP version string. There is no version endpoint on `https://aeko-intelligence.com/mcp` — report only "connected" / "not connected" / specific failure mode.
 - Never roams authenticated sites silently. Every domain navigated via the `/chrome` bridge gets one explicit user confirmation.
@@ -310,7 +310,7 @@ End with the docs link (`https://aeko-intelligence.com`) and an invitation to co
 
 - AEKO 소스 저장소 수정 — 모든 Write는 사용자의 로컬 설치 경로에만.
 - 다른 실행 스킬을 사용자 대신 실행 — 5단계 마무리 안내까지만.
-- 콘텐츠 게시 — `/chrome` 브릿지가 연결되어 있어도 작성 폼 클릭·게시는 미래의 `/aeko-publish` 스킬 영역.
+- 콘텐츠 게시 — `/chrome` 브릿지가 연결되어 있어도 작성 폼 클릭·게시는 본 스킬 범위 밖. AEKO 자체 채널(aeko.shop / Tistory / Naver Blog) 게시는 `/aeko-publish-content`.
 - 브랜드 킷 수정 — 조회만 합니다. 수정은 `/aeko-brand-kit`.
 - MCP 서버 버전 문자열 추측 — 엔드포인트가 없으니 만들지 않습니다.
 - `/chrome` 브릿지에서 사용자 동의 없이 다른 도메인으로 이동 — 도메인당 1회 동의 원칙.

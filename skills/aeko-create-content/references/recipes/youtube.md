@@ -6,20 +6,28 @@ load_when: SKILL.md §5.1 selects channel=youtube
 
 # `youtube` — Description recipe
 
+## Audience scope
+
+Language-neutral channel. Output follows `frontmatter.target_language`:
+
+- **Korean ecommerce brands** (`target_language=ko`): KO title and description. Tags include KO head terms + a few EN long-tails when relevant (`홈카페, 라떼아트, latte art`). Korean YouTube viewers commonly search bilingually for product categories.
+- **Global sellers** (`target_language=en` or other): single-language title and description matching the target market. EN tags only for EN markets — mixing KO tags hurts EN discovery.
+- Chapter labels and on-screen text in the description follow the chosen language end-to-end.
+
 ## Structure
 
-- **Title** — ≤60 chars, includes the prompt keyword
+- **Title** — ≤60 chars (Latin / EN) or ≤30자 (Hangul). YouTube uses byte count under the hood; 60 EN chars ≈ 30 Hangul chars before mobile truncation. Include the prompt keyword.
 - **Description**:
-  - First 200 chars = hook (above the fold)
+  - First 200 chars / 100자 = hook (above the fold)
   - Then full description
-  - Then chapter list: `00:00 Intro / …`
-  - Then tags
+  - Then chapter list: `00:00 Intro / …` — chapter labels in `target_language`
+  - Then tags — language mix per Audience scope above
 
 ## Acceptance gates
 
-- Title ≤60 chars
+- Title ≤60 chars (EN) / ≤30자 (KO)
 - ≥3 chapters
-- Hook in first 200 chars
+- Hook in first 200 chars (EN) / 100자 (KO)
 
 ## Media
 
