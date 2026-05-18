@@ -12,7 +12,7 @@ description: >
   never auto-publishes. Splits the content branch out of the retired
   `/aeko-run-action`.
 argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_crawl_url, aeko_list_own_content, aeko_request_media_upload, aeko_complete_action_item, Read, Write, Bash, WebFetch, WebSearch
+allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_crawl_url, aeko_list_own_content, aeko_request_media_upload, aeko_complete_action_item, aeko_save_content_variation, aeko_list_content_variations, Read, Write, Bash, WebFetch, WebSearch
 ---
 
 # AEKO Create Content
@@ -242,7 +242,7 @@ Per recrawled URL, merge into the channel's structural template (in 3B.5):
 
 Fetch the top **1** in-store blog post via `aeko_crawl_url(url)` (cached default — in-store pages are slower-changing; the 24h cache is fine here) **only when**:
 
-- Any selected channel is an own-store channel (artifact_type starts with `own_store_`), **or**
+- Any selected channel is an own-store channel (`own_store_blog` or a future `own_store_*` slug), **or**
 - The cited-source structural template is thin (the top selected channel has fewer than 3 cited sources) AND no brand-specific exemplar matched in §5.0.
 
 Otherwise skip — cited-source structural template + brand kit + exemplars carry the voice.
@@ -287,23 +287,18 @@ This step is the v2 fanout. Always run; respect `skip` / `none` for empty select
 
 This substep mutates `auto_detected_channels[]` so the §4a summary below reflects the final pre-selection set. Run it before any §4a output.
 
-aeko.shop publishing is enabled for a brand when (a) the brand is on the Pro tier or higher (content-generation is gated Pro+ per contract §3.2 — `aeko-mcp/docs/contracts/action-item-contract.md`'s 2026-04-27 tier-restructure entry), AND (b) the backend `Brand` row's `aeko_shop_disabled` field is `false` (the default — see `aeko-shop-backend/app/models.py:32`). Read the brand-kit response from Step 2:
+aeko.shop is AEKO's canonical publishing destination for tenant brands. Content generation is already gated Pro+ at skill entry per contract §3.2, so this substep must not re-check account tier. Read only the brand-kit response's destination flag from Step 2:
 
-**Tier gate (runs first, hard):** Read `brand_kit.metadata.account_tier`. Allowed values per contract §3.2: `starter`, `pro`, `enterprise`.
+**Canonical destination rule:** For every tenant brand, prepend `aeko_shop` to `auto_detected_channels[]`. Only skip when `brand_kit.aeko_shop_disabled === true`.
 
-- `account_tier ∈ {pro, enterprise}` → proceed to the destination-flag check below.
-- `account_tier == starter` → **do not** prepend `aeko_shop`. Emit a one-line user-facing message (bilingual when `frontmatter.target_language` starts with `ko`):
-  - EN: `ℹ aeko.shop publishing is a Pro feature — your draft will skip aeko_shop. Upgrade at <brand_kit.metadata.billing_url or https://aeko-intelligence.com/billing>.`
-  - KO: `ℹ aeko.shop 게시는 Pro 플랜 이상에서 사용할 수 있어요. 이번 초안에서는 aeko_shop을 건너뜁니다. 업그레이드: <brand_kit.metadata.billing_url 또는 https://aeko-intelligence.com/billing>`
-  - Continue with the rest of the channel set; the user can still pick the non-aeko_shop channels.
-- `account_tier` missing / unrecognized → emit a one-line warning ("ℹ Account tier not surfaced by brand kit — skipping aeko_shop preselection. Re-run /aeko-brand-kit to refresh.") and **do not** prepend `aeko_shop`. Safer to omit than to draft a publish-ready triple the user can't actually publish.
+- `aeko_shop_disabled === true` → no-op; `aeko_shop` never appears in the channel set.
+- `aeko_shop_disabled === false`, absent, malformed, or otherwise not strictly `true` → prepend `aeko_shop` to `auto_detected_channels[]`. The channel appears in §4a's "Auto-detected channels" line and is preselected at §4b — the user can still deselect it.
 
-**Destination-flag check (runs second, only when tier passes):** Read `brand_kit.aeko_shop_disabled`:
+When `aeko_shop_disabled` is absent or malformed, emit a one-line warning in §4a: "ℹ aeko.shop status not surfaced by brand-kit response — assuming enabled. Verify in the dashboard if aeko_shop draft is unexpected."
 
-- `false` (or absent — backend default) → prepend `aeko_shop` to `auto_detected_channels[]`. The channel appears in §4a's "Auto-detected channels" line and is preselected at §4b — the user can still deselect it. When the field is absent, emit a one-line warning in §4a: "ℹ aeko.shop status not surfaced by brand-kit response — assuming enabled. Verify in the dashboard if aeko_shop draft is unexpected."
-- `true` → no-op; `aeko_shop` never appears in the channel set.
+**Own-store content seed:** For every tenant brand, append `own_store_blog` to `auto_detected_channels[]` when absent. This exposes the tenant's connected Store Content draft option in §4a/§4b alongside the canonical aeko.shop option. It is a backend-saved draft target only — this skill never writes to the connected store, and publish later creates an AEKO-owned draft row rather than pushing to Cafe24/Shopify.
 
-**Backend wiring note** — as of the current MCP minor version, `aeko_get_brand_kit` may not surface `aeko_shop_disabled` or `metadata.account_tier` in its response. When `account_tier` is missing the tier gate is conservative (omits aeko_shop); when `aeko_shop_disabled` is missing the destination gate assumes enabled. Both fields need to land in the brand-kit MCP route response for the gate to fire correctly; track as a backend prerequisite (same workstream as the `products[]` hydration in `build_plan_md`).
+**Backend wiring note** — as of the current MCP minor version, `aeko_get_brand_kit` may not surface `aeko_shop_disabled` in its response. `metadata.account_tier` is not load-bearing for this gate. Missing `aeko_shop_disabled` means include `aeko_shop`; only explicit `true` disables the canonical destination. Track surfacing `aeko_shop_disabled` as a backend visibility improvement, not as a prerequisite for preselection.
 
 `aeko_shop` is **not** forensics-detected; it's a brand destination flag. Its §4a "Structural targets" line reads `freshness: pending` until 3B runs (3B will recrawl 1–2 representative pages from the brand's existing aeko.shop content via the same `aeko_list_own_content` → `aeko_crawl_url` flow used for any other selected channel, then derive numeric structural targets).
 
@@ -355,6 +350,7 @@ Parse user reply into `selected_detected_channels[]` (subset of `auto_detected_c
 ### 4c. Add additional formats
 
 Ask: "Add any of these formats?
+- `own_store_blog` (connected Store Content draft for the brand's own CMS/store; local draft only)
 - `보도자료` (Korean press release, 합니다체)
 - `magazine` (Vogue-style editorial)
 - `instagram` (caption + hashtags + alt text)
@@ -426,6 +422,7 @@ For each channel `C` in the selection, before drafting:
     - `youtube` → `references/recipes/youtube.md`
     - `naver_blog` → `references/recipes/naver_blog.md` (layered on top of the forensics template from 3B.5 — recipe provides platform conventions, forensics provides measured numeric targets)
     - `tistory` → `references/recipes/tistory.md` (same layering pattern as `naver_blog`)
+    - `own_store_blog` — no recipe file; structural and voice template comes from the in-store crawl in 3B.4 plus `references/examples/in-store-content-example.md` when present.
     - `reddit` — no recipe file; structural template comes from 3B.5 alone (Q&A locked when forensics 3B.5 detects `QAPage` / `DiscussionForumPosting`).
     - `other:<name>` — no recipe file; structural template comes from §5.1's mini-forensics.
 
@@ -434,6 +431,7 @@ For each channel `C` in the selection, before drafting:
     | channel | example file the skill scans for |
     | --- | --- |
     | `naver_blog`, `tistory` | `references/examples/blog-example.md` |
+    | `own_store_blog` | `references/examples/in-store-content-example.md` |
     | `instagram` | `references/examples/instagram-post-example.md` |
     | `보도자료` | `references/examples/press-release-example.md` |
     | `tiktok` | `references/examples/tiktok-script-example.md` (optional) |
@@ -454,6 +452,7 @@ The user-facing summary at Step 8 must list which reference files were loaded pe
 ### 5.1 Pick the structural source
 
 - **Auto-detected channel without recipe** (`reddit`): use `structural_template_by_channel[channel]` from Step 3 alone (snapshot + live crawl already merged in 3B.3 / 3B.5).
+- **Own-store channel** (`own_store_blog`): use the in-store crawl/tone signature from 3B.4 as the primary structural source, plus `references/examples/in-store-content-example.md` when present. If no in-store content exists, draft from brand-kit voice and cited-source signal, and surface "no in-store signature — drafting from cited-source signal only" once.
 - **Auto-detected channel with recipe** (`naver_blog`, `tistory`): use BOTH the forensics template (3B.5 numeric targets) AND the recipe loaded in §5.0 from `references/recipes/<channel>.md` (platform conventions, register, acceptance gates). When the two disagree on a numeric target, forensics wins; when they disagree on register or platform conventions, the recipe wins. Recipe acceptance gates apply *alongside* §6.2 structural-target deltas.
 - **Brand-destination editorial** (`aeko_shop`): use BOTH the forensics template (3B.5 numeric targets sampled from the brand's existing aeko.shop content via in-store recrawl) AND `references/recipes/editorial-html-jsonld.md`'s aeko_shop section (sanitizer-safe body HTML, product callout pattern, `<slug>.meta.json` field constraints, cdn.aeko.shop image rules — **no in-body JSON-LD**, the frontend regenerates it from `PostUpsert` fields). Recipe wins for product-callout rules, body HTML structure, and `.meta.json` shape; forensics wins for measured paragraph / heading / list / image-density numeric targets.
 - **Built-in addon** (`보도자료`, `magazine`, `instagram`, `tiktok`, `youtube`): use the recipe loaded in §5.0 from `references/recipes/<channel>.md` (and `references/recipes/editorial-html-jsonld.md` for editorial channels' HTML pair).
@@ -471,7 +470,8 @@ If frontmatter prose requests external research OR an `other:<name>` channel nee
 **Output format per channel** (overridden by `frontmatter.output_artifact_format` when present):
 
 | channel | default format(s) |
-| `reddit`, `naver_blog`, `tistory`, `instagram`, `tiktok`, `youtube` | `markdown` |
+| --- | --- |
+| `reddit`, `naver_blog`, `tistory`, `instagram`, `tiktok`, `youtube`, `own_store_blog` | `markdown` |
 | `보도자료`, `magazine`, `partner_media` | `markdown` + `html` (both files written; HTML carries embedded JSON-LD per `references/recipes/editorial-html-jsonld.md`). |
 | `aeko_shop` | `html` + `meta.json` + `markdown` (three files; `.html` is the sanitizer-safe body, `.meta.json` is the publish-payload sidecar mirroring `PostUpsert`, `.md` is a debug mirror). No in-body JSON-LD (the rendered page regenerates it from publish fields). Product references render as `<figure role="callout" data-variant="product" data-product-source-id="…">` callouts. See `references/recipes/editorial-html-jsonld.md`. |
 
@@ -569,18 +569,20 @@ Path template:
 **Filename rules per channel:**
 
 | channel | filename pattern | extension(s) |
-| `reddit`, `naver_blog`, `tistory`, `partner_media` | `<slug>` | `.md` |
+| --- | --- | --- |
+| `reddit`, `naver_blog`, `tistory`, `partner_media`, `own_store_blog` | `<slug>` | `.md` |
 | `보도자료`, `magazine` | `<slug>` | `.md` AND `.html` (see `references/recipes/editorial-html-jsonld.md`) |
 | `aeko_shop` | `<slug>` | `.html` AND `.meta.json` AND `.md` — three files (the publish-ready triple; see `references/recipes/editorial-html-jsonld.md` for the per-file shape and §6.3 for the acceptance gates) |
 | `instagram`, `tiktok`, `youtube` | the channel slug (literal `instagram` / `tiktok` / `youtube`) | `.md` |
 
-**Worked-example directory tree** the skill MUST produce when 10 channels are selected (the 9 below plus `aeko_shop`) for a draft titled "Summer Cooling Bedding — 2026 Guide":
+**Worked-example directory tree** the skill MUST produce when 11 channels are selected (the 10 below plus `aeko_shop`) for a draft titled "Summer Cooling Bedding — 2026 Guide":
 
 ```
 aeko-artifacts/
   <domain_id>/
     <item_id>/
       reddit/summer-cooling-bedding-2026-guide.md
+      own_store_blog/summer-cooling-bedding-2026-guide.md
       naver_blog/summer-cooling-bedding-2026-guide.md
       tistory/summer-cooling-bedding-2026-guide.md
       partner_media/summer-cooling-bedding-2026-guide.md
@@ -602,7 +604,7 @@ If frontmatter prose requests sibling files (JSON-LD, meta, social teaser), writ
 
 ### 5.6 Channel recipes (loaded from `references/recipes/`)
 
-Built-in addon channels each have a recipe file under `references/recipes/`. They were loaded in §5.0; apply them now. Acceptance bullets in each recipe file ARE the §6.4 social-channel gates and the §6.2 prose-channel structural-target source.
+Built-in addon channels use recipe files under `references/recipes/` when one exists; own-store and forensics-derived channels use their structural templates instead. References were loaded in §5.0; apply them now. Acceptance bullets in each recipe file ARE the §6.4 social-channel gates and the §6.2 prose-channel structural-target source.
 
 | channel | recipe file | output |
 | --- | --- | --- |
@@ -610,6 +612,7 @@ Built-in addon channels each have a recipe file under `references/recipes/`. The
 | `magazine` | `references/recipes/magazine.md` + `references/recipes/editorial-html-jsonld.md` | `.md` + `.html` |
 | `partner_media` | forensics template (3B.5) + `references/recipes/editorial-html-jsonld.md` | `.md` + `.html` |
 | `aeko_shop` | `references/recipes/editorial-html-jsonld.md` (aeko_shop section — sanitizer-safe body HTML + product callout pattern + cdn.aeko.shop image rules; **no in-body JSON-LD** — the frontend regenerates Article + Product schemas from `PostUpsert` fields at render time) + 3B.5 forensics template for paragraph/heading targets | `.html` + `.meta.json` + `.md` (publish-ready triple) |
+| `own_store_blog` | in-store crawl/tone signature (3B.4) + `references/examples/in-store-content-example.md` when present | `.md` |
 | `naver_blog` | `references/recipes/naver_blog.md` + forensics template (3B.5) | `.md` |
 | `tistory` | `references/recipes/tistory.md` + forensics template (3B.5) | `.md` |
 | `instagram` | `references/recipes/instagram.md` | `.md` |
@@ -704,7 +707,24 @@ Substitute the recipe's "Acceptance gates" section in `references/recipes/<chann
 
 Weak on a soft-warning dimension → iterate that artifact's affected section. Cap at **2 soft iterations per artifact**. Hard-gate failures get **1 fix iteration** before failing the artifact. If any artifact still fails its hard gates, leave the entire item `pending` (do NOT call `aeko_complete_action_item`) and surface which channels failed and which dimensions need work.
 
-## Step 7 — Mark complete
+## Step 7 — Validate artifacts
+
+Gate completion on the artifact set produced so far. The actual `aeko_complete_action_item` call moves into Step 7.5 so it's conditional on the backend-save outcome.
+
+Only proceed past this step (i.e., into Step 7.5) if:
+- ≥1 artifact written AND every written artifact passed its acceptance gates AND citability self-check passed for every artifact.
+
+If the artifact set fails this gate → leave the item `pending` (do NOT enter Step 7.5; do NOT call `aeko_complete_action_item`) and surface which channels failed and which dimensions need work.
+
+## Step 7.5 — Save publishable variations to backend
+
+After Step 7's validation passes, optionally save the publishable variations to the AEKO backend so they can be published from another machine, by another flow, or later in time. This step also owns the `aeko_complete_action_item` call — completion is gated on the save outcome per the lifecycle locked in the plan.
+
+### 7.5.1 Identify publishable artifacts
+
+Build `publishable_artifacts[]` = subset of channels drafted in §5.3 whose destination slug is in `{aeko_shop, own_store_blog}`. Every other channel (`reddit`, `naver_blog`, `tistory`, `instagram`, `tiktok`, `youtube`, `보도자료`, `magazine`, `partner_media`, `other:<name>`) is local-only and not eligible for backend save.
+
+If `publishable_artifacts` is empty → skip the save prompt. Call `aeko_complete_action_item` immediately (local-only completion is valid):
 
 ```
 aeko_complete_action_item(
@@ -715,8 +735,88 @@ aeko_complete_action_item(
 )
 ```
 
-Only complete if:
-- ≥1 artifact written AND every written artifact passed its acceptance gates AND citability self-check passed for every artifact.
+Set `saved_variations = []` and proceed to Step 8.
+
+### 7.5.2 Ask the user (single prompt, bilingual)
+
+If `publishable_artifacts` is non-empty, ask once. Bilingual when `frontmatter.target_language` starts with `ko`:
+
+- EN: `Save <N> publishable variation(s) to AEKO backend so you can publish them later (or from another machine)? [Y/n]`
+- KO: `<N>개의 게시 가능한 변형본을 AEKO 백엔드에 저장할까요? 나중에 (또는 다른 기기에서) 게시할 수 있어요. [Y/n]`
+
+List the destinations under the prompt (e.g., `- aeko_shop\n- own_store_blog`) so the user knows what they're agreeing to.
+
+### 7.5.3 On decline (`n`)
+
+`saved_variations = []`. Call `aeko_complete_action_item` (same payload as 7.5.1). Local-only completion is valid; the user just opted out of backend storage. Proceed to Step 8.
+
+### 7.5.4 On accept (`Y`)
+
+Iterate `publishable_artifacts[]`. For each:
+
+```
+metadata = <artifact.meta_json dict>
+if destination == "aeko_shop":
+    metadata = {
+        **metadata,
+        # Flat IDs drive aeko.shop post_products mapping.
+        "featured_product_source_ids": [
+            p.product_source_id for p in metadata.featured_products
+        ],
+        # Full snapshots let publish upsert missing aeko.shop products before
+        # inserting the post. Source ID is still the join key; never use ProductRef.id
+        # as product_source_id.
+        "featured_products": [
+            {
+                "product_source_id": p.product_source_id,
+                "source_id": p.product_source_id,
+                "id": parsed_products_by_source[p.product_source_id].id,
+                "slug": parsed_products_by_source[p.product_source_id].slug,
+                "name": parsed_products_by_source[p.product_source_id].name,
+                "sku": parsed_products_by_source[p.product_source_id].sku,
+                "outbound_url": parsed_products_by_source[p.product_source_id].outbound_url,
+                "image_url": parsed_products_by_source[p.product_source_id].image_url,
+                "short_description": parsed_products_by_source[p.product_source_id].short_description,
+                "display_order": p.display_order,
+            }
+            for p in metadata.featured_products
+        ],
+    }
+
+aeko_save_content_variation(
+    item_id=frontmatter.item_id,
+    destination=<"aeko_shop" or "own_store_blog">,
+    title=<artifact.title>,
+    body_html=<artifact.body_html or None>,  # populated for aeko_shop
+    body_markdown=<artifact.body_markdown or None>,  # populated for own_store_blog (and aeko_shop's .md debug mirror)
+    metadata=metadata,
+    artifact_paths=[<absolute paths of this channel's files>],
+)
+```
+
+For `aeko_shop`, the `featured_products[]` snapshots are mandatory whenever `.meta.json featured_products[]` is non-empty. Publish uses them to upsert the aeko.shop `products` table first, then the post publish maps `post_products` by `featured_product_source_ids`. If a product lacks `source_id`, drop it earlier per Step 1.1 and keep the draft product-free; do not fabricate a join key.
+
+Collect the returned `variation_id`s into `saved_variations[]`.
+
+**On ANY save failure mid-loop** (HTTP 4xx/5xx, MCP error, network failure):
+- Do NOT call `aeko_complete_action_item`. Item stays in `pending`.
+- Surface bilingual retry guidance and STOP — do not continue with remaining destinations:
+  - EN: `⚠ Save failed for <destination>: <error>. Item left pending. Re-run /aeko-create-content <item_id> to retry.`
+  - KO: `⚠ <destination> 저장 실패: <error>. 항목이 pending 상태로 남아 있어요. /aeko-create-content <item_id>를 다시 실행해 재시도해 주세요.`
+- Skip Step 8 (no completion summary); skip Step 9 (no publish handoff).
+
+**On ALL saves succeed**:
+
+```
+aeko_complete_action_item(
+    item_id=frontmatter.item_id,
+    artifact_summary="<N channels> · saved <K> backend variation(s): <destinations>",
+    artifact_paths=[<absolute paths of every file written across all channels>],
+    write_result={"backend_variations": saved_variations},  # records the variation_ids on the action item for audit
+)
+```
+
+Print a one-line summary: `Saved <K> variation(s) to backend (destinations: <list>) | Failed: 0` so the outcome lands in the user transcript. Proceed to Step 8.
 
 ## Step 8 — User-facing summary
 
@@ -764,17 +864,29 @@ Next: /aeko-action-center <domain_id> content
 
 This skill never publishes — Step 8 stops at local files plus the manual checklist. Publishing is the job of `/aeko-publish-content`, which routes only to **aeko.shop**. All other channels (Tistory, Naver Blog, Instagram, TikTok, YouTube, 보도자료, magazine, partner_media) are generation-only outputs — the client posts them however they want; AEKO does not route them anywhere. This step adds a **read-only handoff line** at the very end of the user-facing summary so the publish path is visible from day one.
 
-### 9.1 Always print the publish-content line — when aeko_shop was drafted
+### 9.1 Print the publish-content line — conditional on Step 7.5 outcome
 
-If `aeko_shop` is in the drafted channel set, insert immediately under the `Next:` line in §8 — unconditionally, no detection step:
+The handoff line is gated on `saved_variations` (set in Step 7.5), not on the drafted channel set alone. Publishing now reads from backend rows, not local files — if nothing was saved to backend, there's nothing for `/aeko-publish-content` to publish.
 
-```
-Publish: /aeko-publish-content <item_id>
-  ↳ publishes the rich aeko_shop artifact (body_html + .meta.json + featured_products) to aeko.shop — N products linked to live catalog, structured data regenerated at render time for ChatGPT/Claude/Perplexity citation.
-  ↳ aeko.shop is the only destination this skill family routes to. Other channels' drafts stay local.
-```
+- **`saved_variations` is non-empty** (user accepted Step 7.5 save AND all saves succeeded) — insert immediately under the `Next:` line in §8:
 
-If `aeko_shop` is **not** in the drafted channel set, omit the publish line entirely — there's nothing to publish via `/aeko-publish-content`. Leave the External-media publish checklist (§8) in place as the only post-creation guidance.
+  ```
+  Publish: /aeko-publish-content <item_id>
+    ↳ publishes <K> saved backend variation(s) — destinations: <comma list>.
+    ↳ aeko_shop → live on aeko.shop with body_html + featured_products linked to live catalog; structured data regenerated at render time for ChatGPT/Claude/Perplexity citation.
+    ↳ own_store_blog → creates an AEKO-owned draft row you push to your connected store later (never auto-pushed to Cafe24/Shopify).
+  ```
+
+- **`publishable_artifacts` was non-empty but the user DECLINED the Step 7.5 save** — print instead:
+
+  ```
+  ℹ Local artifacts saved. No backend variations stored.
+    To publish via /aeko-publish-content, re-run /aeko-create-content <item_id> and accept the backend-save prompt at Step 7.5.
+  ```
+
+- **`publishable_artifacts` was empty** (no `aeko_shop` / `own_store_blog` channels were drafted) — omit the publish line entirely. The External-media publish checklist (§8) is the only post-creation guidance for those local-only channels.
+
+- **Item is pending due to Step 7.5 save failure** — Step 8 / §9 are skipped entirely (already handled in §7.5.4); this branch never fires.
 
 ### 9.2 Optional Chrome-bridge hint for client-managed channels
 

@@ -386,3 +386,31 @@ Any HTML-side hard-gate failure → one fix iteration → leave `pending`.
 ## Notes on the migration from the pre-v1.4 recipe
 
 Before this rewrite the recipe described an `aeko_shop` `.html` as a full HTML document with embedded JSON-LD, inline `<a data-aeko-product-ref>` product links, and an in-body hero `<figure>`. Every one of those constructs returns HTTP 400 from `sanitize_post_html` (`aeko-shop-backend/app/sanitizer.py`). If a drafter produces an artifact in the old shape, `/aeko-publish-content` will fail at the POST step with the sanitizer's tag/attr-enumeration error. Re-draft against this recipe.
+
+---
+
+## Backend variation save payload (v1.5)
+
+When `/aeko-create-content` Step 7.5 saves the aeko_shop variation to the backend, it calls `aeko_save_content_variation` with a `metadata` dict built directly from the local `.meta.json` sidecar. The backend's `AekoShopMetadata` Pydantic schema enforces the publish-critical keys for `destination='aeko_shop'`; saves that omit required fields return HTTP 422 at save time (not at publish time), so the gap is caught before the row exists.
+
+Field map — `.meta.json` (this recipe's sidecar) → `aeko_save_content_variation(metadata=...)`:
+
+| `.meta.json` field | `metadata` key | Required for `aeko_shop`? |
+|---|---|---|
+| `title` | (not in `metadata`; passed as the top-level `title` arg) | yes — top-level arg |
+| `og_description` | `og_description` | **yes** |
+| `hero_image_url` | `hero_image_url` | recommended (may be `null`; when present, must be a `cdn.aeko.shop/...` URL) |
+| `featured_products[].product_source_id` | `featured_product_source_ids` (flat `list[str]`) | **yes** (may be `[]`) |
+| `featured_products[]` + Step 1 `parsed_products[]` | `featured_products` (full product snapshots: `product_source_id`, `source_id`, `id`, `slug`, `name`, `sku`, `outbound_url`, `image_url`, `short_description`, `display_order`) | **yes when products exist** |
+| `locale` | `locale` | optional but recommended |
+| `content_format_version` | `content_format_version` | optional |
+| `mentioned_brand_ids` | not in `metadata`; included as raw fields on the row | n/a |
+| `external_publications` | not in `metadata`; included as raw fields on the row | n/a |
+
+`body_html` is passed as the dedicated `body_html=` arg (the sanitizer-safe body verbatim, same as the local `.html` file). `body_markdown` is the `.md` debug mirror — populated for `aeko_shop` too so the row carries both representations.
+
+When products are present, `featured_products` in the backend save payload is richer than the local `.meta.json` sidecar: merge each `.meta.json featured_products[].product_source_id` with the matching Step 1 `parsed_products[]` row. Publish uses those snapshots to upsert missing aeko.shop `products` rows before creating the post; aeko.shop then creates `post_products` mappings from `featured_product_source_ids`. The join key remains `ProductRef.source_id` only.
+
+For the `own_store_blog` channel (no `.meta.json` sidecar — markdown only): pass `body_markdown` only; `metadata` is looser (`OwnStoreBlogMetadata` schema), no required `hero_image_url` or `featured_product_source_ids`.
+
+This mapping is the single source of truth for skill authors — do not invent a parallel transformation when extending the recipe.
