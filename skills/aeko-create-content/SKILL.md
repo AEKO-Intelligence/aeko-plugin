@@ -12,7 +12,7 @@ description: >
   never auto-publishes. Splits the content branch out of the retired
   `/aeko-run-action`.
 argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_crawl_url, aeko_list_own_content, aeko_request_media_upload, aeko_complete_action_item, Read, Write, Bash, WebFetch, WebSearch
+allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_crawl_url, aeko_list_own_content, aeko_request_media_upload, aeko_complete_action_item, Read, Write, Bash, WebFetch, WebSearch
 ---
 
 # AEKO Create Content
@@ -107,13 +107,19 @@ The phase boundary means deselected channels never pay an enrichment cost. Net e
 
 `frontmatter.prompts_to_rank_on` may carry either UUIDs (preferred — newer Plan-builders write these directly) or raw prompt text (older Plan-builders + manually authored Plans). `aeko_get_tracked_prompt` only accepts UUIDs, so resolve text → UUID before 3A.1.
 
-For each entry:
+Pass the whole list through `aeko_resolve_prompts_by_text(prompts_to_rank_on)` in one call. The tool short-circuits entries that already look like UUIDs and matches the rest against `prompt_en` / `prompt_ko` / `raw_prompt` server-side (NFC + lowercase + strip-punctuation + collapse-whitespace), returning one deterministic line per input:
 
-1. **UUID detection.** If the entry matches `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$` (case-insensitive), it's already a UUID — pass through.
-2. **Text → UUID resolution.** If any entry is non-UUID text, call `aeko_get_tracked_prompts()` *once* (cache the result for the rest of this step). The response includes an `ID` column for every tracked prompt. Build a normalized lookup map: lowercase + strip punctuation + collapse whitespace, applied to both `prompt_en` and `prompt_ko`. Match each text entry against the map. Carry `(text → uuid, matched_via)` for §4a transparency.
-3. **Unresolved entries.** Collect any text entries that didn't match. Surface them in §4a as "unresolved prompts" (don't silently drop) — the user needs to know which prompts were skipped.
+```
+- "웨딩 촬영 전 피부 톤업 앰플 추천" → `7a3f8b2c-…` (matched_via: prompt_ko)
+- "에스테틱샵에서 쓰는 비타민C 앰플" → UNRESOLVED
+- `92c4e6a1-…` → already a UUID
+```
 
-**Hard precondition.** If zero entries resolve to UUIDs, stop here:
+Carry `(text → uuid, matched_via)` for §4a transparency. **Do not** fall back to grep-parsing `aeko_get_tracked_prompts` markdown — that table renders `prompt_ko` on a separate row from the ID column, which is why text→UUID resolution used to silently fail on Korean Plan.md inputs.
+
+Collect any `UNRESOLVED` entries and surface them in §4a as "unresolved prompts" (don't silently drop) — the user needs to know which prompts were skipped.
+
+**Hard precondition.** If zero entries resolve to UUIDs (every input came back UNRESOLVED), stop here:
 
 ```
 Forensics requires tracked prompts. None of `prompts_to_rank_on` resolved to a tracked UUID.
