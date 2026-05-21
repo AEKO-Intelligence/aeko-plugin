@@ -1,5 +1,6 @@
 ---
 name: aeko-create-content
+version: 0.10.0
 description: >
   Multi-channel content executor for Action-tab items with
   `execution_class=local_content_artifact`. Fetches a Plan.md, runs
@@ -17,6 +18,8 @@ allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_resolve_prompts_by
 
 # AEKO Create Content
 
+**Changelog v0.10.0** — Front-loaded tool/reference batching (§0); annotated AEKO data-gap diagnostics with graded defaults + 3-option proceed prompt (§3A); opt-in WebFetch with heavy-host guard + 50k char cap (§3B); two-form §4 elicitation (channels then media+alt) with required alt-text; channel-aware filename basenames (`<slug>__<filename_token>.<ext>`) + `보도자료` → `press_release` filesystem alias (§5.5); structural-summary aeko.shop publish block with bilingual HTML→aeko.shop callout (§9); Korean channel labels in summary + handoff. **Breaking:** filename pattern changed, alt-text now a hard gate, WebFetch is opt-in only.
+
 Executes one Action-tab content item end-to-end: fetch Plan.md → pull citation-forensics on tracked prompts → identify winning source structures + auto-detect channels → confirm channels with user + collect optional add-on formats and per-channel media → draft N channel-fitted artifacts in the brand voice → save local artifacts → mark complete.
 
 Contract reference: `docs/contracts/action-item-contract.md` §3 (Plan.md), §3.2.1 (ProductRef), §6 (completion). Pinned to contract minor `v1.4` (introduces formal `ProductRef.source_id` required for `aeko_shop` product-callout publishing; backend `build_plan_md()` hydration still pending — see Step 1's "Backend wiring note").
@@ -25,19 +28,59 @@ Contract reference: `docs/contracts/action-item-contract.md` §3 (Plan.md), §3.
 
 - `item-id` (required) — `$1`. If missing, stop and point user to `/aeko-action-center <domain_id> content`.
 
+## Step 0 — Front-load deferred resources (do this FIRST, once per run)
+
+Wall-clock observability: deferred tools loaded one-at-a-time across a run cost a round-trip each. Reference files loaded serially during drafting block the per-channel loop. Both are issued up front as single batched operations.
+
+### 0a. Deferred-tool batch (very first call of the skill)
+
+Issue exactly ONE `ToolSearch` call before any other tool use:
+
+```
+ToolSearch(query="select:aeko_get_action_plan,aeko_get_brand_kit,aeko_resolve_prompts_by_text,aeko_get_tracked_prompts,aeko_get_tracked_prompt,aeko_crawl_url,aeko_list_own_content,aeko_request_media_upload,aeko_save_content_variation,aeko_list_content_variations,aeko_complete_action_item,TaskCreate,TaskUpdate,WebFetch,WebSearch", max_results=20)
+```
+
+Record which tools the host actually exposed (`loaded_tools[]`) for diagnostics only. Do not add stale-MCP fallback branches here: if `aeko_save_content_variation` is missing from the host, the existing §7.5 save-failure branch handles it and the user should update the AEKO MCP.
+
+**Do not load deferred tools one-at-a-time mid-run.** If a later step needs a tool not in the §0a batch, surface a single bilingual notice and stop — the missing tool is a spec drift, not a runtime fallback.
+
+### 0b. Reference-file batch (deferred to after §4-Form-1)
+
+Reference files (`references/recipes/*.md`, `references/examples/*.md`, `references/style/voice-overrides.md`) MUST NOT be loaded one-at-a-time per channel during the Step 5 loop. Hold the read until §4-Form-1 returns the selected channel set, then issue a single parallel `Read` batch covering:
+
+1. **`references/style/voice-overrides.md`** — load ONCE (global file, not per-channel). Skip silently if absent.
+2. **Per selected channel C, the recipe file** when one exists in the §5.0 channel-to-file map (e.g., `references/recipes/<C>.md` plus `references/recipes/editorial-html-jsonld.md` for editorial channels).
+3. **Per selected channel C, the example file** per the §5.0 example-file table.
+
+All three categories go in the same parallel batch. The per-channel Step 5 loop reads from the in-memory cache produced here, NOT from disk.
+
+Batch shape for verification: `Read references/recipes/...` and `Read references/examples/...` entries appear only in this §0b batch description; Step 5 uses cached content.
+
+If a recipe or example file 404s, log a single warning and continue — recipes are nice-to-have for some channels (reddit, own_store_blog have none).
+
 ## Step 1 — Fetch and parse the Plan.md
 
 Call `aeko_get_action_plan(item_id)`. Parse YAML frontmatter + prose.
 
 **Validate:**
 - `contract_version` starts with `2026-04-17.action.v1.` — else stop.
-- Pin this skill to contract minor `v1.4` (matches the skill header). Greater minor → print advisory + proceed.
+- Minor versions `v1.3` (current live) and `v1.4` (proposed `products[]`) are both accepted. This skill is v1.4-tolerant but must run cleanly on v1.3 Plans where `products[]` is absent. Greater minor → print advisory + proceed.
 - `tab == "action"` — else stop.
 - `execution_class == "local_content_artifact"` — else redirect to the right executor.
 - `artifact_type ∈ {own_store_markdown, external_media_markdown, own_store_content, external_media_content}` (accept both v1 and v2 names for forward-compat). In v2 this is **advisory** — actual channel set is decided in Step 4 — but it must be present.
 - `status ∈ {pending, ready}` — else stop.
 - `write_target == "local"` — content artifacts never write to store; mismatch → stop.
 - `tier_required` gate via brand kit metadata.
+
+**Sanity checks (post-validation):**
+
+- **Dedupe `prompts_to_rank_on`.** Some Plan-builder versions emit the same prompt multiple times (observed in production: 3 copies of one prompt). Collapse duplicates (preserve first occurrence's order). If duplicates were found, print one notice: `ℹ Dedupe: collapsed N duplicate prompts in prompts_to_rank_on (Plan-builder upstream bug — file separately).` Carry the deduped list into §3A.
+- **Title fallback chain (for filenames + display).** Compute `resolved_title` once and carry it through Step 5. Chain:
+  1. `frontmatter.title` if present and non-empty → use as-is.
+  2. Else the **first H1 in Plan body**, stripped of any leading `Plan:` prefix (the Plan template starts with `# Plan: <title>`).
+  3. Else `frontmatter.item_id` (UUID fallback).
+
+  Without this chain, Korean-titled Plans with no `frontmatter.title` collapse to `<item_id>.<ext>` everywhere (production bug). `resolved_title` feeds the §5.5 slug derivation; the raw `resolved_title` (not the slug) is what Step 8 / §9 print as the human-readable label.
 
 **Parse `products[]` (optional; contract minor v1.4 — see `docs/contracts/action-item-contract.md §3.2.1`).** When the v1.4 backend wiring ships, Plan.md generated from the dashboard's `상품 선택` mode will carry a `products[]` array; brand-wide mode omits it. Today (pre-v1.4) the field is absent from all live Plan.md — the parse logic below is forward-compat. Each entry shape:
 
@@ -71,7 +114,7 @@ If `products[]` is empty or absent (including the "pre-v1.4 backend, every entry
   - KO: `ℹ 상품 선택 기반 콘텐츠 생성은 백엔드 배포 대기 중입니다 — 이번 초안은 브랜드 전체 톤으로 작성되며 본문에 인라인 상품 callout이 포함되지 않습니다. 대시보드의 상품 선택은 그대로 유지되며, 배포 후 다시 실행하면 본문에서 상품 callout을 확인할 수 있습니다.`
   - If `frontmatter.content_scope` is absent (older Plan.md without the flag) or is `"brand"`, do NOT surface this note — an empty `products[]` in brand-wide mode is the expected shape.
 
-The §4a.5 warning ("Plan carries N products but aeko_shop not active") fires only if `parsed_products[]` is non-empty AND `aeko_shop` is not in the final selected channel set after §4e.
+The §4a.5 warning ("Plan carries N products but aeko_shop not active") fires only if `parsed_products[]` is non-empty AND `aeko_shop` is not in the final selected channel set after §4-Form-1.
 
 **Backend wiring note** — as of the v1.4 contract revision, `build_plan_md()` does NOT yet hydrate `products[]` (or `source_id` on those entries) from the dashboard's product-selection payload. Until the backend wires this, every Plan.md will have `products[]` empty regardless of which content-scope mode the user picked. The skill remains pinned to v1.4; the contract is in place ahead of the backend so skills can validate against the final shape before the wiring ships.
 
@@ -86,9 +129,11 @@ Print prose verbatim. Never echo frontmatter.
 ## Step 2 — Stale brand-kit check
 
 If `frontmatter.requires_brand_kit == true`:
-- `aeko_get_brand_kit(frontmatter.domain_id)`. Missing / empty → stop with Brand-Kit-missing message.
-- Verify voice minimum: `tone_of_voice` present + at least one of `{brand_voice_summary, target_audience}`. Thin kit → warn + offer to abort (`/aeko-brand-kit <domain_id> edit`).
-- Snapshot-version drift: ask user.
+- `aeko_get_brand_kit(frontmatter.domain_id)`. Missing / empty → **record into `aeko_data_gaps[]`** (key: `brand_kit`, status: `404` or `empty`) and continue — don't stop. The §3A.8 diagnostic surfaces the gap with the rest. (Previous behavior was hard-stop; now we surface and let the user decide alongside other 3A signals.)
+- If brand kit is present, verify voice minimum: `tone_of_voice` present + at least one of `{brand_voice_summary, target_audience}`. Thin kit → warn + offer to abort (`/aeko-brand-kit <domain_id> edit`).
+- If brand kit is present, check snapshot-version drift and ask user when drift exists.
+
+If `frontmatter.requires_brand_kit == false`, skip this step (don't add to `aeko_data_gaps[]`).
 
 ## Step 3 — Citation forensics (two phases)
 
@@ -97,7 +142,7 @@ This is what makes AEKO-grounded content beat vanilla Claude. Build a structural
 The work splits in two:
 
 - **Phase 3A — Selection forensics** (runs before Step 4). Cheap signal only: prompt resolution, compact tracked-prompt snapshot, cited-domain ranking, channel auto-detection, in-store dedupe index, selection-confidence score. No live recrawls; no full-body harvesting. Feeds Step 4's channel-selection UX.
-- **Phase 3B — Post-selection enrichment** (runs during §4e, after channel/media selection and before the proceed-to-draft confirmation). Live recrawls and the full structural template — but only for channels the user actually kept. Feeds Step 5's drafting.
+- **Phase 3B — Post-selection enrichment** (runs at §4e, after §4-Form-2's submit captures both channel and media selection). Live recrawls and the full structural template — but only for channels the user actually kept. Feeds Step 5's drafting. No separate proceed-to-draft prompt; the form submit IS the proceed.
 
 The phase boundary means deselected channels never pay an enrichment cost. Net effect vs. the single-phase predecessor: roughly half the tokens on 3A.1 (no bodies, `latest` window), all live crawls deferred and scoped to the kept channels, all tool fan-outs issued as parallel batches.
 
@@ -151,6 +196,8 @@ Per citation, harvest only:
 
 Per response, retain only the platform and any per-response counters needed for ranking — **not** the response body. Body text is not consumed downstream; Step 5 mimics cited-source format, not AI-response prose. Harvesting the body inflates context for no signal.
 
+**Track per-prompt outcomes** into `aeko_wait_cycles[]`: if a tracked prompt returns zero citations for the `latest` window, append `{prompt_id, prompt_text, citation_count: 0}`. This is a wait-cycle state (the prompt was tracked but AEKO hasn't re-queried it yet) — NOT a backend error. The §3A.8 diagnostic surfaces wait-cycle states in a separate section from genuine 404s.
+
 If the snapshot carries an embedded `crawl` payload per cited URL (the prompt-collection-time crawl alongside the citation), preserve it under `cached_crawl_by_url{}` for 3A.5 and 3B.2 — those payloads are older but free, and the 3B.2 stale-gate can reuse them when fresh enough.
 
 #### 3A.2 Rank cited sources
@@ -166,11 +213,13 @@ Classify each top source domain into a channel slug per the table in `references
 Single call: `aeko_list_own_content(domain_id, type="all", limit=15)`. Issue this in the same parallel batch as 3A.1's tracked-prompt fan-out — independent.
 
 Split the result client-side by `content_type`:
-- Build `in_store_topic_index[]` from the (title, url) pairs across blog and PDP rows. Used in §4a duplicate detection: if the working draft title is ≥80% token-overlap with an existing page, surface the conflict and offer a pivot at Step 4e.
+- Build `in_store_topic_index[]` from the (title, url) pairs across blog and PDP rows. Used in §4a duplicate detection: if the working draft title is ≥80% token-overlap with an existing page, surface the conflict in §4a so the user can deselect or pivot before submitting §4-Form-1.
 
 **Do not crawl in-store posts in 3A.** Tone-signature crawling is conditional and moves to 3B.4.
 
-New domain with no in-store content → call returns empty; skip silently and note "no in-store signature — drafting from cited-source signal only" in §4a output. Non-fatal.
+New domain with no in-store content → call returns empty; record `{key: "list_own_content", status: "empty"}` in `aeko_data_gaps[]` and continue silently. The diagnostic in §3A.8 surfaces it; §4a still notes "no in-store signature — drafting from cited-source signal only." Non-fatal.
+
+If `aeko_list_own_content` returns 404 (domain not indexed in AEKO at all) — distinct from an empty-but-indexed response — record `{key: "list_own_content", status: "404"}` in `aeko_data_gaps[]` and continue. The diagnostic surfaces this as a backend/indexing issue, not a wait-cycle state.
 
 #### 3A.5 Build light structural template stubs
 
@@ -185,7 +234,7 @@ These stubs power §4a's "Structural targets" hint so the user can pick channels
 
 #### 3A.6 Initialize `cited_url_allowlist[]`
 
-Seed `cited_url_allowlist[]` with every `source_url` harvested in 3A.1. 3B.6 and Step 4d append to it; Step 6.1 reads it as the source of truth for "no invented URLs."
+Seed `cited_url_allowlist[]` with every `source_url` harvested in 3A.1. 3B.6 and §4-Form-2 append to it; Step 6.1 reads it as the source of truth for "no invented URLs."
 
 #### 3A.7 Compute selection confidence
 
@@ -197,15 +246,99 @@ Purely pre-crawl, no recrawl dependency:
 
 Reported in §4a as `Selection confidence: high|medium|low`. Drives 3B.1's recrawl escalation: `low` selection confidence triggers the 3-URL escalation in 3B even on non-editorial channels.
 
-#### 3A.8 No-tracked-prompts handling
+#### 3A.8 AEKO data-gap diagnostic + graded proceed prompt
 
-3A.0 already hard-stops when zero entries resolve to UUIDs. The skill does **not** fall back to `aeko_search_research_prompts` — research prompts are unrelated to the user's tracked-prompt set, so their forensics carry the wrong structural signal (different cited sources, different `@type`s, different audience). Substituting them produces drafts that look forensics-grounded but optimize for the wrong queries.
+After §3A.1–§3A.7 finish, evaluate the gathered telemetry. Two categories:
 
-If 3A.0 succeeded but every `aeko_get_tracked_prompt` call in 3A.1 returns no responses for the latest window (tracked but never re-queried), surface this in 3A.7 as `low selection confidence` with the note "tracked prompts exist but no response history yet — re-run after the next response cycle, or proceed with brand-kit-only drafting." The user decides at §4e whether to abort.
+- **`aeko_data_gaps[]`** — genuine backend/config/indexing problems worth fixing:
+  - `brand_kit: 404|empty` from Step 2
+  - `list_own_content: 404` from §3A.4 (distinct from empty-but-indexed)
+  - `crawl_url: <url> → 404` from §3B.2 if it has already run (typically not yet at this point; see §3B for runtime tracking)
+- **`aeko_wait_cycles[]`** — tracked prompts with zero citations in the `latest` window, recorded in §3A.1. NOT a backend error; the prompt was tracked but AEKO hasn't re-queried since. Will populate on the next response cycle.
 
-### Phase 3B — Post-selection enrichment (runs during §4e, after channel/media selection)
+If both arrays are empty → no diagnostic; proceed silently to §4a. If either is non-empty, print the bilingual diagnostic block:
 
-3B runs after Step 4d completes (≥1 selected channel) and before the §4e proceed-to-draft confirmation. Enrichment is scoped to the selected channels — deselected auto-detected channels pay nothing. The §4e summary reports freshness so the user can see what 3B produced before committing to drafting; if they cancel or edit at §4e, the 3B output is discarded.
+```
+⚠ AEKO 데이터 누락 (백엔드/인덱싱 확인 필요) / Missing AEKO data (backend/indexing)
+  - domain_id: <id>
+  - <for each entry in aeko_data_gaps[]>: <key>: <status> [<url if applicable>]
+  Suggested action: verify the domain is indexed; check backend logs for <domain_id>.
+
+ℹ AEKO 큐 대기 (재쿼리 사이클 대기) / AEKO queue waiting (re-query pending)
+  - tracked prompts with 0 citations: <N>/<M> — will populate after AEKO's next re-query cycle; not a backend error.
+```
+
+Print only the sections with non-empty arrays.
+
+**Graded default** — drive the proceed prompt's default option from §3A.7's `selection_confidence`:
+
+- `selection_confidence == high` — proceed silently to §4a; no prompt. (Forensics is grounded regardless of any non-blocking gaps.)
+- `selection_confidence == medium` — print prompt, **default option 1 (Plan-only)**.
+- `selection_confidence == low` — print prompt, **default option 3 (abort)**.
+
+**The proceed prompt** (printed only when default is not silent-proceed):
+
+```
+How would you like to proceed?
+  1. Proceed Plan-only — draft from Plan.md description + products[] alone; skip external enrichment.
+  2. Proceed with single capped WebFetch on <target_url> — explicit opt-in (see §3B caps).
+  3. Abort and investigate the diagnostic above.
+
+Default: <1|3 per selection_confidence>. Reply with `1`, `2`, or `3`.
+```
+
+`<target_url>` resolution for option 2 (in priority order):
+1. `frontmatter.target_url` if present.
+2. First entry of `parsed_products[].outbound_url` if Step 1 carried any.
+3. The top-ranked `source_url` from §3A.2 if any survived the 404 storm.
+4. None → option 2 is unavailable; print "Option 2 not available — no target URL in Plan or partial 3A signal." and show only options 1 and 3.
+
+**No research-prompt fallback.** Do not invoke `aeko_search_research_prompts` when 3A returns thin signal — research prompts optimize for unrelated queries and produce drafts that look forensics-grounded but rank for the wrong things. (Note retained from prior 3A.8.)
+
+On option 1: proceed to §4a with `forensics_mode = "plan_only"` carried as state — Step 5's drafting downgrades structural-template usage and relies on Plan description + brand kit.
+On option 2: invoke §3A.9 (immediate opt-in WebFetch) before §4a.
+On option 3: stop here. Do NOT call `aeko_complete_action_item`. Surface a one-line bilingual exit notice.
+
+#### 3A.9 Opt-in WebFetch path (invoked only from §3A.8 option 2)
+
+Fires synchronously the moment the user picks option 2 at §3A.8, BEFORE §4a / §4-Form-1. The resulting `external_enrichment_paste` is carried as state into Step 4 (for selection-summary context) and Step 5 (for drafting enrichment).
+
+Never silent, never automatic, never invoked as a fallback when `aeko_crawl_url` 4xx/5xx (those failures stay logged and skipped per §3B.3 / Error paths). The §5.1 `other:<name>` fallback and §5.2 frontmatter-research call sites ALSO apply the rules below.
+
+**Pre-fetch heavy-host guard.** Before calling `WebFetch`, parse the host out of `<target_url>` and match against this allowlist of known-heavy PDP hosts:
+
+```
+cafe24.com, *.cafe24.com, cafe24cdn.com,
+myshopify.com, *.myshopify.com,
+smartstore.naver.com,
+gmarket.co.kr, auction.co.kr,
+coupang.com, *.coupang.com
+```
+
+If the host matches, **DO NOT call WebFetch**. Print this bilingual prompt and wait for the user to paste facts:
+
+```
+이 호스트는 일반적으로 100k+ 자의 PDP를 반환합니다. 핵심 제품 정보(가격/성분/특장점)를 직접 붙여넣어 주세요.
+This host typically returns 100k+ char PDPs. Please paste the load-bearing product facts (price / ingredients / claims) directly.
+```
+
+Treat the user's paste as `external_enrichment_paste`. Continue to §4a.
+
+**Post-fetch cap (non-allowlist hosts).** If the host does not match the allowlist, call `WebFetch(target_url)` exactly once. If the returned body length is >50,000 chars OR >1,000 lines:
+
+- DO NOT subagent-extract.
+- Print the page `<title>` + first 5,000 chars of the body.
+- Then print the same bilingual "paste facts" prompt above and wait for the user's paste.
+
+If the body is within the cap, parse it as `external_enrichment_paste` directly (title, meta description, first 3 paragraphs, any JSON-LD `<script>` block).
+
+**Scope.** WebFetch is restricted here to the single `<target_url>`. No recursive crawling, no per-prompt-source re-crawls, no fallback fetches when this one fails.
+
+**Failure.** If `WebFetch` itself errors (network, 4xx/5xx), print one warning line and fall through to the "paste facts" prompt — never auto-retry, never fall back to a different URL.
+
+### Phase 3B — Post-selection enrichment (runs at §4e, after §4-Form-2 submit)
+
+3B runs after §4-Form-2 submits (≥1 selected channel + per-channel media/alt captured). Enrichment is scoped to the selected channels — deselected auto-detected channels pay nothing. The §4e summary reports freshness so the user can see what 3B produced; the submit was already the proceed-to-draft confirmation, so no further user prompt fires here. Step 5 drafting begins immediately after 3B completes.
 
 #### 3B.1 Recrawl budget per selected channel
 
@@ -228,7 +361,7 @@ Record per-URL outcome — `cached_fresh` (stale-gate suppressed), `recrawled_su
 
 Issue every URL eligible for recrawl in 3B.2 (i.e., the ones not suppressed by the stale-gate) across all selected channels as a single parallel batch — not sequential per channel.
 
-On any recrawl failure (4xx/5xx, connect error), log a single warning line and keep going on the snapshot signal alone. Recrawl is enriching, not gating.
+On any recrawl failure (4xx/5xx, connect error), append `{key: "crawl_url", url: <url>, status: <status-or-error>}` to `aeko_data_gaps[]`, log a single warning line, and keep going on the snapshot signal alone. Recrawl is enriching, not gating.
 
 Per recrawled URL, merge into the channel's structural template (in 3B.5):
 
@@ -267,7 +400,7 @@ Deselected auto-detected channels: their stubs from 3A.5 are discarded — do no
 
 #### 3B.6 Append crawled URLs to `cited_url_allowlist[]`
 
-Every URL passed to `aeko_crawl_url` in 3B.2 or 3B.4 — success or failure both count — appends to `cited_url_allowlist[]`. Failure URLs may still be referenced via §4d media so they remain allowlist-eligible.
+Every URL passed to `aeko_crawl_url` in 3B.2 or 3B.4 — success or failure both count — appends to `cited_url_allowlist[]`. Failure URLs may still be referenced via §4-Form-2 media so they remain allowlist-eligible.
 
 #### 3B.7 Compute freshness confidence
 
@@ -277,7 +410,9 @@ Post-crawl:
 - `medium` — at least one selected channel has fresh signal (`cached_fresh` or `recrawled_success`); others may be stale or failed.
 - `low` — all recrawls failed and no snapshot is ≤7 days old.
 
-Reported in §4e as `Freshness confidence: high|medium|low` alongside the recrawl tally. Distinct label from selection confidence — never collapse them.
+Reported at §4e as `Freshness confidence: high|medium|low` alongside the recrawl tally (informational only — no user prompt at this point). Distinct label from selection confidence — never collapse them.
+
+(The opt-in WebFetch path lives in §3A.9 — see Phase 3A. No subsection at 3B.8.)
 
 ## Step 4 — Channel & media selection (interactive)
 
@@ -292,23 +427,23 @@ aeko.shop is AEKO's canonical publishing destination for tenant brands. Content 
 **Canonical destination rule:** For every tenant brand, prepend `aeko_shop` to `auto_detected_channels[]`. Only skip when `brand_kit.aeko_shop_disabled === true`.
 
 - `aeko_shop_disabled === true` → no-op; `aeko_shop` never appears in the channel set.
-- `aeko_shop_disabled === false`, absent, malformed, or otherwise not strictly `true` → prepend `aeko_shop` to `auto_detected_channels[]`. The channel appears in §4a's "Auto-detected channels" line and is preselected at §4b — the user can still deselect it.
+- `aeko_shop_disabled === false`, absent, malformed, or otherwise not strictly `true` → prepend `aeko_shop` to `auto_detected_channels[]`. The channel appears in §4a's "Auto-detected channels" line and is preselected in §4-Form-1 — the user can still deselect it.
 
 When `aeko_shop_disabled` is absent or malformed, emit a one-line warning in §4a: "ℹ aeko.shop status not surfaced by brand-kit response — assuming enabled. Verify in the dashboard if aeko_shop draft is unexpected."
 
-**Own-store content seed:** For every tenant brand, append `own_store_blog` to `auto_detected_channels[]` when absent. This exposes the tenant's connected Store Content draft option in §4a/§4b alongside the canonical aeko.shop option. It is a backend-saved draft target only — this skill never writes to the connected store, and publish later creates an AEKO-owned draft row rather than pushing to Cafe24/Shopify.
+**Own-store content seed:** For every tenant brand, append `own_store_blog` to `auto_detected_channels[]` when absent. This exposes the tenant's connected Store Content draft option in §4a / §4-Form-1 alongside the canonical aeko.shop option. It is a backend-saved draft target only — this skill never writes to the connected store, and publish later creates an AEKO-owned draft row rather than pushing to Cafe24/Shopify.
 
 **Backend wiring note** — as of the current MCP minor version, `aeko_get_brand_kit` may not surface `aeko_shop_disabled` in its response. `metadata.account_tier` is not load-bearing for this gate. Missing `aeko_shop_disabled` means include `aeko_shop`; only explicit `true` disables the canonical destination. Track surfacing `aeko_shop_disabled` as a backend visibility improvement, not as a prerequisite for preselection.
 
 `aeko_shop` is **not** forensics-detected; it's a brand destination flag. Its §4a "Structural targets" line reads `freshness: pending` until 3B runs (3B will recrawl 1–2 representative pages from the brand's existing aeko.shop content via the same `aeko_list_own_content` → `aeko_crawl_url` flow used for any other selected channel, then derive numeric structural targets).
 
-When `aeko_shop` lands in the final selected set, drafting for it uses `references/recipes/editorial-html-jsonld.md` (the same recipe `보도자료`/`magazine`/`partner_media` use; aeko_shop has its own section in that file with the sanitizer-safe body-only HTML shape, the `<slug>.meta.json` sidecar, and the product callout pattern — see §5.6 and §5.6.6). aeko.shop is the **only** channel that consumes `parsed_products[]` (from Step 1) — rendered as `<figure role="callout" data-variant="product" data-product-source-id="<source_id>">` callouts in body HTML and `featured_products[]` entries in `.meta.json`. **No in-body JSON-LD** — the aeko.shop frontend regenerates Article + Product structured data from `PostUpsert` fields at render time. If `parsed_products[]` is non-empty but `aeko_shop` is **not** in the final selected channel set after §4e, surface a warning before drafting: "Plan carries `<N>` products but `aeko_shop` channel is not active — products won't be linked. Re-select `aeko_shop` at §4b to use them, or accept that other channels render product names as plain text only."
+When `aeko_shop` lands in the final selected set, drafting for it uses `references/recipes/editorial-html-jsonld.md` (the same recipe `보도자료`/`magazine`/`partner_media` use; aeko_shop has its own section in that file with the sanitizer-safe body-only HTML shape, the `<slug>.meta.json` sidecar, and the product callout pattern — see §5.6 and §5.6.6). aeko.shop is the **only** channel that consumes `parsed_products[]` (from Step 1) — rendered as `<figure role="callout" data-variant="product" data-product-source-id="<source_id>">` callouts in body HTML and `featured_products[]` entries in `.meta.json`. **No in-body JSON-LD** — the aeko.shop frontend regenerates Article + Product structured data from `PostUpsert` fields at render time. If `parsed_products[]` is non-empty but `aeko_shop` is **not** in the final selected channel set after §4-Form-1, surface a warning before drafting: "Plan carries `<N>` products but `aeko_shop` channel is not active — products won't be linked. Re-select `aeko_shop` and re-submit §4-Form-1 to use them, or accept that other channels render product names as plain text only."
 
-**User-facing channel label.** When printing the channel in §4a/§4b/§4e, render it as `aeko_shop (브랜드 스토어 · aeko.shop)` on first appearance and `aeko_shop` thereafter — this gives Korean-speaking users immediate context for what aeko.shop is. Other channels keep their bare slug since their slugs are platform names.
+**User-facing channel label.** Use the bilingual label from §8.0 (`aeko.shop용 HTML / aeko.shop HTML`) for §4a, §4-Form-1, the §4e enrichment summary, Step 8, and §9. The legacy "aeko_shop (브랜드 스토어 · aeko.shop)" inline label is superseded by the §8.0 table.
 
 ### 4a. Print selection summary
 
-Print the Phase 3A signal so the user can tell at a glance whether forensics is grounded **before** committing to channels. This is pre-crawl — the live recrawl runs in Phase 3B during §4e (after channel/media selection completes, before the proceed-to-draft confirmation), so the recrawl line is "deferred" here and reported separately at §4e.
+Print the Phase 3A signal so the user can tell at a glance whether forensics is grounded **before** committing to channels. This is pre-crawl — the live recrawl runs in Phase 3B at §4e (after §4-Form-2 submit captures both channels and media), so the recrawl line is "deferred" here and reported separately at §4e.
 
 The `Selection confidence` line is computed in 3A.7:
 
@@ -337,58 +472,93 @@ Live re-crawl:           deferred (runs after channel confirmation)
 Selection confidence:    high (5 prompts × 12 cited sources, 4 distinct domains, JSON-LD on 8/12)
 ```
 
-If `Selection confidence: low`, warn before Step 4b: "the structural template will be thin — consider tracking more prompts first via `/aeko-find-prompts-to-track` for higher-quality output. Phase 3B will escalate to a 3-URL recrawl per channel to compensate." User may still proceed.
+If `Selection confidence: low`, warn before §4-Form-1: "the structural template will be thin — consider tracking more prompts first via `/aeko-find-prompts-to-track` for higher-quality output. Phase 3B will escalate to a 3-URL recrawl per channel to compensate." User may still proceed via §3A.8's 3-option prompt.
 
-If 3A.4 surfaced a likely duplicate (≥80% title token-overlap with an in-store page from `in_store_topic_index[]`), append a single-line warning above the question in 4b: "⚠ This draft topic looks ≥80% similar to <existing-url> — consider pivoting the angle or canonicalizing in Step 4e."
+If 3A.4 surfaced a likely duplicate (≥80% title token-overlap with an in-store page from `in_store_topic_index[]`), append a single-line warning above the §4-Form-1 channel toggles: "⚠ This draft topic looks ≥80% similar to <existing-url> — consider pivoting the angle or deselecting `own_store_blog` to avoid a duplicate."
 
-### 4b. Confirm auto-detected channels
+### 4-Form-1. Channel selection (replaces former §4b + §4c)
 
-Ask: "Generate drafts for all auto-detected channels above? Reply with the channels to keep, or `all`, or `none`."
+Issue ONE structured elicitation form with both auto-detected channels (pre-checked) and addon channels. Eliminate the previous two-question sequence — one submit captures everything.
 
-Parse user reply into `selected_detected_channels[]` (subset of `auto_detected_channels`).
+**Form fields:**
 
-### 4c. Add additional formats
+1. **Auto-detected channels** (pre-checked toggles, user can deselect):
+   - Bullet list of `auto_detected_channels[]` from §3A.3, each rendered with bilingual label from §8.0 (e.g., "Reddit 포스트 초안 / Reddit post — auto-detected from `reddit.com/r/<sub>`").
+   - The `aeko_shop` entry from §4.0 is pre-checked when the brand-kit flag allows.
+   - The `own_store_blog` entry from §4.0 is pre-checked when present.
 
-Ask: "Add any of these formats?
-- `own_store_blog` (connected Store Content draft for the brand's own CMS/store; local draft only)
-- `보도자료` (Korean press release, 합니다체)
-- `magazine` (Vogue-style editorial)
-- `instagram` (caption + hashtags + alt text)
-- `tiktok` (30–60s script with beats)
-- `youtube` (title, description, chapters)
-- `other:<name>` (free-form — describe the format briefly, or paste 1-2 reference URLs)
+2. **Addon channels** (unchecked toggles):
+   - 보도자료 — 보도자료 초안 / Press release draft (합니다체)
+   - magazine — 매거진 기고용 / Magazine pitch (Vogue-style editorial)
+   - instagram — Instagram용 캡션 / Instagram caption (caption + hashtags + alt text)
+   - tiktok — TikTok용 스크립트 / TikTok script (30–60s with beats)
+   - youtube — YouTube용 스크립트 / YouTube script (title + description + chapters)
+   - naver_blog, tistory (also offered here even when not auto-detected)
+   - other:`<name>` — free-form (one text input for `<name>` and one for "reference URL(s) or short description"). `<name>` must be ASCII; reject submissions with non-ASCII characters in the name field (collapsed to `other_<ascii_name>` for filesystem use per §5.5.1).
 
-Reply with comma list, or `none`."
+3. **Single submit button:** "Proceed to media step" (KO: "미디어 단계로 진행").
 
-Parse into `selected_addon_channels[]`. For each `other:<name>`, ask one follow-up: "Reference URL(s) or short description for `<name>` format?"
+**Mechanism note.** The implementing session picks the best available elicitation mechanism: a true multi-select form if the host supports it, otherwise a structured prompt with checkbox-style text input. Either way, ONE round-trip — not a sequence of asks.
 
-### 4d. Per-channel media
+Parse user reply into `selected_detected_channels[]` (subset of `auto_detected_channels`) and `selected_addon_channels[]`. For each `other:<name>`, the reference URLs / description were captured inline in the form (no follow-up ask).
 
-For each channel in `selected_detected_channels + selected_addon_channels`, ask once:
-"Image/video for `<channel>`? Reply with URL, local path, or `skip`."
+**If 0 channels selected → stop here.** Print bilingual "no channels selected" and do NOT call `aeko_complete_action_item`. Do not run §0b reference batch, do not run §4-Form-2, do not run Phase 3B.
 
-Validate:
-- URL → light `WebFetch` probe; warn if 4xx/5xx but allow continue.
-- Local path → `Read` to confirm exists; warn + allow if missing.
-- `skip` → record null.
+**Otherwise — run §0b reference batch now** (the per-channel recipe + example reads, plus the global voice-overrides read) in a single parallel `Read`. Hold the results in memory for Step 5.
 
-Record into `media_by_channel{}`. For every URL captured here (and every URL pasted into `other:<name>` references in §4c), append to `cited_url_allowlist[]` so Step 6.1's "no invented URLs" gate accepts the user-supplied media link.
+### 4-Form-2. Per-channel media + alt-text (replaces former §4d + §4e)
 
-### 4e. Confirm before generating
+Issue a SECOND structured elicitation form. This is the only other interactive turn before drafting.
 
-Print a selection table:
+**Channel class split** — render channels in two groups within the form so the UI doesn't look like 8 identical blobs:
+
+- **Editorial class** (`aeko_shop`, `naver_blog`, `tistory`, `magazine`, `보도자료`, `partner_media`, `own_store_blog`): for each selected channel in this class, render:
+  - **Hero image** slot — one file picker / URL input + one alt-text input.
+  - **Inline image** slots — up to TWO additional slots per channel, COLLAPSED by default (user expands the ones they want to fill). Each expanded slot has the same file + alt-text pair.
+
+- **Social class** (`instagram`, `tiktok`, `youtube`, `reddit`): for each selected channel in this class, render:
+  - **One image slot** — single file picker / URL input + one alt-text input.
+  - For `tiktok` / `youtube`: a separate **video reference** input (URL or local path) — NOT a file picker (video files are NOT uploaded via `aeko_request_media_upload`; only referenced). Optional.
+
+- **`other:<name>` channels:** one image slot + alt-text, same as social class.
+
+**Per-slot rules (apply to every slot above):**
+
+- **Image inputs** accept `image/jpeg`, `image/png`, `image/webp`, `image/gif` ONLY (matches `aeko_request_media_upload`'s MIME validator in `aeko-mcp/aeko_mcp/tools/media_upload.py:7`). Reject other MIME types in the form.
+- **URL fallback** is always available alongside the file picker for users who'd rather paste a URL.
+- **Alt-text input is REQUIRED** the moment a file or URL is staged in that slot. The form CANNOT submit if any populated media slot has empty alt-text — surface "Alt text required for `<channel>` `<slot>`" inline.
+- **"Skip media for this channel"** checkbox per channel (collapses that channel's slots). Allowed for prose-only channels (`reddit`, `보도자료`); for visual-first channels, skip emits `media_specs:` YAML blocks at §5.4 as today.
+- **Video references** (tiktok/youtube only): URL or local-path string only; no upload; alt-text still required (used as accessible caption).
+
+**Mechanism note.** Same as §4-Form-1: pick the best available file-attachment elicitation, with structured-prompt fallback. If the host elicitation truly does not support file attachments, ask the user to attach files in chat referencing each by a stable label ("aeko_shop hero", "naver_blog inline #1") and capture alt-text inline — but always offer the URL fallback as a first-class option.
+
+**Submit button:** "Generate drafts" (KO: "초안 생성"). The submit IS the proceed-to-draft confirmation — no separate §4e re-confirmation.
+
+Parse the form into `media_by_channel{}` with per-slot metadata:
 
 ```
-| Channel       | Source template       | Media          |
-| reddit        | forensics: r/<sub>    | skip           |
-| naver_blog    | forensics: 1인칭 review | https://...   |
-| 보도자료       | recipe: press_release | skip           |
-| instagram     | recipe: instagram     | /Users/.../a.jpg |
+media_by_channel = {
+  "aeko_shop": {
+    "hero": {"src": "<file|url|local_path>", "alt": "<required>", "type": "image"},
+    "inline_1": {...} | null,
+    "inline_2": {...} | null,
+    "video": null,
+  },
+  "tiktok": {
+    "image": {"src": "...", "alt": "..."},
+    "video": {"src": "https://...", "alt": "...", "type": "video_reference"} | null,
+  },
+  ...
+}
 ```
 
-If the **total selected channels is 0**, stop with "no channels selected" and do NOT call `aeko_complete_action_item`. Do not run Phase 3B; do not ask the proceed-to-draft question.
+For every URL captured here (and every URL pasted into `other:<name>` references in §4-Form-1), append to `cited_url_allowlist[]` so Step 6.1's "no invented URLs" gate accepts the user-supplied media link.
 
-Otherwise, **run Phase 3B now** (`§3` → Phase 3B). 3B scopes its recrawl budget to the selected channels only, so the cost is bounded. When 3B completes, print the enrichment summary:
+### 4e. Phase 3B enrichment (runs after §4-Form-2 submit, before Step 5)
+
+The §4-Form-2 submit triggers Phase 3B immediately. No separate "Proceed to draft?" ask — Form-2's submit already captured proceed.
+
+**Run Phase 3B now** (`§3` → Phase 3B). 3B scopes its recrawl budget to the selected channels only, so the cost is bounded. When 3B completes, print the enrichment summary:
 
 ```
 Enrichment summary (Phase 3B, selected channels only):
@@ -400,19 +570,21 @@ Enrichment summary (Phase 3B, selected channels only):
 
 Render `Freshness confidence` as a distinct label from `Selection confidence` (§4a) — never collapse them. The two answer different questions: selection confidence is "is the channel auto-detect grounded?"; freshness confidence is "is the structural template fresh enough to draft against?"
 
-Ask: "Proceed to draft? (`yes` / `cancel` / `edit`)". On `edit`, loop back to 4b (the 3B work is discarded — re-run 3B if the new selection differs). On `cancel`, stop without writing or completing. On `yes`, proceed to Step 5 with `structural_template_by_channel{}` populated for selected channels only.
+If Phase 3B appended any new `crawl_url` entries to `aeko_data_gaps[]`, print the same bilingual "Missing AEKO data" diagnostic section from §3A.8 immediately under the enrichment summary. This is not a prompt and it does not block drafting; it makes post-selection backend/indexing gaps visible instead of burying them in warning lines.
+
+Proceed to Step 5 with `structural_template_by_channel{}` populated for selected channels only. The summary is informational; no user prompt here.
 
 ## Step 5 — Per-channel draft loop
 
 Loop over the final selected channel list. For each channel:
 
-### 5.0 Load references (per-channel, on-demand)
+### 5.0 Use the §0b reference cache
 
-Reference content lives under `skills/aeko-create-content/references/` and is loaded **only when needed** per channel — Anthropic's progressive-disclosure model. SKILL.md stays small; recipes and brand-specific exemplars load when their channel runs.
+Reference content lives under `skills/aeko-create-content/references/`. The maps below define what §0b loads in one parallel `Read` batch immediately after §4-Form-1. During the Step 5 loop, use the in-memory cache from §0b; do not issue new per-channel `Read` calls unless the user edited the channel set after the batch.
 
-For each channel `C` in the selection, before drafting:
+For each selected channel `C`, §0b loads:
 
-1. **Load the recipe** (always, when a recipe file exists for the channel): `Read references/recipes/<C>.md`. Channel-to-file map:
+1. **Recipe cache entry** (always, when a recipe file exists for the channel). Channel-to-file map:
     - `보도자료` → `references/recipes/보도자료.md` (also load `references/recipes/editorial-html-jsonld.md`)
     - `magazine` → `references/recipes/magazine.md` (also load `references/recipes/editorial-html-jsonld.md`)
     - `partner_media` → forensics-derived; load `references/recipes/editorial-html-jsonld.md` for the HTML/JSON-LD pair
@@ -426,7 +598,7 @@ For each channel `C` in the selection, before drafting:
     - `reddit` — no recipe file; structural template comes from 3B.5 alone (Q&A locked when forensics 3B.5 detects `QAPage` / `DiscussionForumPosting`).
     - `other:<name>` — no recipe file; structural template comes from §5.1's mini-forensics.
 
-2. **Load the brand-specific exemplar** (if it exists, conditional). Filename pattern: `references/examples/<C>-*example*.md` or the explicit names in the table below. Use a `Read` with `Glob`/check-exists semantics — silently skip if absent. Treat each match as style guidance:
+2. **Brand-specific exemplar cache entry** (if it exists, conditional). Filename pattern: `references/examples/<C>-*example*.md` or the explicit names in the table below. Use check-exists semantics during the §0b batch — silently skip if absent. Treat each match as style guidance:
 
     | channel | example file the skill scans for |
     | --- | --- |
@@ -439,7 +611,7 @@ For each channel `C` in the selection, before drafting:
     | `magazine` | `references/examples/magazine-feature-example.md` (optional) |
     | (any) | `references/examples/in-store-content-example.md` — voice signal across all channels |
 
-3. **Load voice overrides** (if it exists): `Read references/style/voice-overrides.md`. Filter to blocks scoped to `domain: <frontmatter.domain_id>` and/or `channel: <C>`. Skip silently if the file doesn't exist or no scoped block matches.
+3. **Voice-overrides cache entry** (if it exists): `references/style/voice-overrides.md`. Filter to blocks scoped to `domain: <frontmatter.domain_id>` and/or `channel: <C>`. Skip silently if the file doesn't exist or no scoped block matches.
 
 **Example-file rules** (mirror §6.1 hard-gate intent):
 
@@ -456,13 +628,13 @@ The user-facing summary at Step 8 must list which reference files were loaded pe
 - **Auto-detected channel with recipe** (`naver_blog`, `tistory`): use BOTH the forensics template (3B.5 numeric targets) AND the recipe loaded in §5.0 from `references/recipes/<channel>.md` (platform conventions, register, acceptance gates). When the two disagree on a numeric target, forensics wins; when they disagree on register or platform conventions, the recipe wins. Recipe acceptance gates apply *alongside* §6.2 structural-target deltas.
 - **Brand-destination editorial** (`aeko_shop`): use BOTH the forensics template (3B.5 numeric targets sampled from the brand's existing aeko.shop content via in-store recrawl) AND `references/recipes/editorial-html-jsonld.md`'s aeko_shop section (sanitizer-safe body HTML, product callout pattern, `<slug>.meta.json` field constraints, cdn.aeko.shop image rules — **no in-body JSON-LD**, the frontend regenerates it from `PostUpsert` fields). Recipe wins for product-callout rules, body HTML structure, and `.meta.json` shape; forensics wins for measured paragraph / heading / list / image-density numeric targets.
 - **Built-in addon** (`보도자료`, `magazine`, `instagram`, `tiktok`, `youtube`): use the recipe loaded in §5.0 from `references/recipes/<channel>.md` (and `references/recipes/editorial-html-jsonld.md` for editorial channels' HTML pair).
-- **`other:<name>`**: if reference URLs were provided, fetch them via `aeko_crawl_url(url)` and derive an ad-hoc template (mini-forensics: title, meta, paragraph length, heading depth, list usage, JSON-LD `@type`s). Fall back to `WebFetch` if the crawl tool returns 4xx/5xx — for `other:<name>` channels, JSON-LD signal is nice-to-have, not required. If only a description was given, use the description plus brand-voice defaults.
+- **`other:<name>`**: if reference URLs were provided, fetch them via `aeko_crawl_url(url)` and derive an ad-hoc template (mini-forensics: title, meta, paragraph length, heading depth, list usage, JSON-LD `@type`s). Fall back to `WebFetch` if the crawl tool returns 4xx/5xx — **but apply the same heavy-host guard + 50k char / 1k line cap from §3A.9**. For `other:<name>` channels, JSON-LD signal is nice-to-have, not required. If only a description was given, use the description plus brand-voice defaults.
 
 ### 5.2 Optional research
 
 If frontmatter prose requests external research OR an `other:<name>` channel needs reference fetching:
 - `WebSearch` for related context (competitor brand names, recent news, review themes).
-- `WebFetch` on specific URLs called out in prose or supplied by user. Do NOT invent URLs.
+- `WebFetch` on specific URLs called out in prose or supplied by user. **Apply the §3A.9 heavy-host guard + 50k char / 1k line cap to every WebFetch call here, without exception.** Do NOT invent URLs.
 - Append a research-log to the channel's artifact directory.
 
 ### 5.3 Draft the artifact
@@ -486,7 +658,7 @@ Enforce:
 2. **Brand-specific exemplar** (`references/examples/<channel>-*example*.md`, if present, loaded in §5.0) — drives structural mimicry (paragraph length, hook style, hashtag density, heading cadence) and channel-specific glossary. Recipe acceptance gates still apply on top.
 3. **Brand kit** `tone_of_voice` drives sentence-level register; brand kit `must_include` and `forbidden` override frontmatter if conflicting (surface the conflict to the user before resolving).
 4. **Cited-source structural template** (3B.5) drives format when no exemplar is present: paragraph length, heading depth, list density, list-vs-prose split, Q&A patterning when locked.
-5. **In-store tone signature** (3B.4) — fills gaps when the brand kit's `tone_of_voice` is thin or absent. May be absent when 3B.4 didn't trigger (no own-store channel selected and template not thin); in that case treat as null. When brand kit and in-store conflict, brand kit wins; surface the conflict once at Step 4e.
+5. **In-store tone signature** (3B.4) — fills gaps when the brand kit's `tone_of_voice` is thin or absent. May be absent when 3B.4 didn't trigger (no own-store channel selected and template not thin); in that case treat as null. When brand kit and in-store conflict, brand kit wins; surface the conflict once at the §4e enrichment summary.
 
 Plus the always-on rules:
 - Target audience from brand kit shapes word choice (beginner vs expert vocabulary).
@@ -500,33 +672,40 @@ Plus the always-on rules:
 
 ### 5.4 Embed media reference
 
-**Hard rule:** never emit `[Image #N]`, `[image placeholder]`, `[Image]`, `[photo]`, `[Video:` (without a real URL inside), `[Photo:`, `[graphic]`, or any unfilled `[…]` media marker in body text. Markdown image syntax (`![alt](url-or-path)`) is only permitted with a real URL or local path. If you find yourself wanting to write a placeholder, stop and use the `media_specs:` block below instead (except for `aeko_shop` — see below). The §6.1 hard gate scans for any `[Image`/`[image`/`[Video`/`[video`/`[Photo`/`[photo`/`[Graphic`/`[graphic`/`[placeholder` token followed by a non-URL — fail the artifact if any match.
+**Hard rule (placeholders):** never emit `[Image #N]`, `[image placeholder]`, `[Image]`, `[photo]`, `[Video:` (without a real URL inside), `[Photo:`, `[graphic]`, or any unfilled `[…]` media marker in body text. Markdown image syntax (`![alt](url-or-path)`) is only permitted with a real URL or local path. If you find yourself wanting to write a placeholder, stop and use the `media_specs:` block below instead (except for `aeko_shop` — see below). The §6.1 hard gate scans for any `[Image`/`[image`/`[Video`/`[video`/`[Photo`/`[photo`/`[Graphic`/`[graphic`/`[placeholder` token followed by a non-URL — fail the artifact if any match.
+
+**Hard rule (alt-text required everywhere):** every emitted image — Markdown `![alt](url)`, HTML `<img alt="…">`, `meta.json alt_text` field, or `media_specs.alt_text` YAML — MUST carry non-empty alt text. The alt-text comes from `media_by_channel[<channel>][<slot>].alt` captured in §4-Form-2 (required at form-submit time). The §6 citability check fails any artifact with an empty `alt=""` or missing `alt_text` field. This applies to both user-supplied media AND `parsed_products[]` image references (use `product.short_description` truncated to ≤125 chars, or `product.name` as fallback).
+
+**Input shape** (from §4-Form-2): `media_by_channel[<channel_slug>] = {<slot_name>: {src, alt, type} | null, ...}` where `slot_name` is `hero` / `inline_1` / `inline_2` / `image` / `video` per the channel class. Iterate slots in declaration order; emit slots whose value is non-null.
 
 **For the `aeko_shop` channel specifically** (publish-ready path; the artifact lands on aeko.shop without further transformation):
 
-- **No `media_specs:` YAML for aeko_shop.** The channel needs concrete `cdn.aeko.shop/...` URLs in the body. If the user replied `skip` for aeko_shop's media at §4d AND `parsed_products[]` is empty, the recipe still produces a text-only article (no hero, no inline images) — the §6.3 acceptance gates accept image-count = 0 for this case.
-- **For each user-supplied image** (URL or local path from §4d's `media_by_channel[aeko_shop]`): upload to `cdn.aeko.shop` before embedding. The contract is enforced by `aeko-shop-backend/app/schemas.py::MediaPresignRequest` (which uses base64 MD5, not hex) and Azure Blob's signed-URL PUT requirements (which need `x-ms-blob-type` and `Content-MD5` headers). Mismatch returns HTTP 400 or 403. Steps:
+- **No `media_specs:` YAML for aeko_shop.** The channel needs concrete `cdn.aeko.shop/...` URLs in the body. If the user populated zero slots in `media_by_channel[aeko_shop]` AND `parsed_products[]` is empty, the recipe still produces a text-only article (no hero, no inline images) — the §6.3 acceptance gates accept image-count = 0 for this case.
+- **For each user-supplied image** (URL or local path from §4-Form-2's `media_by_channel[aeko_shop]`, iterating slots in declaration order: `hero` → `inline_1` → `inline_2`): upload to `cdn.aeko.shop` before embedding. The contract is enforced by `aeko-shop-backend/app/schemas.py::MediaPresignRequest` (which uses base64 MD5, not hex) and Azure Blob's signed-URL PUT requirements (which need `x-ms-blob-type` and `Content-MD5` headers). Mismatch returns HTTP 400 or 403. Steps:
   1. **Stage the bytes locally.** For local-path inputs the file already exists; for remote URLs, fetch first into a temp file at `./aeko-artifacts/<domain_id>/<item_id>/aeko_shop/.uploads/<sha256_of_url>.<ext>` (deterministic temp path; safe under parallel runs; auto-cleaned at Step 7 success). Create the `.uploads/` subdir if missing.
   2. **Compute digests.** `content_sha256` = **SHA-256 hex** (lowercase, 64 chars, no separators). `content_md5` = **base64-encoded raw MD5 digest** (exactly 24 chars including padding; do **NOT** use hex — the backend's Pydantic field is `min_length=24, max_length=24`). `byte_length` = file size. Reference implementation: `aeko-mcp/aeko_mcp/tools/store_write.py:84-85` (`base64.b64encode(hashlib.md5(data).digest()).decode()`).
   3. **Call `aeko_request_media_upload`** per `aeko-mcp/aeko_mcp/tools/media_upload.py` — args: `brand_id=frontmatter.domain_id` (required — the backend's `MediaPresignRequest` validates this; the MCP tool must forward it), `source_content_id=frontmatter.item_id`, `filename=<basename only — no path separators>`, `content_type=<MIME, must match `^image/(jpeg|jpg|png|webp|gif)$`>`, `content_sha256=<hex>`, `content_md5=<base64>`, `byte_length=<n>`. Response: `{upload_url, public_url, blob_key, expires_at}`.
   4. **PUT the bytes** via `Bash` with the Azure-required headers — every header is required (Azure rejects with 403 otherwise): `curl -X PUT --data-binary @<staged_path> -H "x-ms-blob-type: BlockBlob" -H "Content-Type: <type>" -H "Content-MD5: <base64>" "<upload_url>"`. The `Content-MD5` value MUST equal the `content_md5` passed at step 3 — Azure verifies the body against this header. Verify HTTP 2xx before proceeding; treat 4xx/5xx as upload failure per the rule below.
-  5. **Embed `public_url`** (the `cdn.aeko.shop/...` URL) in the artifact body — Markdown `![<alt>](<cdn_url>)` and HTML `<figure><img src="<cdn_url>" alt="<alt>" width="<w>" height="<h>" loading="lazy"></figure>` (per the recipe's image-attribute hard gate at §6.3).
-- **For `parsed_products[]` image references**: `product.image_url` is already a `cdn.aeko.shop/...` URL by construction (aeko.shop catalog images live on the same CDN). Do **not** re-upload; reference directly.
-- **Hero image**: written to `<slug>.meta.json` `hero_image_url` (top-level publish field) — NOT embedded as an in-body `<figure>` (the rendered page emits its own hero `<Image>` from the publish payload; embedding it in body HTML produces a duplicate hero). First entry of `parsed_products[]` (if any) wins — its `image_url` populates `hero_image_url`. If `parsed_products[]` is empty, fall back to the first user-supplied image. If neither, leave `hero_image_url` as `null` in `.meta.json` and omit the hero entirely.
+  5. **Embed `public_url`** (the `cdn.aeko.shop/...` URL) in the artifact body — Markdown `![<alt>](<cdn_url>)` and HTML `<figure><img src="<cdn_url>" alt="<alt>" width="<w>" height="<h>" loading="lazy"></figure>` (per the recipe's image-attribute hard gate at §6.3). The `alt` value MUST be the `alt` field from `media_by_channel[aeko_shop][<slot>].alt`. Never invent alt text; never leave empty.
+- **For `parsed_products[]` image references**: `product.image_url` is already a `cdn.aeko.shop/...` URL by construction (aeko.shop catalog images live on the same CDN). Do **not** re-upload; reference directly. Alt-text for product images derives from `product.short_description` truncated to ≤125 chars; fall back to `product.name` when short_description is absent.
+- **Hero image**: written to `<slug>.meta.json` `hero_image_url` (top-level publish field) — NOT embedded as an in-body `<figure>` (the rendered page emits its own hero `<Image>` from the publish payload; embedding it in body HTML produces a duplicate hero). First entry of `parsed_products[]` (if any) wins — its `image_url` populates `hero_image_url`. If `parsed_products[]` is empty, fall back to `media_by_channel[aeko_shop].hero.src` (the user-supplied hero from §4-Form-2). If neither, leave `hero_image_url` as `null` in `.meta.json` and omit the hero entirely.
+- **`.meta.json` alt-text propagation:** for every image emitted in body HTML (inline images uploaded via §5.4 steps 1-5, plus product callouts), the corresponding `media[]` entry in `.meta.json` MUST carry `alt_text` matching the body HTML's `alt=` attribute. Hard-gated in §6.3.
 - On upload failure (network error, presign 4xx/5xx, PUT non-2xx): surface a single-line warning and write a placeholder body marker `[image: <filename> — upload pending]` in the draft. §6.1's hard gate **fails** the aeko_shop artifact when any such placeholder remains — this is intentional, since aeko_shop is publish-ready or it isn't. The user re-runs once the upload path recovers. Do not delete the staged file on failure — it speeds up retry.
 
-**If `media_by_channel[channel]` is set** (real URL or local path supplied) for **non-aeko_shop channels**:
+**If `media_by_channel[channel]` has any populated slot** (real URL or local path supplied) for **non-aeko_shop channels**:
 
-- Markdown channels → standard image / video markdown:
-  - Image: `![<alt>](<url-or-path>)`
-  - Video: `[Video](<url-or-path>)` link with caption on the next line. Bracket form `[Video: <url>]` (with a colon and inlined URL) is **not** allowed because the §6.1 scanner would flag it; use the link form so the URL parses cleanly.
-- Instagram → `media:` field at the top of the file referencing the asset; alt text rendered in its own section.
-- TikTok → reference inside the relevant beat (`[on-screen]: image at <path>`).
-- YouTube → reference in description (`Thumbnail: <url-or-path>`).
+Iterate the slots in declaration order. For each slot with non-null `{src, alt, type}`:
+
+- Markdown channels (`naver_blog`, `tistory`, `partner_media`, `own_store_blog`, `reddit`, `magazine`, `보도자료`):
+  - Image (`type == "image"`): emit `![<alt>](<src>)` — the alt MUST be the slot's `alt` field, never empty.
+  - Video reference (`type == "video_reference"`): emit `[<alt>](<src>)` link with the alt as link text; alt doubles as accessible caption. Bracket form `[Video: <url>]` (with a colon and inlined URL) is **not** allowed because the §6.1 scanner would flag it; use the link form so the URL parses cleanly.
+- Instagram → `media:` field at the top of the file referencing the asset; alt text rendered in its own `alt:` field below.
+- TikTok → reference inside the relevant beat (`[on-screen]: image at <src>, alt: <alt>`). For tiktok video references, emit `[video: <src>, alt: <alt>]` in the relevant beat.
+- YouTube → reference in description (`Thumbnail: <src> (alt: <alt>)`). For youtube video references, emit `Video URL: <src>` plus a separate `Alt text: <alt>` line.
 
 For non-aeko_shop channels, the skill **does not copy or upload** the media — references only.
 
-**If `media_by_channel[channel]` is null** (user replied `skip` in Step 4d) — excludes `aeko_shop` (its skip behavior is handled above):
+**If `media_by_channel[channel]` is null or every slot is null** (user picked "Skip media" in §4-Form-2) — excludes `aeko_shop` (its skip behavior is handled above):
 
 - **Visual-first channels** (`instagram`, `tiktok`, `youtube`, `magazine`, `naver_blog`, `tistory`, `partner_media`): write a fenced `yaml` code block at the top of the file (immediately after the `# <title>` heading) containing the `media_specs:` array — one entry per slot the recipe expects (typically `hero` + 0-3 `inline` slots; YouTube also `thumbnail`; TikTok one entry per major beat). Fenced so downstream consumers (designer tools, image-gen pipelines) can reliably extract it; an unfenced `- ` prefixed list breaks markdown rendering AND parsing.
 
@@ -550,57 +729,90 @@ For non-aeko_shop channels, the skill **does not copy or upload** the media — 
 
 ### 5.5 Artifact path
 
-**Always use channel-segmented paths.** Do not flatten artifacts into one folder — recent runs produced flat outputs because the slug rule was under-specified; fix is below.
+**Always use channel-segmented paths.** Do not flatten artifacts into one folder. Both the directory and the basename carry the channel — basenames look identical in Claude Desktop's working-folder UI without the suffix, which makes drafts indistinguishable.
 
-Path template:
+#### 5.5.1 Channel slug vs filename token (alias layer)
 
-`./aeko-artifacts/<domain_id>/<item_id>/<channel_slug>/<filename>.<ext>`
+Each channel has three identifiers:
 
-**Slug derivation** (for prose channels and editorial HTML):
+- **`channel_slug`** — canonical lookup key. Used for recipe/example file paths in §5.0 (e.g., `references/recipes/<channel_slug>.md`), error messages, contract references, and any cross-skill grep.
+- **`display_label_ko` / `display_label_en`** — bilingual human label. Used in §4a / §4-Form-1 prompts, Step 8 summary, and §9 publish handoff. See the §8.0 channel-label table.
+- **`filename_token`** — ASCII-safe slug used ONLY in directory + basename suffix. For nearly every channel `filename_token == channel_slug`. The one exception today is `보도자료` → `press_release` (Korean characters in filenames break some downstream tooling and indexing).
 
-1. Source: `frontmatter.title` (not Plan prose, not response text).
+Allowlist (canonical slug → filename token):
+
+| channel_slug | filename_token |
+|---|---|
+| `aeko_shop` | `aeko_shop` |
+| `naver_blog` | `naver_blog` |
+| `tistory` | `tistory` |
+| `instagram` | `instagram` |
+| `tiktok` | `tiktok` |
+| `youtube` | `youtube` |
+| `magazine` | `magazine` |
+| `보도자료` | `press_release` |
+| `partner_media` | `partner_media` |
+| `reddit` | `reddit` |
+| `own_store_blog` | `own_store_blog` |
+| `other:<ascii_name>` | `other_<ascii_name>` (collapse `:` → `_`; reject if `<ascii_name>` has non-ASCII chars at §4-Form-1) |
+
+Recipe loader still reads `references/recipes/<channel_slug>.md` — the alias affects filesystem OUTPUT only, never lookup. A recipe filename or lookup key named `press_release` must not exist; an existing human-facing `other:press_release` example inside `references/recipes/보도자료.md` is allowed.
+
+#### 5.5.2 Path template
+
+`./aeko-artifacts/<domain_id>/<item_id>/<filename_token>/<slug>__<filename_token>.<ext>`
+
+- Directory uses `<filename_token>` (so `보도자료/` becomes `press_release/`).
+- Basename suffix `__<filename_token>` so flattened views still identify the channel.
+- `<slug>` is derived per §5.5.3 from the `resolved_title` produced in Step 1.
+
+#### 5.5.3 Slug derivation
+
+1. Source: `resolved_title` from Step 1 (frontmatter.title → Plan H1 → item_id chain).
 2. Lowercase, ASCII-fold non-ASCII characters (Hangul → romanization via standard fold; if no fold available, drop the character).
 3. Replace any run of non-alphanumeric characters with a single hyphen.
 4. Truncate to **60 characters at the nearest word boundary** (don't truncate mid-word).
 5. Strip leading and trailing hyphens.
 6. On filename collision within the same channel directory, append `-2`, `-3`, … until unique.
-7. **Empty-slug fallback.** If steps 1–5 produce an empty string (most common cause: 100% Hangul title with no romanization fold available), use `<frontmatter.item_id>` as the slug. Never write to a hidden filename like `.md`. Example: title `여름철 침구 가이드` with no fold → `<slug>` becomes `<item_id>` (a UUID), so the file lands at `.../naver_blog/3f2c1a04-….md` rather than `.../naver_blog/.md`.
+7. **Empty-slug fallback.** If steps 1–5 produce an empty string (most common cause: 100% Hangul `resolved_title` with no romanization fold available AND no Plan H1), use `<frontmatter.item_id>` as the slug. Never write to a hidden filename like `__naver_blog.md`. Example: a Plan with H1 `# Plan: 여름철 침구 가이드` and no frontmatter.title — `resolved_title` becomes `여름철 침구 가이드`; if Hangul fold yields nothing, slug becomes `<item_id>` (a UUID), so the file lands at `.../naver_blog/3f2c1a04-…__naver_blog.md`.
 
-**Filename rules per channel:**
+#### 5.5.4 Filename rules per channel
 
-| channel | filename pattern | extension(s) |
+| channel_slug | basename pattern | extension(s) |
 | --- | --- | --- |
-| `reddit`, `naver_blog`, `tistory`, `partner_media`, `own_store_blog` | `<slug>` | `.md` |
-| `보도자료`, `magazine` | `<slug>` | `.md` AND `.html` (see `references/recipes/editorial-html-jsonld.md`) |
-| `aeko_shop` | `<slug>` | `.html` AND `.meta.json` AND `.md` — three files (the publish-ready triple; see `references/recipes/editorial-html-jsonld.md` for the per-file shape and §6.3 for the acceptance gates) |
-| `instagram`, `tiktok`, `youtube` | the channel slug (literal `instagram` / `tiktok` / `youtube`) | `.md` |
+| `reddit`, `naver_blog`, `tistory`, `partner_media`, `own_store_blog` | `<slug>__<filename_token>` | `.md` |
+| `보도자료`, `magazine` | `<slug>__<filename_token>` | `.md` AND `.html` (see `references/recipes/editorial-html-jsonld.md`) |
+| `aeko_shop` | `<slug>__aeko_shop` | `.html` AND `.meta.json` AND `.md` — three files (the publish-ready triple; see `references/recipes/editorial-html-jsonld.md` for the per-file shape and §6.3 for the acceptance gates) |
+| `instagram`, `tiktok`, `youtube` | `<slug>__<filename_token>` (slug still derives from `resolved_title`; do NOT use the literal channel name as the basename) | `.md` |
 
-**Worked-example directory tree** the skill MUST produce when 11 channels are selected (the 10 below plus `aeko_shop`) for a draft titled "Summer Cooling Bedding — 2026 Guide":
+#### 5.5.5 Worked-example directory tree
+
+For a draft with `resolved_title = "Summer Cooling Bedding — 2026 Guide"` and 11 selected channels:
 
 ```
 aeko-artifacts/
   <domain_id>/
     <item_id>/
-      reddit/summer-cooling-bedding-2026-guide.md
-      own_store_blog/summer-cooling-bedding-2026-guide.md
-      naver_blog/summer-cooling-bedding-2026-guide.md
-      tistory/summer-cooling-bedding-2026-guide.md
-      partner_media/summer-cooling-bedding-2026-guide.md
-      보도자료/summer-cooling-bedding-2026-guide.md
-      보도자료/summer-cooling-bedding-2026-guide.html
-      magazine/summer-cooling-bedding-2026-guide.md
-      magazine/summer-cooling-bedding-2026-guide.html
-      aeko_shop/summer-cooling-bedding-2026-guide.html
-      aeko_shop/summer-cooling-bedding-2026-guide.meta.json
-      aeko_shop/summer-cooling-bedding-2026-guide.md
-      instagram/instagram.md
-      tiktok/tiktok.md
-      youtube/youtube.md
+      reddit/summer-cooling-bedding-2026-guide__reddit.md
+      own_store_blog/summer-cooling-bedding-2026-guide__own_store_blog.md
+      naver_blog/summer-cooling-bedding-2026-guide__naver_blog.md
+      tistory/summer-cooling-bedding-2026-guide__tistory.md
+      partner_media/summer-cooling-bedding-2026-guide__partner_media.md
+      press_release/summer-cooling-bedding-2026-guide__press_release.md
+      press_release/summer-cooling-bedding-2026-guide__press_release.html
+      magazine/summer-cooling-bedding-2026-guide__magazine.md
+      magazine/summer-cooling-bedding-2026-guide__magazine.html
+      aeko_shop/summer-cooling-bedding-2026-guide__aeko_shop.html
+      aeko_shop/summer-cooling-bedding-2026-guide__aeko_shop.meta.json
+      aeko_shop/summer-cooling-bedding-2026-guide__aeko_shop.md
+      instagram/summer-cooling-bedding-2026-guide__instagram.md
+      tiktok/summer-cooling-bedding-2026-guide__tiktok.md
+      youtube/summer-cooling-bedding-2026-guide__youtube.md
 ```
 
-The `aeko_shop/` channel is the only one that produces a **triple** (`.html` + `.meta.json` + `.md`). All other editorial channels produce a pair (`.md` + `.html`) or a single `.md`.
+Note the `press_release/` directory (NOT `보도자료/`) — that's the `filename_token` alias from §5.5.1.
 
-If frontmatter prose requests sibling files (JSON-LD, meta, social teaser), write them next to the channel's main file using the same `<slug>` stem (e.g., `<slug>.jsonld.json`, `<slug>.meta.json`).
+The `aeko_shop/` channel is the only one that produces a **triple** (`.html` + `.meta.json` + `.md`). All other editorial channels produce a pair (`.md` + `.html`) or a single `.md`. There is no `.jsonld.json` file for any channel — editorial channels embed JSON-LD inside the `.html`, and aeko.shop regenerates structured data at render time.
 
 ### 5.6 Channel recipes (loaded from `references/recipes/`)
 
@@ -650,7 +862,8 @@ Run per artifact before completion.
 These fail the artifact immediately — one fix iteration, then leave the item `pending`:
 
 - **No image placeholders.** Zero occurrences of `[Image`, `[image`, `[Photo`, `[photo`, `[placeholder`, `[Placeholder`, or `TODO` in body text. Real markdown image syntax with a URL or path is allowed; `media_specs:` YAML is allowed (it's a distinct format).
-- **No invented URLs.** Every external URL in the artifact must appear in `cited_url_allowlist[]` — the union of: every cited `source_url` from 3A.1 (seeded into the allowlist at 3A.6), every URL passed to `aeko_crawl_url` in 3B.2 or 3B.4 (appended at 3B.6), every URL returned by `aeko_list_own_content` in 3A.4 (when surfaced as a draft reference), every URL in `media_by_channel{}` from Step 4d, plus any URL the user pasted into an `other:<name>` reference in Step 4c. Step 6's URL extractor scans the artifact for `https?://…` tokens and fails the artifact if any URL is not in the allowlist. Brand-internal anchor links (`#section`) and `mailto:` are exempt.
+- **Alt-text non-empty.** Every emitted image — Markdown `![alt](url)`, HTML `<img alt="…">`, `meta.json` `alt_text` / `media[].alt_text` fields, `media_specs.alt_text` YAML entries — MUST have non-empty alt. Scan for `![](`, `alt=""`, `alt_text: ""`, `alt_text: ''`, or unset `alt_text` on any media entry. Any match fails the artifact. Alt-text originates in §4-Form-2 (required at submit) or from `parsed_products[].short_description`/`.name` (for product callouts).
+- **No invented URLs.** Every external URL in the artifact must appear in `cited_url_allowlist[]` — the union of: every cited `source_url` from 3A.1 (seeded into the allowlist at 3A.6), every URL passed to `aeko_crawl_url` in 3B.2 or 3B.4 (appended at 3B.6), every URL returned by `aeko_list_own_content` in 3A.4 (when surfaced as a draft reference), every URL in `media_by_channel{}` from §4-Form-2, plus any URL the user pasted into an `other:<name>` reference in §4-Form-1. Step 6's URL extractor scans the artifact for `https?://…` tokens and fails the artifact if any URL is not in the allowlist. Brand-internal anchor links (`#section`) and `mailto:` are exempt.
 - **Frontmatter `forbidden` list:** zero matches.
 
 ### 6.2 Prose channels (forensics-detected, `보도자료`, `magazine`, `partner_media`)
@@ -820,28 +1033,54 @@ Print a one-line summary: `Saved <K> variation(s) to backend (destinations: <lis
 
 ## Step 8 — User-facing summary
 
+### 8.0 Channel label table (used in §8 + §9 + §4-Form-1)
+
+Every channel reference in user-facing output uses the bilingual label — never a bare slug. Generic labels like `[Image #1]`, `Draft 1`, or `Output 3` are forbidden.
+
+| channel_slug | Korean label | English label |
+|---|---|---|
+| `aeko_shop` | aeko.shop용 HTML | aeko.shop HTML |
+| `naver_blog` | 네이버 블로그용 초안 | Naver Blog draft |
+| `tistory` | 티스토리용 초안 | Tistory draft |
+| `instagram` | Instagram용 캡션 | Instagram caption |
+| `tiktok` | TikTok용 스크립트 | TikTok script |
+| `youtube` | YouTube용 스크립트 | YouTube script |
+| `magazine` | 매거진 기고용 | Magazine pitch |
+| `보도자료` | 보도자료 초안 | Press release draft |
+| `partner_media` | 파트너 미디어용 | Partner media draft |
+| `reddit` | Reddit 포스트 초안 | Reddit post |
+| `own_store_blog` | 자사몰 블로그 초안 | Own-store blog draft |
+| `other:<name>` | `<name> 초안` | `<name> draft` |
+
+For Korean target_language, lead with the KO label and pair the EN label after a slash. For EN target_language, lead with EN. Example: `aeko.shop용 HTML / aeko.shop HTML` (KO target) or `aeko.shop HTML / aeko.shop용 HTML` (EN target).
+
+### 8.1 Summary block
+
 ```
-✔ Content drafted across <N> channels: <comma list>
+✔ Content drafted across <N> channels: <comma list of Korean labels>
   Domain:        <domain>
   Action item:   <item_id>
+  Title:         <resolved_title from Step 1>
   Mimicked:      <top 2-3 source domains + format patterns>
   Refs loaded:
-    - instagram    → recipes/instagram.md + examples/instagram-post-example.md
-    - 보도자료      → recipes/보도자료.md + recipes/editorial-html-jsonld.md
-    - naver_blog   → recipes/naver_blog.md + forensics template + examples/blog-example.md
-    - tistory      → recipes/tistory.md + forensics template + examples/blog-example.md
-    - reddit       → forensics-derived (no recipe file)
-    - …            (one line per channel; show "no exemplar" when example file absent)
+    - Instagram용 캡션 / Instagram caption    → recipes/instagram.md + examples/instagram-post-example.md
+    - 보도자료 초안 / Press release draft       → recipes/보도자료.md + recipes/editorial-html-jsonld.md
+    - 네이버 블로그용 초안 / Naver Blog draft   → recipes/naver_blog.md + forensics template + examples/blog-example.md
+    - 티스토리용 초안 / Tistory draft           → recipes/tistory.md + forensics template + examples/blog-example.md
+    - Reddit 포스트 초안 / Reddit post           → forensics-derived (no recipe file)
+    - …                                          (one line per channel; show "no exemplar" when example file absent)
   Artifacts:
-    - reddit       → <path>
-    - naver_blog   → <path>
-    - 보도자료      → <path>
-    - instagram    → <path>
-  Media refs:    <N attached, M skipped>
-  Citability:    passed on N/N · failed on: <list or 'none'>
+    - Reddit 포스트 초안 / Reddit post          → ./aeko-artifacts/<domain_id>/<item_id>/reddit/<slug>__reddit.md
+    - 네이버 블로그용 초안 / Naver Blog draft   → ./aeko-artifacts/<domain_id>/<item_id>/naver_blog/<slug>__naver_blog.md
+    - 보도자료 초안 / Press release draft       → ./aeko-artifacts/<domain_id>/<item_id>/press_release/<slug>__press_release.md
+    - Instagram용 캡션 / Instagram caption     → ./aeko-artifacts/<domain_id>/<item_id>/instagram/<slug>__instagram.md
+  Media refs:    <N attached with alt-text, M skipped>
+  Citability:    passed on N/N · failed on: <list of Korean labels or 'none'>
 ```
 
 The **Refs loaded** block exists so users can verify their `references/examples/<file>.md` is being picked up — if a channel's line shows only `recipes/<channel>.md` and no `examples/...`, their exemplar isn't matching the filename pattern.
+
+**Hard rule:** every artifact line uses the bilingual channel label from §8.0; never refer to drafts generically as "Draft 1", "Image #1", "Output 3", or by bare slug alone.
 
 If any artifact targets a client-managed channel (anything except `aeko_shop`), append a publish checklist:
 
@@ -868,12 +1107,42 @@ This skill never publishes — Step 8 stops at local files plus the manual check
 
 The handoff line is gated on `saved_variations` (set in Step 7.5), not on the drafted channel set alone. Publishing now reads from backend rows, not local files — if nothing was saved to backend, there's nothing for `/aeko-publish-content` to publish.
 
-- **`saved_variations` is non-empty** (user accepted Step 7.5 save AND all saves succeeded) — insert immediately under the `Next:` line in §8:
+- **`saved_variations` includes an `aeko_shop` entry** — print the dedicated aeko.shop block FIRST (this is the most actionable handoff and must be unmissable):
+
+  ```
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ▶ aeko.shop용 HTML / aeko.shop HTML
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  파일 / Files:
+    - ./aeko-artifacts/<domain_id>/<item_id>/aeko_shop/<slug>__aeko_shop.html
+    - ./aeko-artifacts/<domain_id>/<item_id>/aeko_shop/<slug>__aeko_shop.meta.json
+    - ./aeko-artifacts/<domain_id>/<item_id>/aeko_shop/<slug>__aeko_shop.md
+
+  구조 요약 / Structural summary:
+    <N> H2 sections · <N> tables · <N> inline images · <N> chars body · hero: <cdn_url|null> · product callouts: <N>
+
+  게시 명령어 / Publish command:
+    /aeko-publish-content <item_id>
+
+  ℹ 이 HTML이 aeko.shop으로 게시됩니다 / This HTML is what publishes to aeko.shop.
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ```
+
+  Then add the non-aeko_shop tail underneath (when other destinations are also in `saved_variations`):
+
+  ```
+  Other saved variation(s): /aeko-publish-content <item_id> also handles:
+    ↳ own_store_blog → creates an AEKO-owned draft row you push to your connected store later (never auto-pushed to Cafe24/Shopify).
+  ```
+
+  **Structural summary computation** — produce one scannable line covering: count of `<h2>` tags in the body HTML, count of `<table>` tags, count of `<figure>`/`<img>` inline image elements, character count of body text (HTML stripped), `hero_image_url` value from meta.json (or `null`), count of `<figure data-variant="product">` callouts in body HTML. Computed from the produced `<slug>__aeko_shop.html` + `<slug>__aeko_shop.meta.json`; do NOT include an inline raw-HTML preview (aeko_shop HTML is body-only and a 15-line preview adds context bloat without comprehension gain — the structural summary is more scannable, and the file path lets the user click through to the real HTML).
+
+- **`saved_variations` non-empty but contains NO `aeko_shop` entry** (only `own_store_blog`) — skip the dedicated aeko.shop block and print only:
 
   ```
   Publish: /aeko-publish-content <item_id>
     ↳ publishes <K> saved backend variation(s) — destinations: <comma list>.
-    ↳ aeko_shop → live on aeko.shop with body_html + featured_products linked to live catalog; structured data regenerated at render time for ChatGPT/Claude/Perplexity citation.
     ↳ own_store_blog → creates an AEKO-owned draft row you push to your connected store later (never auto-pushed to Cafe24/Shopify).
   ```
 
@@ -913,14 +1182,15 @@ This keeps `aeko-create-content` honest about its boundary ("never auto-publishe
 - Contract mismatch → stop.
 - Stale brand kit + user declines → stop.
 - No tracked prompts resolve in 3A.0 → hard-stop per 3A.0's precondition (research-prompt fallback is explicitly out per 3A.8 — different cited sources optimize for the wrong queries). Tell user to run `/aeko-find-prompts-to-track` first.
-- All resolved prompts return no responses in 3A.1 (`latest` window) → 3A.7 reports `low selection confidence`; surface in §4a; user may still proceed at Step 4b for fully-manual format choices, but the structural-template quality drops.
-- `aeko_crawl_url` 4xx/5xx or unavailable (backend route not yet shipped) → log a single warning line in 3B.3 and §4e (recrawl row in the enrichment summary marks the URL as `recrawled_failure`), continue on the snapshot signal alone. Live recrawl is enriching, not gating.
-- `aeko_list_own_content` 4xx/5xx or unavailable → log "no in-store signature — drafting from cited-source signal only" once, continue. In-store signature is enriching, not gating.
-- Step 4e returns 0 selected channels → stop without writing or completing.
-- User cancels at Step 4e → stop without writing or completing.
+- All resolved prompts return no responses in 3A.1 (`latest` window) → `aeko_wait_cycles[]` populated; §3A.8 prints the wait-cycle section and (when selection_confidence drops to medium/low) offers the 3-option proceed prompt. User may still proceed Plan-only.
+- `aeko_crawl_url` 4xx/5xx or unavailable (backend route not yet shipped) → record into `aeko_data_gaps[]` and log a single warning line in 3B.3 and at §4e (recrawl row in the enrichment summary marks the URL as `recrawled_failure`). Continue on the snapshot signal alone. Live recrawl is enriching, not gating. **Do NOT fall back to WebFetch** — WebFetch is only invoked via §3A.8 option 2 (explicit user opt-in).
+- `aeko_list_own_content` 4xx/5xx or unavailable → record into `aeko_data_gaps[]`, log "no in-store signature — drafting from cited-source signal only" once, continue. In-store signature is enriching, not gating.
+- §3A.8 user picks option 3 (abort) → stop without writing or completing; surface bilingual exit notice.
+- §4-Form-1 returns 0 selected channels → stop without writing or completing.
+- §4-Form-2 submit fails alt-text validation → form re-renders inline with "Alt text required for `<channel>` `<slot>`"; user fills missing alts and resubmits. No skill-level exit.
 - Citability self-check hard-gate fails after the §6.5 iteration budget on any artifact → leave item `pending`; surface failed channels + dimensions.
 - HTML emission fails on an editorial channel (markdown rendered, but JSON-LD won't validate) → write the `.md`, skip the `.html`, surface the JSON-LD error in the user summary, and treat the channel as failed for completion purposes.
-- Non-interactive caller (e.g., dispatched from another agent): if `frontmatter.non_interactive == true` (forward-compat), skip 4b/4c/4d asks and default to: all auto-detected channels, no addons, no media. If 0 auto-detected, stop with "non-interactive run needs at least one auto-detected channel".
+- Non-interactive caller (e.g., dispatched from another agent): if `frontmatter.non_interactive == true` (forward-compat), skip §4-Form-1 and §4-Form-2 and default to: all auto-detected channels, no addons, no media. If 0 auto-detected, stop with "non-interactive run needs at least one auto-detected channel".
 
 ## What this skill never does
 
@@ -934,4 +1204,4 @@ This keeps `aeko-create-content` honest about its boundary ("never auto-publishe
 - Never regenerates the Plan.md.
 - Never reads machine values from prose.
 - Never echoes raw frontmatter.
-- Never proceeds past Step 4e without explicit user confirmation (except in non-interactive mode with a valid auto-detected channel set).
+- Never proceeds past §4-Form-2 submit without an explicit user submit on both forms (except in non-interactive mode with a valid auto-detected channel set and no required alt-text gaps).
