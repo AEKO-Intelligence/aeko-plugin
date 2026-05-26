@@ -1,0 +1,11 @@
+{
+  "name": "aeko-plugin",
+  "version": "0.10.0",
+  "description": "AEKO skills for Gemini CLI - AEO workflows (PDP optimization, content briefs, JSON-LD, brand kit, action center). Pair with the AEKO MCP connector for backend tool access.",
+  "mcpServers": {
+    "aeko": {
+      "httpUrl": "https://aeko-intelligence.com/mcp",
+      "authProviderType": "dynamic_discovery"
+    }
+  }
+}

@@ -2,7 +2,7 @@
 
 > 한국어 버전은 아래를 참고하세요 → [한국어](#한국어-버전).
 
-Skills for [AEKO](https://aeko-intelligence.com) — AEO (AI Engine Optimization) workflows for cross-border ecommerce. Guides Claude and Codex through optimizing product pages for ChatGPT/Claude/Gemini/Perplexity citations, drafting persona-targeted content, generating JSON-LD, managing brand kits, and executing action items.
+Skills for [AEKO](https://aeko-intelligence.com) — AEO (AI Engine Optimization) workflows for cross-border ecommerce. Guides Claude, Codex, and Gemini CLI through optimizing product pages for ChatGPT/Claude/Gemini/Perplexity citations, drafting persona-targeted content, generating JSON-LD, managing brand kits, and executing action items.
 
 This repo ships **skills only**. Backend access (tools like `aeko_get_domain_info`, `aeko_get_brand_kit`, etc.) comes from the separate [AEKO MCP server](https://github.com/AEKO-Intelligence/aeko-mcp), hosted at `https://aeko-intelligence.com/mcp`. Install both.
 
@@ -14,7 +14,7 @@ Most skills read files, write artifacts (HTML, markdown, JSON), or shell out to 
 
 - **Claude Code:** native — `Read`, `Write`, `Glob`, `Bash` are built-in.
 - **Claude Desktop:** install `@modelcontextprotocol/server-filesystem` (or equivalent) alongside the AEKO connector. Skills that save local artifacts will fail without it.
-- **Codex / Cursor:** verify per-host filesystem tooling before install.
+- **Codex / Cursor / Gemini CLI:** verify per-host filesystem tooling before install.
 
 ### Claude Desktop (recommended)
 
@@ -55,9 +55,17 @@ codex mcp add --transport http aeko https://aeko-intelligence.com/mcp
 
 This repo also includes a Codex plugin manifest at `.codex-plugin/plugin.json` for marketplace discovery.
 
+### Gemini CLI
+
+```bash
+gemini extensions install https://github.com/AEKO-Intelligence/aeko-plugin
+```
+
+Restart Gemini CLI after install. The Gemini extension manifest (`gemini-extension.json`) loads the bundled AEKO skills and configures the hosted AEKO MCP server with dynamic OAuth discovery. Claude/Codex use `plugin.json` and marketplace manifests; Gemini CLI uses `gemini-extension.json`.
+
 ## Available Skills
 
-See [`skills/`](skills/). Each is a self-contained SKILL.md consumed by Claude or Codex.
+See [`skills/`](skills/). Each is a self-contained SKILL.md consumed by Claude, Codex, or Gemini CLI.
 
 **Entry points:**
 
@@ -112,7 +120,7 @@ Bug fix if a skill's prose references AEKO primitives its `allowed-tools` doesn'
 ## Relationship to other AEKO repos
 
 - **[`aeko-mcp`](https://github.com/AEKO-Intelligence/aeko-mcp)** — Python MCP server. Hosts the `aeko_*` tools. Embedded in the AEKO backend and exposed at `/mcp`. You don't install this directly; you connect to the hosted endpoint.
-- **`aeko-plugin`** (this repo) — Skills only. Distributed via the Claude/Codex plugin marketplaces.
+- **`aeko-plugin`** (this repo) — Skills only. Distributed via the Claude/Codex plugin marketplaces and Gemini CLI extension installs.
 
 ## License
 
@@ -122,7 +130,7 @@ MIT
 
 # 한국어 버전
 
-[AEKO](https://aeko-intelligence.com) 스킬 모음 — 크로스보더 이커머스를 위한 AEO (AI Engine Optimization) 워크플로. Claude와 Codex가 ChatGPT/Claude/Gemini/Perplexity 인용을 위해 상품 페이지를 최적화하고, 페르소나별 콘텐츠를 작성하며, JSON-LD를 생성하고, 브랜드 키트를 관리하고, 액션 아이템을 실행하도록 안내합니다.
+[AEKO](https://aeko-intelligence.com) 스킬 모음 — 크로스보더 이커머스를 위한 AEO (AI Engine Optimization) 워크플로. Claude, Codex, Gemini CLI가 ChatGPT/Claude/Gemini/Perplexity 인용을 위해 상품 페이지를 최적화하고, 페르소나별 콘텐츠를 작성하며, JSON-LD를 생성하고, 브랜드 키트를 관리하고, 액션 아이템을 실행하도록 안내합니다.
 
 이 저장소는 **스킬만 배포합니다**. 백엔드 액세스(`aeko_get_domain_info`, `aeko_get_brand_kit` 등의 도구)는 별도의 [AEKO MCP 서버](https://github.com/AEKO-Intelligence/aeko-mcp) — `https://aeko-intelligence.com/mcp`에서 호스팅 — 에서 제공됩니다. 두 가지 모두 설치하세요.
 
@@ -134,7 +142,7 @@ MIT
 
 - **Claude Code:** 기본 제공 — `Read`, `Write`, `Glob`, `Bash` 내장.
 - **Claude Desktop:** AEKO 커넥터와 함께 `@modelcontextprotocol/server-filesystem`(또는 동등 패키지)을 설치하세요. 이게 없으면 로컬 아티팩트를 저장하는 스킬이 실패합니다.
-- **Codex / Cursor:** 설치 전 호스트별 파일시스템 도구를 확인하세요.
+- **Codex / Cursor / Gemini CLI:** 설치 전 호스트별 파일시스템 도구를 확인하세요.
 
 ### Claude Desktop (권장)
 
@@ -175,9 +183,17 @@ codex mcp add --transport http aeko https://aeko-intelligence.com/mcp
 
 이 저장소에는 마켓플레이스 디스커버리를 위한 Codex 플러그인 매니페스트(`.codex-plugin/plugin.json`)도 포함되어 있습니다.
 
+### Gemini CLI
+
+```bash
+gemini extensions install https://github.com/AEKO-Intelligence/aeko-plugin
+```
+
+설치 후 Gemini CLI를 재시작하세요. Gemini 확장 매니페스트(`gemini-extension.json`)가 번들된 AEKO 스킬을 로드하고, 동적 OAuth 디스커버리로 호스팅된 AEKO MCP 서버를 설정합니다. Claude/Codex는 `plugin.json` 및 marketplace 매니페스트를 사용하고, Gemini CLI는 `gemini-extension.json`을 사용합니다.
+
 ## 사용 가능한 스킬
 
-[`skills/`](skills/) 참조. 각 스킬은 Claude 또는 Codex가 실행하는 자체 완결형 SKILL.md입니다.
+[`skills/`](skills/) 참조. 각 스킬은 Claude, Codex 또는 Gemini CLI가 실행하는 자체 완결형 SKILL.md입니다.
 
 **진입점:**
 
@@ -232,7 +248,7 @@ AEKO 스킬은 **유용한 워크플로를 압축**할 때만 자리를 얻습�
 ## 다른 AEKO 저장소와의 관계
 
 - **[`aeko-mcp`](https://github.com/AEKO-Intelligence/aeko-mcp)** — Python MCP 서버. `aeko_*` 도구 호스팅. AEKO 백엔드에 임베드되어 `/mcp`에 노출. 직접 설치하지 않고, 호스팅된 엔드포인트에 연결합니다.
-- **`aeko-plugin`** (이 저장소) — 스킬만. Claude/Codex 플러그인 마켓플레이스를 통해 배포.
+- **`aeko-plugin`** (이 저장소) — 스킬만. Claude/Codex 플러그인 마켓플레이스 및 Gemini CLI 확장 설치를 통해 배포.
 
 ## 라이선스
 
