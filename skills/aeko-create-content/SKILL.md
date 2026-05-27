@@ -1,6 +1,6 @@
 ---
 name: aeko-create-content
-version: 0.10.0
+version: 0.10.1
 description: >
   Multi-channel content executor for Action-tab items with
   `execution_class=local_content_artifact`. Fetches a Plan.md, runs
@@ -9,8 +9,9 @@ description: >
   etc.), then fans out into per-channel drafts: auto-detected channels
   from forensics PLUS user-added formats (보도자료 / magazine /
   Instagram / TikTok / YouTube / free-form). Optional image/video
-  reference per channel. Saves locally; never writes to a store and
-  never auto-publishes. Splits the content branch out of the retired
+  reference per channel. Saves local artifacts; auto-saves aeko.shop
+  publish variations to the AEKO backend; never writes to a connected
+  store and never auto-publishes. Splits the content branch out of the retired
   `/aeko-run-action`.
 argument-hint: "<item-id>"
 allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_crawl_url, aeko_list_own_content, aeko_request_media_upload, aeko_complete_action_item, aeko_save_content_variation, aeko_list_content_variations, Read, Write, Bash, WebFetch, WebSearch
@@ -18,9 +19,11 @@ allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_resolve_prompts_by
 
 # AEKO Create Content
 
+**Changelog v0.10.1** — Makes `aeko_shop` backend-save mandatory once the channel is selected and artifacts validate; deletes the backend-save decline path for `aeko_shop`; threads uploaded aeko.shop media `public_url` into `.meta.json hero_image_url`; drops `wikipedia` / generic `web_article` from auto-detected draft channels; aligns plugin manifests.
+
 **Changelog v0.10.0** — Front-loaded tool/reference batching (§0); annotated AEKO data-gap diagnostics with graded defaults + 3-option proceed prompt (§3A); opt-in WebFetch with heavy-host guard + 50k char cap (§3B); two-form §4 elicitation (channels then media+alt) with required alt-text; channel-aware filename basenames (`<slug>__<filename_token>.<ext>`) + `보도자료` → `press_release` filesystem alias (§5.5); structural-summary aeko.shop publish block with bilingual HTML→aeko.shop callout (§9); Korean channel labels in summary + handoff. **Breaking:** filename pattern changed, alt-text now a hard gate, WebFetch is opt-in only.
 
-Executes one Action-tab content item end-to-end: fetch Plan.md → pull citation-forensics on tracked prompts → identify winning source structures + auto-detect channels → confirm channels with user + collect optional add-on formats and per-channel media → draft N channel-fitted artifacts in the brand voice → save local artifacts → mark complete.
+Executes one Action-tab content item end-to-end: fetch Plan.md → pull citation-forensics on tracked prompts → identify winning source structures + auto-detect channels → confirm channels with user + collect optional add-on formats and per-channel media → draft N channel-fitted artifacts in the brand voice → save local artifacts → auto-save `aeko_shop` publish variations when selected → mark complete only after required saves succeed.
 
 Contract reference: `docs/contracts/action-item-contract.md` §3 (Plan.md), §3.2.1 (ProductRef), §6 (completion). Pinned to contract minor `v1.4` (introduces formal `ProductRef.source_id` required for `aeko_shop` product-callout publishing; backend `build_plan_md()` hydration still pending — see Step 1's "Backend wiring note").
 
@@ -206,7 +209,7 @@ Rank the aggregated sources by **citation frequency × inverse average position 
 
 #### 3A.3 Auto-detect candidate channels
 
-Classify each top source domain into a channel slug per the table in `references/forensics/channel-detection.md`. Read that file lazily on first need (once per skill run). Deduplicate while preserving rank order. Carry `auto_detected_channels[]` into Step 4.
+Classify each top source domain into a channel slug per the table in `references/forensics/channel-detection.md`. Read that file lazily on first need (once per skill run). Discard rows whose channel slug is `—` (currently `wikipedia.org` and generic no-match sources); they remain citation/context signal but are not draft channels. Deduplicate supported slugs while preserving rank order. Carry `auto_detected_channels[]` into Step 4.
 
 #### 3A.4 List in-store content
 
@@ -486,6 +489,7 @@ Issue ONE structured elicitation form with both auto-detected channels (pre-chec
    - Bullet list of `auto_detected_channels[]` from §3A.3, each rendered with bilingual label from §8.0 (e.g., "Reddit 포스트 초안 / Reddit post — auto-detected from `reddit.com/r/<sub>`").
    - The `aeko_shop` entry from §4.0 is pre-checked when the brand-kit flag allows.
    - The `own_store_blog` entry from §4.0 is pre-checked when present.
+   - **Selecting `aeko_shop` is consent to backend-save** after drafting succeeds. This required save creates the backend variation that `/aeko-publish-content <item_id>` publishes later; deselect `aeko_shop` here if the user wants local-only outputs.
 
 2. **Addon channels** (unchecked toggles):
    - 보도자료 — 보도자료 초안 / Press release draft (합니다체)
@@ -686,9 +690,9 @@ Plus the always-on rules:
   2. **Compute digests.** `content_sha256` = **SHA-256 hex** (lowercase, 64 chars, no separators). `content_md5` = **base64-encoded raw MD5 digest** (exactly 24 chars including padding; do **NOT** use hex — the backend's Pydantic field is `min_length=24, max_length=24`). `byte_length` = file size. Reference implementation: `aeko-mcp/aeko_mcp/tools/store_write.py:84-85` (`base64.b64encode(hashlib.md5(data).digest()).decode()`).
   3. **Call `aeko_request_media_upload`** per `aeko-mcp/aeko_mcp/tools/media_upload.py` — args: `brand_id=frontmatter.domain_id` (required — the backend's `MediaPresignRequest` validates this; the MCP tool must forward it), `source_content_id=frontmatter.item_id`, `filename=<basename only — no path separators>`, `content_type=<MIME, must match `^image/(jpeg|jpg|png|webp|gif)$`>`, `content_sha256=<hex>`, `content_md5=<base64>`, `byte_length=<n>`. Response: `{upload_url, public_url, blob_key, expires_at}`.
   4. **PUT the bytes** via `Bash` with the Azure-required headers — every header is required (Azure rejects with 403 otherwise): `curl -X PUT --data-binary @<staged_path> -H "x-ms-blob-type: BlockBlob" -H "Content-Type: <type>" -H "Content-MD5: <base64>" "<upload_url>"`. The `Content-MD5` value MUST equal the `content_md5` passed at step 3 — Azure verifies the body against this header. Verify HTTP 2xx before proceeding; treat 4xx/5xx as upload failure per the rule below.
-  5. **Embed `public_url`** (the `cdn.aeko.shop/...` URL) in the artifact body — Markdown `![<alt>](<cdn_url>)` and HTML `<figure><img src="<cdn_url>" alt="<alt>" width="<w>" height="<h>" loading="lazy"></figure>` (per the recipe's image-attribute hard gate at §6.3). The `alt` value MUST be the `alt` field from `media_by_channel[aeko_shop][<slot>].alt`. Never invent alt text; never leave empty.
+  5. **Record and embed `public_url`.** Store each successful upload in `uploaded_media_by_slot[slot_name] = {public_url, blob_key, alt, staged_path}`. Embed `public_url` (the `cdn.aeko.shop/...` URL) in the artifact body for inline slots — Markdown `![<alt>](<cdn_url>)` and HTML `<figure><img src="<cdn_url>" alt="<alt>" width="<w>" height="<h>" loading="lazy"></figure>` (per the recipe's image-attribute hard gate at §6.3). The `alt` value MUST be the `alt` field from `media_by_channel[aeko_shop][<slot>].alt`. Never invent alt text; never leave empty.
 - **For `parsed_products[]` image references**: `product.image_url` is already a `cdn.aeko.shop/...` URL by construction (aeko.shop catalog images live on the same CDN). Do **not** re-upload; reference directly. Alt-text for product images derives from `product.short_description` truncated to ≤125 chars; fall back to `product.name` when short_description is absent.
-- **Hero image**: written to `<slug>.meta.json` `hero_image_url` (top-level publish field) — NOT embedded as an in-body `<figure>` (the rendered page emits its own hero `<Image>` from the publish payload; embedding it in body HTML produces a duplicate hero). First entry of `parsed_products[]` (if any) wins — its `image_url` populates `hero_image_url`. If `parsed_products[]` is empty, fall back to `media_by_channel[aeko_shop].hero.src` (the user-supplied hero from §4-Form-2). If neither, leave `hero_image_url` as `null` in `.meta.json` and omit the hero entirely.
+- **Hero image**: written to `<slug>.meta.json` `hero_image_url` (top-level publish field) — NOT embedded as an in-body `<figure>` (the rendered page emits its own hero `<Image>` from the publish payload; embedding it in body HTML produces a duplicate hero). First entry of `parsed_products[]` (if any) wins — its `image_url` populates `hero_image_url`. If `parsed_products[]` is empty, fall back to `uploaded_media_by_slot["hero"].public_url` when the user supplied a hero and upload succeeded. The `.meta.json` value MUST be a `cdn.aeko.shop/...` URL or `null`, never the original local path or remote URL from `media_by_channel[aeko_shop].hero.src`. If neither a product image nor uploaded hero exists, leave `hero_image_url` as `null` in `.meta.json` and omit the hero entirely.
 - **`.meta.json` alt-text propagation:** for every image emitted in body HTML (inline images uploaded via §5.4 steps 1-5, plus product callouts), the corresponding `media[]` entry in `.meta.json` MUST carry `alt_text` matching the body HTML's `alt=` attribute. Hard-gated in §6.3.
 - On upload failure (network error, presign 4xx/5xx, PUT non-2xx): surface a single-line warning and write a placeholder body marker `[image: <filename> — upload pending]` in the draft. §6.1's hard gate **fails** the aeko_shop artifact when any such placeholder remains — this is intentional, since aeko_shop is publish-ready or it isn't. The user re-runs once the upload path recovers. Do not delete the staged file on failure — it speeds up retry.
 
@@ -931,11 +935,13 @@ If the artifact set fails this gate → leave the item `pending` (do NOT enter S
 
 ## Step 7.5 — Save publishable variations to backend
 
-After Step 7's validation passes, optionally save the publishable variations to the AEKO backend so they can be published from another machine, by another flow, or later in time. This step also owns the `aeko_complete_action_item` call — completion is gated on the save outcome per the lifecycle locked in the plan.
+After Step 7's validation passes, save publishable variations to the AEKO backend so they can be published from another machine, by another flow, or later in time. This step also owns the `aeko_complete_action_item` call — completion is gated on the save outcome per the lifecycle locked in the plan.
 
 ### 7.5.1 Identify publishable artifacts
 
 Build `publishable_artifacts[]` = subset of channels drafted in §5.3 whose destination slug is in `{aeko_shop, own_store_blog}`. Every other channel (`reddit`, `naver_blog`, `tistory`, `instagram`, `tiktok`, `youtube`, `보도자료`, `magazine`, `partner_media`, `other:<name>`) is local-only and not eligible for backend save.
+
+**Auto-save required for `aeko_shop`.** Selecting `aeko_shop` in §4-Form-1 is the user's consent to save its backend variation after drafting succeeds. There is no Step 7.5 opt-out prompt for `aeko_shop`; deselecting the channel in §4-Form-1 is the local-only escape hatch. Without the backend variation, `/aeko-publish-content <item_id>` has nothing to publish.
 
 If `publishable_artifacts` is empty → skip the save prompt. Call `aeko_complete_action_item` immediately (local-only completion is valid):
 
@@ -950,20 +956,14 @@ aeko_complete_action_item(
 
 Set `saved_variations = []` and proceed to Step 8.
 
-### 7.5.2 Ask the user (single prompt, bilingual)
+### 7.5.2 Auto-save backend variations
 
-If `publishable_artifacts` is non-empty, ask once. Bilingual when `frontmatter.target_language` starts with `ko`:
+If `publishable_artifacts` is non-empty, print one progress line before the first save:
 
-- EN: `Save <N> publishable variation(s) to AEKO backend so you can publish them later (or from another machine)? [Y/n]`
-- KO: `<N>개의 게시 가능한 변형본을 AEKO 백엔드에 저장할까요? 나중에 (또는 다른 기기에서) 게시할 수 있어요. [Y/n]`
+- EN: `Saving <N> publishable variation(s) to AEKO backend for later publishing: <destinations>.`
+- KO: `나중에 게시할 수 있도록 <N>개의 게시 가능한 변형본을 AEKO 백엔드에 저장합니다: <destinations>.`
 
-List the destinations under the prompt (e.g., `- aeko_shop\n- own_store_blog`) so the user knows what they're agreeing to.
-
-### 7.5.3 On decline (`n`)
-
-`saved_variations = []`. Call `aeko_complete_action_item` (same payload as 7.5.1). Local-only completion is valid; the user just opted out of backend storage. Proceed to Step 8.
-
-### 7.5.4 On accept (`Y`)
+For `aeko_shop`, this progress line is informational only — no prompt follows.
 
 Iterate `publishable_artifacts[]`. For each:
 
@@ -996,6 +996,8 @@ if destination == "aeko_shop":
         ],
     }
 
+# `featured_product_source_ids` is required for aeko_shop metadata but may be [].
+# Text-only / product-free aeko_shop posts are valid when Plan.md has no products.
 aeko_save_content_variation(
     item_id=frontmatter.item_id,
     destination=<"aeko_shop" or "own_store_blog">,
@@ -1007,7 +1009,7 @@ aeko_save_content_variation(
 )
 ```
 
-For `aeko_shop`, the `featured_products[]` snapshots are mandatory whenever `.meta.json featured_products[]` is non-empty. Publish uses them to upsert the aeko.shop `products` table first, then the post publish maps `post_products` by `featured_product_source_ids`. If a product lacks `source_id`, drop it earlier per Step 1.1 and keep the draft product-free; do not fabricate a join key.
+For `aeko_shop`, `metadata.featured_product_source_ids` is required and may be an empty list. Product-free and text-only aeko.shop posts are valid. The richer `featured_products[]` snapshots are mandatory only when `.meta.json featured_products[]` is non-empty. Publish uses them to upsert the aeko.shop `products` table first, then the post publish maps `post_products` by `featured_product_source_ids`. If a product lacks `source_id`, drop it earlier per Step 1.1 and keep the draft product-free; do not fabricate a join key.
 
 Collect the returned `variation_id`s into `saved_variations[]`.
 
@@ -1146,16 +1148,9 @@ The handoff line is gated on `saved_variations` (set in Step 7.5), not on the dr
     ↳ own_store_blog → creates an AEKO-owned draft row you push to your connected store later (never auto-pushed to Cafe24/Shopify).
   ```
 
-- **`publishable_artifacts` was non-empty but the user DECLINED the Step 7.5 save** — print instead:
-
-  ```
-  ℹ Local artifacts saved. No backend variations stored.
-    To publish via /aeko-publish-content, re-run /aeko-create-content <item_id> and accept the backend-save prompt at Step 7.5.
-  ```
-
 - **`publishable_artifacts` was empty** (no `aeko_shop` / `own_store_blog` channels were drafted) — omit the publish line entirely. The External-media publish checklist (§8) is the only post-creation guidance for those local-only channels.
 
-- **Item is pending due to Step 7.5 save failure** — Step 8 / §9 are skipped entirely (already handled in §7.5.4); this branch never fires.
+- **Item is pending due to Step 7.5 save failure** — Step 8 / §9 are skipped entirely (already handled in §7.5.2); this branch never fires.
 
 ### 9.2 Optional Chrome-bridge hint for client-managed channels
 

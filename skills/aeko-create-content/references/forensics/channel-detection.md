@@ -9,13 +9,13 @@ Used by `aeko-create-content` Phase 3A.3. Classifies each top cited domain (rank
 | `reddit.com/*` | `reddit` | Forum / Q&A; usually maps to `QAPage` / `DiscussionForumPosting` @type in 3B |
 | `*.blog.naver.com`, `m.blog.naver.com` | `naver_blog` | First-person Korean review register |
 | `*.tistory.com` | `tistory` | Korean long-form blog |
-| `wikipedia.org` | `wikipedia` | Encyclopedic; cited for definitional anchoring — not usually a drafting target |
+| `wikipedia.org` | — | Excluded from auto_detected_channels; use as citation/context only |
 | `news.*`, `*.co.kr/news/*`, established publication TLDs | `partner_media` | News / partner-media heuristic; calibrate to `NewsArticle` / `Article` in 3B |
-| (no match) | `web_article` | Generic fallback; structural template comes from the live recrawl alone |
+| (no match) | — | Excluded from auto_detected_channels; the user can add `other:<name>` in Step 4 when they want a draft shaped by this source |
 
 ## Deduplication
 
-After classification, deduplicate `auto_detected_channels[]` while preserving the ranking order from 3A.2 (the first-occurring channel wins position). Carry the deduplicated list into Step 4.
+After classification, discard rows whose Channel slug is `—`, then deduplicate `auto_detected_channels[]` while preserving the ranking order from 3A.2 (the first-occurring channel wins position). Carry the deduplicated list into Step 4.
 
 ## Future extensions
 

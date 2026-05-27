@@ -72,7 +72,7 @@ See [`skills/`](skills/). Each is a self-contained SKILL.md consumed by Claude, 
 - `/aeko-action-center [domain_id] [category]` — router: lists pending items in three categories (Technical / PDP / Content generation) and prints ready-to-copy executor commands
 - `/aeko-update-pdp <item_id>` — PDP executor. Fetches Plan.md, asks image strategy, WebFetches the live page, generates responsive HTML + JSON-LD, writes to store (shadow-by-default) with audit trail
 - `/aeko-fix-technical <item_id>` — Technical executor. Generates llms.txt / robots.txt patches / site-level JSON-LD with embedded spec rules
-- `/aeko-create-content <item_id>` — Content executor. Pulls tracked-prompt citation forensics to mimic winning source structures; saves locally, never writes to store
+- `/aeko-create-content <item_id>` — Content executor. Pulls tracked-prompt citation forensics to mimic winning source structures; saves local artifacts and auto-saves aeko.shop publish variations, never writes to a connected store
 - `/aeko-brand-kit <domain_id>` — view or edit your domain's brand kit (voice, guardrails, must-include / forbidden)
 
 **Research + discovery:**
@@ -200,7 +200,7 @@ gemini extensions install https://github.com/AEKO-Intelligence/aeko-plugin
 - `/aeko-action-center [domain_id] [category]` — 라우터: pending 아이템을 세 카테고리(Technical / PDP / Content generation)로 나열하고 바로 실행 가능한 executor 커맨드를 출력
 - `/aeko-update-pdp <item_id>` — PDP executor. Plan.md를 가져오고, 이미지 전략을 묻고, 라이브 페이지를 WebFetch하고, 반응형 HTML + JSON-LD를 생성하여 스토어에 기록(shadow 기본) — 감사 추적 포함
 - `/aeko-fix-technical <item_id>` — Technical executor. llms.txt / robots.txt 패치 / 사이트 수준 JSON-LD를 임베디드 스펙 규칙과 함께 생성
-- `/aeko-create-content <item_id>` — Content executor. 추적된 프롬프트의 인용 포렌식으로 우승 소스 구조를 모방; 로컬에 저장만, 스토어에는 절대 기록 안 함
+- `/aeko-create-content <item_id>` — Content executor. 추적된 프롬프트의 인용 포렌식으로 우승 소스 구조를 모방; 로컬 아티팩트를 저장하고 aeko.shop 게시 변형본을 자동 백엔드 저장, 연결된 스토어에는 절대 기록 안 함
 - `/aeko-brand-kit <domain_id>` — 도메인의 브랜드 키트(보이스, 가드레일, must-include / forbidden) 조회·편집
 
 **리서치 + 디스커버리:**
