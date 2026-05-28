@@ -1,6 +1,6 @@
 ---
 name: aeko-create-content
-version: 0.10.1
+version: 0.10.2
 description: >
   Multi-channel content executor for Action-tab items with
   `execution_class=local_content_artifact`. Fetches a Plan.md, runs
@@ -14,10 +14,12 @@ description: >
   store and never auto-publishes. Splits the content branch out of the retired
   `/aeko-run-action`.
 argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_crawl_url, aeko_list_own_content, aeko_request_media_upload, aeko_complete_action_item, aeko_save_content_variation, aeko_list_content_variations, Read, Write, Bash, WebFetch, WebSearch
+allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_brand_kit_by_id, aeko_list_brand_kits, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_crawl_url, aeko_list_own_content, aeko_request_media_upload, aeko_complete_action_item, aeko_save_content_variation, aeko_list_content_variations, Read, Write, Bash, WebFetch, WebSearch
 ---
 
 # AEKO Create Content
+
+**Changelog v0.10.2** — Resolves the exact `brand_kit_id` selected in the AEKO app before falling back to active-by-domain lookup; fixes aeko.shop media upload to presign with `brand_kit_id`; degrades failed image uploads to valid text-only aeko.shop drafts.
 
 **Changelog v0.10.1** — Makes `aeko_shop` backend-save mandatory once the channel is selected and artifacts validate; deletes the backend-save decline path for `aeko_shop`; threads uploaded aeko.shop media `public_url` into `.meta.json hero_image_url`; drops `wikipedia` / generic `web_article` from auto-detected draft channels; aligns plugin manifests.
 
@@ -25,7 +27,7 @@ allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_resolve_prompts_by
 
 Executes one Action-tab content item end-to-end: fetch Plan.md → pull citation-forensics on tracked prompts → identify winning source structures + auto-detect channels → confirm channels with user + collect optional add-on formats and per-channel media → draft N channel-fitted artifacts in the brand voice → save local artifacts → auto-save `aeko_shop` publish variations when selected → mark complete only after required saves succeed.
 
-Contract reference: `docs/contracts/action-item-contract.md` §3 (Plan.md), §3.2.1 (ProductRef), §6 (completion). Pinned to contract minor `v1.4` (introduces formal `ProductRef.source_id` required for `aeko_shop` product-callout publishing; backend `build_plan_md()` hydration still pending — see Step 1's "Backend wiring note").
+Contract reference: `docs/contracts/action-item-contract.md` §3 (Plan.md), §3.2.1 (ProductRef), §6 (completion). Pinned to contract minor `v1.5` for selected `brand_kit_id` resolution and backend-saved content variations; remains tolerant of v1.3/v1.4 Plans where `brand_kit_id` or `products[]` is absent.
 
 ## Input
 
@@ -40,7 +42,7 @@ Wall-clock observability: deferred tools loaded one-at-a-time across a run cost 
 Issue exactly ONE `ToolSearch` call before any other tool use:
 
 ```
-ToolSearch(query="select:aeko_get_action_plan,aeko_get_brand_kit,aeko_resolve_prompts_by_text,aeko_get_tracked_prompts,aeko_get_tracked_prompt,aeko_crawl_url,aeko_list_own_content,aeko_request_media_upload,aeko_save_content_variation,aeko_list_content_variations,aeko_complete_action_item,TaskCreate,TaskUpdate,WebFetch,WebSearch", max_results=20)
+ToolSearch(query="select:aeko_get_action_plan,aeko_get_brand_kit,aeko_get_brand_kit_by_id,aeko_list_brand_kits,aeko_resolve_prompts_by_text,aeko_get_tracked_prompts,aeko_get_tracked_prompt,aeko_crawl_url,aeko_list_own_content,aeko_request_media_upload,aeko_save_content_variation,aeko_list_content_variations,aeko_complete_action_item,TaskCreate,TaskUpdate,WebFetch,WebSearch", max_results=20)
 ```
 
 Record which tools the host actually exposed (`loaded_tools[]`) for diagnostics only. Do not add stale-MCP fallback branches here: if `aeko_save_content_variation` is missing from the host, the existing §7.5 save-failure branch handles it and the user should update the AEKO MCP.
@@ -67,7 +69,7 @@ Call `aeko_get_action_plan(item_id)`. Parse YAML frontmatter + prose.
 
 **Validate:**
 - `contract_version` starts with `2026-04-17.action.v1.` — else stop.
-- Minor versions `v1.3` (current live) and `v1.4` (proposed `products[]`) are both accepted. This skill is v1.4-tolerant but must run cleanly on v1.3 Plans where `products[]` is absent. Greater minor → print advisory + proceed.
+- Minor versions `v1.3` (older live), `v1.4` (`products[]` tolerant), and `v1.5` (`brand_kit_id` frontmatter + backend-saved variations) are accepted. This skill must run cleanly on v1.3/v1.4 Plans where `brand_kit_id` or `products[]` is absent. Greater minor → print advisory + proceed.
 - `tab == "action"` — else stop.
 - `execution_class == "local_content_artifact"` — else redirect to the right executor.
 - `artifact_type ∈ {own_store_markdown, external_media_markdown, own_store_content, external_media_content}` (accept both v1 and v2 names for forward-compat). In v2 this is **advisory** — actual channel set is decided in Step 4 — but it must be present.
@@ -119,7 +121,7 @@ If `products[]` is empty or absent (including the "pre-v1.4 backend, every entry
 
 The §4a.5 warning ("Plan carries N products but aeko_shop not active") fires only if `parsed_products[]` is non-empty AND `aeko_shop` is not in the final selected channel set after §4-Form-1.
 
-**Backend wiring note** — as of the v1.4 contract revision, `build_plan_md()` does NOT yet hydrate `products[]` (or `source_id` on those entries) from the dashboard's product-selection payload. Until the backend wires this, every Plan.md will have `products[]` empty regardless of which content-scope mode the user picked. The skill remains pinned to v1.4; the contract is in place ahead of the backend so skills can validate against the final shape before the wiring ships.
+**Backend wiring note** — as of the v1.4 contract revision, `build_plan_md()` does NOT yet hydrate `products[]` (or `source_id` on those entries) from the dashboard's product-selection payload. Until the backend wires this, every Plan.md will have `products[]` empty regardless of which content-scope mode the user picked. The skill remains tolerant of empty `products[]`; the contract is in place ahead of the product-hydration backend so skills can validate against the final shape before that wiring ships.
 
 Print header in `target_language`:
 1. Action label — KO (own): "자사 콘텐츠 생성: `<artifact_type>`" / KO (external): "외부 매체 콘텐츠 생성: `<artifact_type>`" / EN: "Generating {own-site|external-media} content: `<artifact_type>`"
@@ -132,11 +134,14 @@ Print prose verbatim. Never echo frontmatter.
 ## Step 2 — Stale brand-kit check
 
 If `frontmatter.requires_brand_kit == true`:
-- `aeko_get_brand_kit(frontmatter.domain_id)`. Missing / empty → **record into `aeko_data_gaps[]`** (key: `brand_kit`, status: `404` or `empty`) and continue — don't stop. The §3A.8 diagnostic surfaces the gap with the rest. (Previous behavior was hard-stop; now we surface and let the user decide alongside other 3A signals.)
+- Resolve the Brand Kit in this order and carry the winning `resolved_brand_kit_id` through the rest of the run:
+  1. If `frontmatter.brand_kit_id` is present and non-empty, call `aeko_get_brand_kit_by_id(frontmatter.brand_kit_id)`. This is the preferred path because it uses the exact kit selected in the AEKO app, including draft kits.
+  2. If `brand_kit_id` is absent or the by-id call fails, call `aeko_get_brand_kit(frontmatter.domain_id)` for backward compatibility with older Plan.md files that only carry `domain_id`.
+  3. If both reads miss, call `aeko_list_brand_kits(domain_id=frontmatter.domain_id)` and report whether draft/generating/failed kits exist. **Record into `aeko_data_gaps[]`** (key: `brand_kit`, status: `404` or `empty`) and continue — don't stop. The §3A.8 diagnostic surfaces the gap with the rest.
 - If brand kit is present, verify voice minimum: `tone_of_voice` present + at least one of `{brand_voice_summary, target_audience}`. Thin kit → warn + offer to abort (`/aeko-brand-kit <domain_id> edit`).
 - If brand kit is present, check snapshot-version drift and ask user when drift exists.
 
-If `frontmatter.requires_brand_kit == false`, skip this step (don't add to `aeko_data_gaps[]`).
+If `frontmatter.requires_brand_kit == false`, skip this step (don't add to `aeko_data_gaps[]`) and leave `resolved_brand_kit_id = null`.
 
 ## Step 3 — Citation forensics (two phases)
 
@@ -688,13 +693,13 @@ Plus the always-on rules:
 - **For each user-supplied image** (URL or local path from §4-Form-2's `media_by_channel[aeko_shop]`, iterating slots in declaration order: `hero` → `inline_1` → `inline_2`): upload to `cdn.aeko.shop` before embedding. The contract is enforced by `aeko-shop-backend/app/schemas.py::MediaPresignRequest` (which uses base64 MD5, not hex) and Azure Blob's signed-URL PUT requirements (which need `x-ms-blob-type` and `Content-MD5` headers). Mismatch returns HTTP 400 or 403. Steps:
   1. **Stage the bytes locally.** For local-path inputs the file already exists; for remote URLs, fetch first into a temp file at `./aeko-artifacts/<domain_id>/<item_id>/aeko_shop/.uploads/<sha256_of_url>.<ext>` (deterministic temp path; safe under parallel runs; auto-cleaned at Step 7 success). Create the `.uploads/` subdir if missing.
   2. **Compute digests.** `content_sha256` = **SHA-256 hex** (lowercase, 64 chars, no separators). `content_md5` = **base64-encoded raw MD5 digest** (exactly 24 chars including padding; do **NOT** use hex — the backend's Pydantic field is `min_length=24, max_length=24`). `byte_length` = file size. Reference implementation: `aeko-mcp/aeko_mcp/tools/store_write.py:84-85` (`base64.b64encode(hashlib.md5(data).digest()).decode()`).
-  3. **Call `aeko_request_media_upload`** per `aeko-mcp/aeko_mcp/tools/media_upload.py` — args: `brand_id=frontmatter.domain_id` (required — the backend's `MediaPresignRequest` validates this; the MCP tool must forward it), `source_content_id=frontmatter.item_id`, `filename=<basename only — no path separators>`, `content_type=<MIME, must match `^image/(jpeg|jpg|png|webp|gif)$`>`, `content_sha256=<hex>`, `content_md5=<base64>`, `byte_length=<n>`. Response: `{upload_url, public_url, blob_key, expires_at}`.
+  3. **Call `aeko_request_media_upload`** per `aeko-mcp/aeko_mcp/tools/media_upload.py` — args: `brand_kit_id=<frontmatter.brand_kit_id if present, else resolved_brand_kit_id>`, `source_content_id=frontmatter.item_id`, `filename=<basename only — no path separators>`, `content_type=<MIME, must match `^image/(jpeg|jpg|png|webp|gif)$`>`, `content_sha256=<hex>`, `content_md5=<base64>`, `byte_length=<n>`. Presign must use `frontmatter.brand_kit_id` when available even if the Step 2 voice-read failed or fell back, because upload/publish accepts draft kits by id. Response: `{upload_url, public_url, blob_key, expires_at}`.
   4. **PUT the bytes** via `Bash` with the Azure-required headers — every header is required (Azure rejects with 403 otherwise): `curl -X PUT --data-binary @<staged_path> -H "x-ms-blob-type: BlockBlob" -H "Content-Type: <type>" -H "Content-MD5: <base64>" "<upload_url>"`. The `Content-MD5` value MUST equal the `content_md5` passed at step 3 — Azure verifies the body against this header. Verify HTTP 2xx before proceeding; treat 4xx/5xx as upload failure per the rule below.
   5. **Record and embed `public_url`.** Store each successful upload in `uploaded_media_by_slot[slot_name] = {public_url, blob_key, alt, staged_path}`. Embed `public_url` (the `cdn.aeko.shop/...` URL) in the artifact body for inline slots — Markdown `![<alt>](<cdn_url>)` and HTML `<figure><img src="<cdn_url>" alt="<alt>" width="<w>" height="<h>" loading="lazy"></figure>` (per the recipe's image-attribute hard gate at §6.3). The `alt` value MUST be the `alt` field from `media_by_channel[aeko_shop][<slot>].alt`. Never invent alt text; never leave empty.
 - **For `parsed_products[]` image references**: `product.image_url` is already a `cdn.aeko.shop/...` URL by construction (aeko.shop catalog images live on the same CDN). Do **not** re-upload; reference directly. Alt-text for product images derives from `product.short_description` truncated to ≤125 chars; fall back to `product.name` when short_description is absent.
 - **Hero image**: written to `<slug>.meta.json` `hero_image_url` (top-level publish field) — NOT embedded as an in-body `<figure>` (the rendered page emits its own hero `<Image>` from the publish payload; embedding it in body HTML produces a duplicate hero). First entry of `parsed_products[]` (if any) wins — its `image_url` populates `hero_image_url`. If `parsed_products[]` is empty, fall back to `uploaded_media_by_slot["hero"].public_url` when the user supplied a hero and upload succeeded. The `.meta.json` value MUST be a `cdn.aeko.shop/...` URL or `null`, never the original local path or remote URL from `media_by_channel[aeko_shop].hero.src`. If neither a product image nor uploaded hero exists, leave `hero_image_url` as `null` in `.meta.json` and omit the hero entirely.
 - **`.meta.json` alt-text propagation:** for every image emitted in body HTML (inline images uploaded via §5.4 steps 1-5, plus product callouts), the corresponding `media[]` entry in `.meta.json` MUST carry `alt_text` matching the body HTML's `alt=` attribute. Hard-gated in §6.3.
-- On upload failure (network error, presign 4xx/5xx, PUT non-2xx): surface a single-line warning and write a placeholder body marker `[image: <filename> — upload pending]` in the draft. §6.1's hard gate **fails** the aeko_shop artifact when any such placeholder remains — this is intentional, since aeko_shop is publish-ready or it isn't. The user re-runs once the upload path recovers. Do not delete the staged file on failure — it speeds up retry.
+- On upload failure (missing both `frontmatter.brand_kit_id` and `resolved_brand_kit_id`, network error, presign 4xx/5xx, PUT non-2xx): surface a single-line warning (EN: `Image upload failed for <filename>; continuing with a text-only aeko.shop draft.` / KO: `<filename> 이미지 업로드에 실패해 텍스트만 포함한 aeko.shop 초안으로 계속 진행합니다.`), omit that image from `.html` and `.meta.json`, and continue with a valid text-only aeko.shop draft when no other media is available. Do not write `[image: ...pending]` placeholders for `aeko_shop`; the publish-ready path must either contain concrete `cdn.aeko.shop/...` URLs or no image at all. Do not delete the staged file on failure — it speeds up retry.
 
 **If `media_by_channel[channel]` has any populated slot** (real URL or local path supplied) for **non-aeko_shop channels**:
 
@@ -908,7 +913,7 @@ The publish-ready artifact is a triple: `<slug>.html` (sanitizer-safe body) + `<
 - Every `<a>` tag's attributes are a subset of `{href, title, rel, target, class, data-mention-type, data-mention-id}` (no `data-aeko-product-ref`, no `data-product-sku`). Hard gate.
 - Every `<img src>` in `.html` is a `cdn.aeko.shop/...` URL. Hard gate. (Confirms §5.4 upload step ran and no external URL leaked in.)
 - Every `<img>` carries `alt`, `width`, `height`, `loading` attributes. Hard gate.
-- Zero `[image: …pending]` placeholder markers remain in `.md`, `.html`, or `.meta.json`. Hard gate. (Confirms no `aeko_request_media_upload` failure was unresolved.)
+- Zero `[image: …pending]` placeholder markers remain in `.md`, `.html`, or `.meta.json`. Hard gate. Upload failures should have been handled by omitting the failed image and producing a text-only draft, not by leaving placeholders.
 - **ID-match gate.** Set of `data-product-source-id` values across all `<figure data-variant="product">` in `.html` equals the set of `featured_products[].product_source_id` values in `.meta.json`. Count + set match. Hard gate.
 - Body contains zero `<figure data-variant="product">` callouts when `featured_products[]` is empty (no orphans). Hard gate.
 - When `featured_products[]` has > 3 entries and the body has zero inline `<figure>` callouts: soft warning (body may be too short to incorporate all products inline; not every product needs an inline callout — bottom "Featured products" cards always render from `.meta.json`).

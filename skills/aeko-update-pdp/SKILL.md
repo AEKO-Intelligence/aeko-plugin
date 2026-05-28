@@ -8,7 +8,7 @@ description: >
   marks complete with full audit trail. Splits the PDP branch out of the
   retired `/aeko-run-action`.
 argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_product_description, aeko_list_store_integrations, aeko_update_product_description, aeko_update_product_tags, aeko_update_product_meta, aeko_revert_store_write, aeko_list_store_writes, aeko_complete_action_item, Read, Write, WebFetch, Bash
+allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_brand_kit_by_id, aeko_list_brand_kits, aeko_get_product_description, aeko_list_store_integrations, aeko_update_product_description, aeko_update_product_tags, aeko_update_product_meta, aeko_revert_store_write, aeko_list_store_writes, aeko_complete_action_item, Read, Write, WebFetch, Bash
 ---
 
 # AEKO Update PDP
@@ -32,7 +32,7 @@ Call `aeko_get_action_plan(item_id)`. Parse YAML frontmatter + prose body.
 - `execution_class == "store_write_artifact"` — else redirect: `technical_artifact` → `/aeko-fix-technical`, `local_content_artifact` → `/aeko-create-content`.
 - `status ∈ {pending, ready}` — else stop with appropriate message.
 - `write_target` consistency: must pair with `write_mode` per contract §3 — `shadow_product ↔ shadow`, `append_below_existing ↔ live`, `preview_only ↔ local`. Mismatch → stop.
-- `tier_required` gate via `aeko_get_brand_kit(...).metadata.account_tier`.
+- `tier_required` gate via the resolved Brand Kit metadata (`aeko_get_brand_kit_by_id` when `brand_kit_id` is present, otherwise `aeko_get_brand_kit`).
 
 Print header in `target_language`:
 1. Action label — KO: "상품 페이지 개선: `<write_mode>`" / EN: "PDP update: `<write_mode>`"
@@ -44,7 +44,10 @@ Print prose body verbatim. Never echo raw frontmatter.
 ## Step 2 — Stale brand-kit check
 
 If `frontmatter.requires_brand_kit == true`:
-- Call `aeko_get_brand_kit(frontmatter.domain_id)`. Missing / empty → stop with Brand-Kit-missing message.
+- Resolve the Brand Kit in this order:
+  1. If `frontmatter.brand_kit_id` is present and non-empty, call `aeko_get_brand_kit_by_id(frontmatter.brand_kit_id)`.
+  2. Else fall back to `aeko_get_brand_kit(frontmatter.domain_id)` for older Plan.md files.
+  3. If both miss, call `aeko_list_brand_kits(domain_id=frontmatter.domain_id)` for diagnostics, then stop with the Brand-Kit-missing message and include any draft/generating/failed kit state shown by the list response.
 - Snapshot-version drift: ask user whether to abort or proceed with snapshot.
 
 ## Step 3 — Image strategy (ask user)

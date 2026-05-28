@@ -374,7 +374,7 @@ Both `<slug>.md` AND `<slug>.html` must exist. The `.html` parses with `lxml` / 
 - Every `<a>` tag's attributes are a subset of `{href, title, rel, target, class, data-mention-type, data-mention-id}`. No `data-aeko-product-ref` or `data-product-sku`. **Hard gate.**
 - Every `<img src>` is a `cdn.aeko.shop/...` URL — no other origins. **Hard gate.** (Confirms the §5.4 upload step ran and no external URL leaked in.)
 - Every `<img>` carries `alt`, `width`, `height`, `loading` attributes. **Hard gate.**
-- Zero `[image: …pending]` placeholder markers remain in `.md` or `.html`. **Hard gate.** (No unresolved `aeko_request_media_upload` failures.)
+- Zero `[image: …pending]` placeholder markers remain in `.md` or `.html`. **Hard gate.** Upload failures should be handled by omitting the failed image and publishing a text-only body when needed.
 - **ID-match gate.** The set of `data-product-source-id` values across all `<figure data-variant="product">` in `.html` equals the set of `featured_products[].product_source_id` values in `.meta.json`. Count + set match. **Hard gate.**
 - Body contains zero `<figure>` callouts with `data-variant="product"` when `featured_products[]` is empty (no orphans). **Hard gate.**
 - (Soft warning) When `featured_products[]` has > 3 entries: at least one inline `<figure>` callout exists for at least one product — not required to cover every product (body may be too short).

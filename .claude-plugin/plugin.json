@@ -1,6 +1,6 @@
 {
   "name": "aeko-plugin",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "AEKO skills for Claude — AEO workflows (PDP optimization, content briefs, JSON-LD, brand kit, action center). Pair with the AEKO MCP connector at https://aeko-intelligence.com/mcp for backend tool access.",
   "author": {
     "name": "AEKO",

@@ -8,7 +8,7 @@ description: >
   bumps on semantic changes (voice / target_audience / must_include /
   forbidden) but not on cosmetic edits.
 argument-hint: "[domain-id] [view|edit]"
-allowed-tools: aeko_get_brand_kit, aeko_update_brand_kit, aeko_get_domain_info, aeko_list_domains
+allowed-tools: aeko_get_brand_kit, aeko_get_brand_kit_by_id, aeko_list_brand_kits, aeko_update_brand_kit, aeko_get_domain_info, aeko_list_domains
 ---
 
 # AEKO Brand Kit
@@ -39,7 +39,11 @@ Only call `aeko_get_domain_info` when you already have a UUID and want to confir
 
 ## Step 2 — Read the live kit
 
-Call `aeko_get_brand_kit(domain_id)`. The tool returns a pre-formatted markdown block; pass it through verbatim. Capture the `Kit ID` line (renders as `- **Kit ID**: \`<uuid>\``) into a local variable — Step 5 needs it to PATCH.
+Call `aeko_list_brand_kits(domain_id=<domain_id>)` first so draft, generating, failed, and active kits created in the AEKO app are visible. If exactly one kit is returned, use its `Kit ID` as the selected kit. If multiple kits are returned, show the list and ask the user which kit to view/edit, defaulting to the most recently updated `active` kit when one exists; otherwise default to the first row.
+
+After selecting a kit, call `aeko_get_brand_kit_by_id(kit_id=<uuid>)`. The tool returns a pre-formatted markdown block; pass it through verbatim. Capture the `Kit ID` line (renders as `- **Kit ID**: \`<uuid>\``) into a local variable — Step 5 needs it to PATCH.
+
+Backward compatibility: if `aeko_list_brand_kits` or `aeko_get_brand_kit_by_id` is unavailable in an older MCP session, fall back to `aeko_get_brand_kit(domain_id)`. That fallback only sees the latest active kit by domain, so if it 404s while the app shows a draft kit, tell the user to update the AEKO MCP.
 
 Backend-exposed fields (source: `api/schemas/brand_kits.py::BrandKitResponse`):
 
@@ -100,7 +104,8 @@ so they can deep-dive a reference brand before adding its URL to the kit.
 
 ## Error paths
 
-- `aeko_get_brand_kit` returns not-found → suggest the domain may not be provisioned; show domain info via `aeko_get_domain_info`.
+- `aeko_list_brand_kits` returns rows but no active kit → show the rows and explain that executor skills using new Plan.md can use the selected `brand_kit_id`; old active-by-domain flows only see active kits.
+- `aeko_get_brand_kit` fallback returns not-found → suggest the domain may not be provisioned or the current MCP is too old to see draft kits; show domain info via `aeko_get_domain_info`.
 - `aeko_update_brand_kit` returns 4xx with a field error → print the field + reason; do not re-send blindly.
 - Backend stub (tool unavailable) → tell the user the Brand Kit endpoints aren't wired yet; stop.
 

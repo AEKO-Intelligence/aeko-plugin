@@ -7,7 +7,7 @@ description: >
   Claude's reasoning — no prepare-* backend wrappers. Writes artifacts
   locally, surfaces a deploy checklist, marks the item complete.
 argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_domain_info, aeko_complete_action_item, Read, Write, WebFetch, WebSearch, Bash
+allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_brand_kit_by_id, aeko_list_brand_kits, aeko_get_domain_info, aeko_complete_action_item, Read, Write, WebFetch, WebSearch, Bash
 ---
 
 # AEKO Fix Technical
@@ -37,7 +37,7 @@ Dispatch is driven by `frontmatter`. Prose is narrative guidance only.
 - `execution_class == "technical_artifact"` — else stop.
 - `artifact_type ∈ {llms_txt, robots_txt_patch, json_ld, technical_bundle}` — else stop.
 - `status ∈ {pending, ready}` — else stop with appropriate message.
-- `tier_required` gate: compare against `aeko_get_brand_kit(...).metadata.account_tier`; block if caller tier is below (bilingual tier-gate copy in §Copy).
+- `tier_required` gate: compare against the resolved Brand Kit metadata (`aeko_get_brand_kit_by_id` when `brand_kit_id` is present, otherwise `aeko_get_brand_kit`); block if caller tier is below (bilingual tier-gate copy in §Copy).
 
 Print a plain-language header in `target_language` (default English if unsupported), then the prose body verbatim. Header format:
 
@@ -57,8 +57,10 @@ Never echo the raw frontmatter to the user.
 
 If `frontmatter.requires_brand_kit == true`:
 
-- Call `aeko_get_brand_kit(frontmatter.domain_id)` for the live snapshot.
-- If missing or empty → stop with Brand-Kit-missing message.
+- Resolve the Brand Kit in this order:
+  1. If `frontmatter.brand_kit_id` is present and non-empty, call `aeko_get_brand_kit_by_id(frontmatter.brand_kit_id)` for the exact selected kit.
+  2. Else fall back to `aeko_get_brand_kit(frontmatter.domain_id)` for older Plan.md files.
+  3. If both miss, call `aeko_list_brand_kits(domain_id=frontmatter.domain_id)` for diagnostics, then stop with Brand-Kit-missing message and include any draft/generating/failed kit state shown by the list response.
 - If `frontmatter.brand_kit_snapshot_version` is present and live version is newer → ask user whether to abort or proceed with snapshot. Default to asking.
 
 ## Step 3 — Dispatch by artifact_type
