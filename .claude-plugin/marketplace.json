@@ -9,7 +9,7 @@
     {
       "name": "aeko-plugin",
       "description": "AEKO skills for Claude — AEO workflows (PDP optimization, content briefs, JSON-LD, brand kit, action center).",
-      "version": "0.10.2",
+      "version": "0.11.0",
       "source": "./"
     }
   ]
