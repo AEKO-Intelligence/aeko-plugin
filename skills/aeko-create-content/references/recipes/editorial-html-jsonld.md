@@ -148,6 +148,7 @@ Notes:
 {
   "locale": "ko",
   "title": "…",
+  "slug": "meaningful-english-slug",
   "og_description": "≤500 chars; required (drives <meta description>, OG description, and the speakable JSON-LD on the rendered page).",
   "hero_image_url": "https://aekoshop-htgrg9fha0bbfmed.z02.azurefd.net/…",
   "source_content_id": "<frontmatter.item_id>",
@@ -166,6 +167,7 @@ Field-by-field constraints (mirror `PostUpsert`):
 |---|---|---|---|
 | `locale` | yes | str | 2..12 chars. `ko`, `en`, `en-US`, `ko-KR` all valid. Normalize "Korean"/"한국어"→`ko`, "English"/"영어"→`en`; unrecognized → fall back to `ko` and emit a one-line warning. |
 | `title` | yes | str | 1..300 chars. |
+| `slug` | **strongly recommended** (`aeko_shop`) | str \| null | A **meaningful English** slug (translate, don't transliterate) — see SKILL.md §5.5.6. Must match `^[a-z0-9]+(?:-[a-z0-9]+)*$` (lowercase ASCII, hyphen-separated; ≤220). Becomes the post URL slug (backend appends `-2`/`-3` on collision). Omit → backend transliterates the title to ASCII (routable but phonetic). **Never Korean/non-ASCII** — the backend rejects it (422). |
 | `og_description` | **yes** (recipe requirement, even though `PostUpsert` allows null) | str | ≤500 chars. Absent → the rendered page's `speakable` JSON-LD block does not emit (`structured-data.ts:67-73`), so always include. |
 | `hero_image_url` | recommended | str \| null | Absolute https URL. Uploaded heroes use the presign `public_url` (AEKO media CDN); a **product** hero may use `parsed_products[0].image_url` on the brand's own https CDN — the frontend renders this via `next/image` (any https host), not the body sanitizer, so brand-CDN origins are fine **here only**. Never a hand-written `cdn.aeko.shop`. Renders as the 16:9 hero `<Image>` above body HTML (page.tsx). |
 | `source_content_id` | yes | str | 1..240 chars. Set to `frontmatter.item_id`. Backend idempotency keys on `(brand_id, source_content_id)` — re-publishes are safe. |
@@ -398,6 +400,7 @@ Field map — `.meta.json` (this recipe's sidecar) → `aeko_save_content_variat
 | `.meta.json` field | `metadata` key | Required for `aeko_shop`? |
 |---|---|---|
 | `title` | (not in `metadata`; passed as the top-level `title` arg) | yes — top-level arg |
+| `slug` | `slug` | strongly recommended — meaningful English slug (§5.5.6); lowercase-ASCII `^[a-z0-9]+(?:-[a-z0-9]+)*$`. Omit → backend transliterates the title. |
 | `og_description` | `og_description` | **yes** |
 | `hero_image_url` | `hero_image_url` | recommended (may be `null`; when present, an absolute https URL — the presign `public_url`, or a brand-CDN `parsed_products[0].image_url`) |
 | `featured_products[].product_source_id` | `featured_product_source_ids` (flat `list[str]`) | **yes** (may be `[]`) |

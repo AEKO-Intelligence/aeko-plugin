@@ -19,6 +19,8 @@ allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_brand_kit_by_i
 
 # AEKO Create Content
 
+**Changelog v0.12.0** — aeko.shop posts now get a **meaningful English URL slug** instead of a Korean one (which 404'd on non-ASCII lookup). §5.5.6: the skill writes a translated English `slug` to `.meta.json` (distinct from the romanized *filename* slug); it threads through `aeko_save_content_variation` metadata → publish → aeko.shop `PostUpsert.slug` (validated lowercase-ASCII, 422 on non-ASCII). When omitted, the backend now transliterates the title to ASCII (never Korean). Recipe + fixture updated.
+
 **Changelog v0.11.0** — Fixes the aeko.shop image host-contract drift: the skill now embeds the presign `public_url` **verbatim** (the backend-configured AEKO media CDN, e.g. `*.azurefd.net`) instead of asserting/hand-writing a non-serving `cdn.aeko.shop` URL — the §6.3 body-image gate validates the real allowed origins and the hero may be a brand-CDN product image (rendered by `next/image`). Recipe/fixtures updated to match. Adds a §6.3 structured-data completeness gate (brand+post always; product block when products attached) so a post never publishes silently non-citable, and documents `price_minor`/`currency`/`available` in the save-payload snapshot for complete Product `offers`. Products selected in the AEKO app now flow end-to-end (backend `build_plan_md()` hydrates `products[]` with `source_id`). Pairs with the new `aeko_update_content_variation` MCP tool for editing drafts (see `/aeko-publish-content`).
 
 **Changelog v0.10.2** — Resolves the exact `brand_kit_id` selected in the AEKO app before falling back to active-by-domain lookup; fixes aeko.shop media upload to presign with `brand_kit_id`; degrades failed image uploads to valid text-only aeko.shop drafts.
@@ -828,6 +830,15 @@ aeko-artifacts/
 Note the `press_release/` directory (NOT `보도자료/`) — that's the `filename_token` alias from §5.5.1.
 
 The `aeko_shop/` channel is the only one that produces a **triple** (`.html` + `.meta.json` + `.md`). All other editorial channels produce a pair (`.md` + `.html`) or a single `.md`. There is no `.jsonld.json` file for any channel — editorial channels embed JSON-LD inside the `.html`, and aeko.shop regenerates structured data at render time.
+
+#### 5.5.6 aeko_shop publish slug (meaningful English) — `aeko_shop` only
+
+The §5.5.3 slug is romanized for **local file organization**. The **published aeko.shop URL** uses a *separate* slug carried in `<slug>.meta.json`'s top-level `slug` field. Do **NOT** reuse the romanized filename slug for the URL — for a Korean title it transliterates to phonetic gibberish (`eseutetig-mogongpaegeul-…`) that reads as noise to humans and AI engines. Instead, write a **meaningful English** slug:
+
+1. **Translate the meaning, don't transliterate.** From the post topic/title, write a concise English slug: 3–8 words, lowercase, hyphen-joined, ASCII `[a-z0-9-]` only, drop stop-words (`a`/`the`/`of`/`for`/`in`/`to`/`은`/`는`…), ≤ 70 chars. Example: `에스테틱 모공팩을 집에서 — 팜스 테라비타 화산토 모공팩 콜모 구매 가이드` → `volcanic-clay-pore-pack-home-guide`.
+2. **Use a brand/product's established Latin name** when it has one (e.g. the brand's official English spelling); translate the descriptive terms otherwise. Don't invent product names.
+3. Write it to `.meta.json` `slug`. It MUST match `^[a-z0-9]+(?:-[a-z0-9]+)*$` (lowercase ASCII, hyphen-separated, no leading/trailing/double hyphens) — the backend rejects anything else with HTTP 422 at save/publish.
+4. The aeko.shop backend uses this as the post's URL slug and enforces uniqueness (appends `-2`/`-3` on collision). If you omit `slug`, the backend falls back to an ASCII transliteration of the title — valid and routable, but less readable, so always supply a meaningful English slug for `aeko_shop`.
 
 ### 5.6 Channel recipes (loaded from `references/recipes/`)
 
