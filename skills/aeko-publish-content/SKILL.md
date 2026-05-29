@@ -170,7 +170,8 @@ If the call fails:
   - `429` Rate-limited (>10 aeko.shop publishes / hour per brand).
   - `502` Upstream aeko-shop error — re-run after the upstream recovers. Idempotent: re-running on the same `variation_id` is safe.
   - `422` Adapter validation (e.g., `body_html` or `meta.og_description` missing for `aeko_shop` — this should be caught at save time, but if it slipped through, the variation needs to be re-saved with the missing field).
-- **5xx / network** → surface error + tell the user the publish was not recorded. Re-running is safe.
+- **`503` Service not configured** — the backend can't produce a clickable post URL (`AEKO_SHOP_PUBLIC_URL` unset). This is a **deployment-side** issue, **not retriable by the user**: surface the backend message and tell the user to contact support; do NOT advise re-running (it will fail identically until an operator fixes the config). The variation stays `saved`.
+- **5xx / network** (excluding the 503 above) → surface error + tell the user the publish was not recorded. Re-running is safe (idempotent).
 
 On any failure, the variation row stays in its current state — tier/disabled/rate-limit failures leave it as `saved` (retriable); 422 and 502 may flip to `failed` server-side with `last_error` populated. Already-published rows return a normal success response with stored handles.
 
@@ -229,6 +230,16 @@ AEKO 콘텐츠 드래프트로 저장됨:  <draft_id>
 ```
 
 If publish failed → hard stop with the backend error. The action item's completion state was already set by `/aeko-create-content`; this skill does not modify it.
+
+## Editing or updating a post
+
+There are two distinct edit paths depending on whether the variation has been published yet:
+
+- **Edit a draft (not yet published).** Use `aeko_update_content_variation(variation_id, title?, body_html?, body_markdown?, metadata?)` to change a saved variation in place — tweak the body, fix `og_description`, swap the hero, add/adjust `featured_products` — without saving a whole new variation. Only the fields you pass change. The backend re-checks the `aeko_shop` contract on the merged result (non-empty `body_html`; valid `metadata` with `og_description` and an absolute-https `hero_image_url`) and returns 422 if it would break. A variation left in `failed` state is reset to `saved` on a successful edit so you can retry publish. Then publish as normal.
+
+- **Edit an already-published post.** aeko.shop posts are upserted by `source_content_id`, so **re-publishing the same variation overwrites the live post in place** — the page re-renders, images/featured-products/JSON-LD regenerate, and a changed slug emits a 308 redirect from the old URL. To change a published post: either (a) `aeko_update_content_variation` on the variation then re-run Step 6 publish, or (b) re-run `/aeko-create-content <item_id>` to regenerate, which saves a new variation you then publish (its publish overwrites the post by the same `source_content_id`). The publish route is idempotent, so re-running never duplicates the post.
+
+> **No version history.** Variations are not snapshotted/recoverable after publish — re-publishing overwrites the live post and the previous rendered version is not retained. If you need to keep the prior copy, save it before overwriting. Published variations themselves are immutable via `aeko_update_content_variation` (returns 409); edit happens by re-publishing, not by mutating the published row.
 
 ## Error paths
 

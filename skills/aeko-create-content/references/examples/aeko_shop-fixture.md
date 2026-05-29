@@ -4,7 +4,7 @@
 
 메리노 울은 일반적으로 겨울 소재로 분류되지만, 미세 섬유 구조는 여름철에도 의외의 효과를 냅니다. 직경 17.5μm 이하의 슈퍼파인 메리노는 표면에서 수분을 빠르게 흡수해 증발열을 통해 피부 표면 온도를 낮추는데, 이 효과는 면 대비 약 1.5℃ 차이로 측정됩니다. [Wool Research Institute의 2024년 실험 보고서](https://example.com/merino-thermal-study)는 동일한 침실 조건에서 메리노 울과 면을 비교했을 때 평균 야간 피부 온도가 메리노 측에서 1.4℃ 낮게 유지되었다고 보고합니다.
 
-> **쿨링 슬립웨어** (`product_source_id: BIO-CLS-001`) — 17.5μm 메리노 울 기반으로 야간 체온을 약 1.5℃ 낮추는 침구. 알레르기 반응이 적고, 가정용 세탁에 대응합니다. 이미지: `https://cdn.aeko.shop/brands/bioelements/catalog/cool-sleep.jpg`
+> **쿨링 슬립웨어** (`product_source_id: BIO-CLS-001`) — 17.5μm 메리노 울 기반으로 야간 체온을 약 1.5℃ 낮추는 침구. 알레르기 반응이 적고, 가정용 세탁에 대응합니다. 이미지: `https://aekoshop-htgrg9fha0bbfmed.z02.azurefd.net/brands/bioelements/posts/fixture/cool-sleep.jpg`
 
 중요한 점은 "시원함"이 단일 변수가 아니라는 사실입니다. 침구의 체감 온도는 소재의 열전도율, 흡습 속도, 표면 거칠기, 그리고 침실 자체의 습도가 함께 만들어내는 결과입니다. 따라서 단일 라벨 — 예를 들어 *쿨링*이라는 마케팅 용어 — 만으로 비교하는 것은 의미가 약합니다.
 
