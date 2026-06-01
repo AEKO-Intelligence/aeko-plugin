@@ -91,7 +91,7 @@ Call `aeko_get_action_plan(item_id)`. Parse YAML frontmatter + prose.
 
   Without this chain, Korean-titled Plans with no `frontmatter.title` collapse to `<item_id>.<ext>` everywhere (production bug). `resolved_title` feeds the §5.5 slug derivation; the raw `resolved_title` (not the slug) is what Step 8 / §9 print as the human-readable label.
 
-**Parse `products[]` (optional; contract minor v1.4 — see `docs/contracts/action-item-contract.md §3.2.1`).** When the v1.4 backend wiring ships, Plan.md generated from the dashboard's `상품 선택` mode will carry a `products[]` array; brand-wide mode omits it. Today (pre-v1.4) the field is absent from all live Plan.md — the parse logic below is forward-compat. Each entry shape:
+**Parse `products[]` (optional; contract minor v1.4 — see `docs/contracts/action-item-contract.md §3.2.1`).** Plan.md generated from the dashboard's `상품 선택` mode carries a `products[]` array — the backend `build_plan_md()` hydrates it from the selected store products (each `source_id` = the store's `external_product_id`). Brand-wide mode omits the key. Each entry shape:
 
 ```yaml
 products:
@@ -111,21 +111,19 @@ products:
 **`id` vs `source_id`.** Different ID spaces — `id` is AEKO's internal UUID for cross-AEKO references; `source_id` is the brand-registered external identifier and is what `PostUpsert.featured_products[].product_source_id` joins on at publish time. Both must be present for v1.4. See `docs/contracts/action-item-contract.md §3.2.1` for the authoritative definition.
 
 If `products[]` is present:
-- Validate each entry has at minimum `id`, `source_id`, `name`, `outbound_url`, `image_url`. Entries missing any of those → drop with a single warning line listing the dropped IDs; keep going with the rest.
-- For pre-v1.4 Plan.md (where `source_id` may be absent because `build_plan_md()` hasn't been updated): drop the entry with the same warning. Do **not** fabricate `source_id`; do **not** fall back to `id` for the `product_source_id` slot. Without `source_id` the publish-time backend join fails and downstream product callouts are inert.
+- Validate each entry has at minimum `id`, `source_id`, `name`, `outbound_url`, `image_url`. Entries missing any of those → drop, and **warn loudly** (not a silent one-liner): print a visible block naming each dropped product and the reason, and state that **it will NOT appear in the published post** (no product card, no Product JSON-LD). A product is most often dropped because it has no `source_id` — i.e. it isn't synced from the brand's connected store (`build_plan_md` maps `source_id` from `StoreProducts.external_product_id`). Tell the user to sync/connect the store catalog so the product carries a store id, then re-run.
+- Do **not** fabricate `source_id`; do **not** fall back to `id` for the `product_source_id` slot. Without `source_id` the publish-time backend join fails and downstream product callouts are inert.
 - Carry the validated list into Step 4 and Step 5 as `parsed_products[]`.
 - The list is only consumed by the `aeko_shop` channel's draft (§5.3 + the editorial recipe's "Product callout pattern" section). Other channels render product names as plain text in the body when relevant; they do not generate product reference links.
 
-If `products[]` is empty or absent (including the "pre-v1.4 backend, every entry dropped for missing `source_id`" case):
+If `products[]` is empty or absent:
 - `aeko_shop` (if selected) still drafts a rich article without product callouts. `.meta.json` has empty `featured_products[]` and no `<figure data-variant="product">` blocks appear in `.html`. Non-fatal.
-- **Surface a pre-v1.4 distinguishing notice when applicable.** If `frontmatter.content_scope == "products"` (v1.4 dashboard flag — `상품 선택` mode was used) AND `products[]` is absent or empty AND `aeko_shop` is in the selected channel set, the user picked specific products on the dashboard but the backend hasn't shipped the hydration yet. Emit a one-line info note in §4a to distinguish "pending backend" from "your selection didn't save":
-  - EN: `ℹ Product-specific content generation (상품 선택 mode) is waiting on a backend release — this draft will be written in your brand's general voice without inline product callouts. Your selection is preserved on the dashboard; re-run this skill after the release to see product callouts in the body.`
-  - KO: `ℹ 상품 선택 기반 콘텐츠 생성은 백엔드 배포 대기 중입니다 — 이번 초안은 브랜드 전체 톤으로 작성되며 본문에 인라인 상품 callout이 포함되지 않습니다. 대시보드의 상품 선택은 그대로 유지되며, 배포 후 다시 실행하면 본문에서 상품 callout을 확인할 수 있습니다.`
-  - If `frontmatter.content_scope` is absent (older Plan.md without the flag) or is `"brand"`, do NOT surface this note — an empty `products[]` in brand-wide mode is the expected shape.
+- **Warn loudly when the user expected products but none came through.** If `frontmatter.content_scope == "products"` (`상품 선택` mode was used) AND `products[]` is absent/empty AND `aeko_shop` is in the selected channel set, the user picked specific products on the dashboard but none survived to the plan. The cause is **not** a pending backend release (hydration is shipped) — it's that the selected product(s) have no store-synced `source_id` (`build_plan_md` only emits products that resolve to a `StoreProducts.external_product_id`). Surface a visible warning in §4a:
+  - EN: `⚠ You selected products (상품 선택 mode) but none reached this draft — they have no store product id (source_id). This usually means the brand's store catalog isn't connected/synced in AEKO, so the products can't be linked or rendered on aeko.shop. Connect/sync the store catalog, then re-run. This draft will publish in your brand's general voice with no product cards.`
+  - KO: `⚠ 상품을 선택(상품 선택 모드)하셨지만 이번 초안에 반영되지 않았습니다 — 스토어 상품 ID(source_id)가 없습니다. 보통 브랜드의 스토어 카탈로그가 AEKO에 연결/동기화되지 않은 경우이며, 이 경우 상품을 aeko.shop에 연결하거나 렌더링할 수 없습니다. 스토어 카탈로그를 연결/동기화한 뒤 다시 실행해 주세요. 이번 초안은 상품 카드 없이 브랜드 전체 톤으로 게시됩니다.`
+  - If `frontmatter.content_scope` is absent or is `"brand"`, do NOT surface this — an empty `products[]` in brand-wide mode is the expected shape.
 
 The §4a.5 warning ("Plan carries N products but aeko_shop not active") fires only if `parsed_products[]` is non-empty AND `aeko_shop` is not in the final selected channel set after §4-Form-1.
-
-**Backend wiring note** — as of the v1.4 contract revision, `build_plan_md()` does NOT yet hydrate `products[]` (or `source_id` on those entries) from the dashboard's product-selection payload. Until the backend wires this, every Plan.md will have `products[]` empty regardless of which content-scope mode the user picked. The skill remains tolerant of empty `products[]`; the contract is in place ahead of the product-hydration backend so skills can validate against the final shape before that wiring ships.
 
 Print header in `target_language`:
 1. Action label — KO (own): "자사 콘텐츠 생성: `<artifact_type>`" / KO (external): "외부 매체 콘텐츠 생성: `<artifact_type>`" / EN: "Generating {own-site|external-media} content: `<artifact_type>`"
@@ -436,6 +434,8 @@ This substep mutates `auto_detected_channels[]` so the §4a summary below reflec
 
 aeko.shop is AEKO's canonical publishing destination for tenant brands. Content generation is already gated Pro+ at skill entry per contract §3.2, so this substep must not re-check account tier. Read only the brand-kit response's destination flag from Step 2:
 
+> The brand kit is the **content voice kit**; the public aeko.shop brand identity (the brand page) is **derived from it on publish** and keyed by store domain — there is no separate shop brand to create or claim before publishing. (See `/aeko-brand-kit`.)
+
 **Canonical destination rule:** For every tenant brand, prepend `aeko_shop` to `auto_detected_channels[]`. Only skip when `brand_kit.aeko_shop_disabled === true`.
 
 - `aeko_shop_disabled === true` → no-op; `aeko_shop` never appears in the channel set.
@@ -526,7 +526,7 @@ Issue a SECOND structured elicitation form. This is the only other interactive t
 **Channel class split** — render channels in two groups within the form so the UI doesn't look like 8 identical blobs:
 
 - **Editorial class** (`aeko_shop`, `naver_blog`, `tistory`, `magazine`, `보도자료`, `partner_media`, `own_store_blog`): for each selected channel in this class, render:
-  - **Hero image** slot — one file picker / URL input + one alt-text input.
+  - **Hero image** slot — one file picker / URL input + one alt-text input. For `aeko_shop` this is the post's **standalone featured/lead image** (the big image at the top of the rendered post) — it is NOT one of the inline body images, so a user who just wants "a picture on the post" fills THIS slot. If the user supplies exactly one image for `aeko_shop` and leaves the inline slots empty, treat it as the hero. (When `parsed_products[]` exists, the first product image auto-fills the hero, so an explicit hero upload is optional.)
   - **Inline image** slots — up to TWO additional slots per channel, COLLAPSED by default (user expands the ones they want to fill). Each expanded slot has the same file + alt-text pair.
 
 - **Social class** (`instagram`, `tiktok`, `youtube`, `reddit`): for each selected channel in this class, render:
@@ -707,7 +707,11 @@ Plus the always-on rules:
   - Alt-text for product images derives from `product.short_description` truncated to ≤125 chars; fall back to `product.name` when short_description is absent.
 - **Hero image**: written to `<slug>.meta.json` `hero_image_url` (top-level publish field) — NOT embedded as an in-body `<figure>` (the rendered page emits its own hero `<Image>` from the publish payload; embedding it in body HTML produces a duplicate hero). First entry of `parsed_products[]` (if any) wins — its `image_url` populates `hero_image_url`. If `parsed_products[]` is empty, fall back to `uploaded_media_by_slot["hero"].public_url` when the user supplied a hero and upload succeeded. The `.meta.json` value MUST be an **absolute https URL** — either the `public_url` returned by `aeko_request_media_upload` (uploaded hero) or `parsed_products[0].image_url` (product hero, which may be on the brand's own https CDN since the hero is rendered by `next/image`, not the sanitizer) — or `null`. Never the original local path, and never a hand-written `cdn.aeko.shop` URL. If neither a product image nor uploaded hero exists, leave `hero_image_url` as `null` in `.meta.json` and omit the hero entirely.
 - **`.meta.json` alt-text propagation:** for every image emitted in body HTML (inline images uploaded via §5.4 steps 1-6, plus product callouts), the corresponding `media[]` entry in `.meta.json` MUST carry `alt_text` matching the body HTML's `alt=` attribute. Hard-gated in §6.3.
-- On upload failure (missing both `frontmatter.brand_kit_id` and `resolved_brand_kit_id`, network error, presign 4xx/5xx, PUT non-2xx): surface a single-line warning (EN: `Image upload failed for <filename>; continuing with a text-only aeko.shop draft.` / KO: `<filename> 이미지 업로드에 실패해 텍스트만 포함한 aeko.shop 초안으로 계속 진행합니다.`), omit that image from `.html` and `.meta.json`, and continue with a valid text-only aeko.shop draft when no other media is available. Do not write `[image: ...pending]` placeholders for `aeko_shop`; the publish-ready path must either contain concrete AEKO-media-CDN URLs (the presign `public_url`) or no image at all. Do not delete the staged file on failure — it speeds up retry.
+- On upload failure (missing both `frontmatter.brand_kit_id` and `resolved_brand_kit_id`, network error, presign 4xx/5xx, PUT non-2xx, or the §5.4-step-5 `public_url` reachability check returning non-2xx): **warn loudly and specifically — never let an intended image vanish silently** (the #1 "I added an image but it didn't show up" report). Surface a visible block, not a one-liner:
+  - For a **hero** slot failure (EN): `⚠ Hero image upload failed for <filename> (<reason: presign 4xx / PUT failed / public_url not reachable>). The post will publish with NO lead image. Fix and re-run, or proceed text-only.` / KO: `⚠ 대표 이미지 업로드 실패: <filename> (<사유>). 이 포스트는 대표 이미지 없이 게시됩니다. 수정 후 다시 실행하거나 텍스트만으로 진행하세요.`
+  - For an **inline body** slot failure (EN): `⚠ Inline image upload failed for <filename> (<reason>); it was dropped from the body. The rest of the draft is intact.` / KO: `⚠ 본문 이미지 업로드 실패: <filename> (<사유>) — 본문에서 제외했습니다. 나머지 초안은 정상입니다.`
+  - If the failure reason is a **non-2xx `public_url`** despite a successful PUT, name the likely cause (CDN/Front Door container-path or `media_public_base_url` misconfig) so it's actionable, not mysterious.
+  Then omit that image from `.html` and `.meta.json` and continue with a valid text-only/partial aeko.shop draft. Do not write `[image: ...pending]` placeholders for `aeko_shop`; the publish-ready path must either contain concrete AEKO-media-CDN URLs (the presign `public_url`) or no image at all. Do not delete the staged file on failure — it speeds up retry. (No-image publishing is fully valid — `hero_image_url: null` renders a clean text-only post; the warning is so the user *chose* text-only rather than losing an image they expected.)
 
 **If `media_by_channel[channel]` has any populated slot** (real URL or local path supplied) for **non-aeko_shop channels**:
 

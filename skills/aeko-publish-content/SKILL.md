@@ -205,6 +205,11 @@ aeko.shop에 게시 완료:      <aeko_shop_url>
                             연결된 상품을 직접 인용할 수 있습니다.
 ```
 
+**Then append a single soft "claim your brand" nudge** (one line, after the report block — publishing does NOT require claiming; this is optional and never blocks). The aeko.shop brand was auto-created/owned for you on publish; finishing connect-brand verifies your site and unlocks the on-site shop agent. Do not gate or repeat — just offer it once:
+
+- EN: `Tip: your aeko.shop brand is live. If you own this site, you can finish connecting it to unlock the shop agent → https://aeko.shop/connect-brand (optional).`
+- KO: `팁: aeko.shop 브랜드가 게시되었습니다. 이 사이트의 소유자라면 사이트를 연결해 숍 에이전트를 활성화할 수 있습니다 → https://aeko.shop/connect-brand (선택).`
+
 ### For `destination == 'own_store_blog'`:
 
 EN:
@@ -237,7 +242,9 @@ There are two distinct edit paths depending on whether the variation has been pu
 
 - **Edit a draft (not yet published).** Use `aeko_update_content_variation(variation_id, title?, body_html?, body_markdown?, metadata?)` to change a saved variation in place — tweak the body, fix `og_description`, swap the hero, add/adjust `featured_products` — without saving a whole new variation. Only the fields you pass change. The backend re-checks the `aeko_shop` contract on the merged result (non-empty `body_html`; valid `metadata` with `og_description` and an absolute-https `hero_image_url`) and returns 422 if it would break. A variation left in `failed` state is reset to `saved` on a successful edit so you can retry publish. Then publish as normal.
 
-- **Edit an already-published post.** aeko.shop posts are upserted by `source_content_id`, so **re-publishing the same variation overwrites the live post in place** — the page re-renders, images/featured-products/JSON-LD regenerate, and a changed slug emits a 308 redirect from the old URL. To change a published post: either (a) `aeko_update_content_variation` on the variation then re-run Step 6 publish, or (b) re-run `/aeko-create-content <item_id>` to regenerate, which saves a new variation you then publish (its publish overwrites the post by the same `source_content_id`). The publish route is idempotent, so re-running never duplicates the post.
+- **Edit an already-published post.** aeko.shop posts are upserted by `source_content_id`, which is scoped to the **action item** (`aeko-item:{item_id}`) — so every variation of that item maps to the *same* live post. To change a published post, **re-run `/aeko-create-content <item_id>` to regenerate (this saves a NEW variation) and publish it**: because the key is item-scoped, publishing the new variation **overwrites the same live post in place** — the page re-renders, images/featured-products/JSON-LD regenerate, and a changed slug emits a 308 redirect from the old URL. This never creates a `…-2 / …-3` duplicate.
+  - **Re-publishing the *same* already-published variation is a no-op:** the backend returns the stored URL/post_id without re-rendering (it does not pick up edits). To push a change you must publish a *new* variation for the item — not re-publish the old one.
+  - **`aeko_update_content_variation` works only on a *not-yet-published* draft** (it returns 409 on a published variation). So the "edit then publish" path applies to drafts; for an already-live post, regenerate + publish.
 
 > **No version history.** Variations are not snapshotted/recoverable after publish — re-publishing overwrites the live post and the previous rendered version is not retained. If you need to keep the prior copy, save it before overwriting. Published variations themselves are immutable via `aeko_update_content_variation` (returns 409); edit happens by re-publishing, not by mutating the published row.
 
