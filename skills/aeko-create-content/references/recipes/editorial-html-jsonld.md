@@ -167,7 +167,7 @@ Field-by-field constraints (mirror `PostUpsert`):
 |---|---|---|---|
 | `locale` | yes | str | 2..12 chars. `ko`, `en`, `en-US`, `ko-KR` all valid. Normalize "Korean"/"한국어"→`ko`, "English"/"영어"→`en`; unrecognized → fall back to `ko` and emit a one-line warning. |
 | `title` | yes | str | 1..300 chars. |
-| `slug` | **strongly recommended** (`aeko_shop`) | str \| null | A **meaningful English** slug (translate, don't transliterate) — see SKILL.md §5.5.6. Must match `^[a-z0-9]+(?:-[a-z0-9]+)*$` (lowercase ASCII, hyphen-separated; ≤220). Becomes the post URL slug (backend appends `-2`/`-3` on collision). Omit → backend transliterates the title to ASCII (routable but phonetic). **Never Korean/non-ASCII** — the backend rejects it (422). |
+| `slug` | **required (`aeko_shop`)** | str | A **meaningful English** slug (translate, don't transliterate) — see SKILL.md §5.5.6. Must match `^[a-z0-9]+(?:-[a-z0-9]+)*$` (lowercase ASCII, hyphen-separated; ≤220); for a **non-ASCII (Korean) title** it must NOT equal the §5.5.3 romanized filename slug (for an already-English title that equality is fine — the filename slug is itself meaningful). Becomes the post URL slug (backend appends `-2`/`-3` on collision). Enforced by the SKILL §6.3 hard gate — omitting it (or reusing a romanized filename slug) fails the draft. (The backend itself still allows null and would otherwise transliterate the title to phonetic ASCII; the gate exists to prevent that.) **Never Korean/non-ASCII** — the backend rejects it (422). |
 | `og_description` | **yes** (recipe requirement, even though `PostUpsert` allows null) | str | ≤500 chars. Absent → the rendered page's `speakable` JSON-LD block does not emit (`structured-data.ts:67-73`), so always include. |
 | `hero_image_url` | recommended | str \| null | Absolute https URL. Uploaded heroes use the presign `public_url` (AEKO media CDN); a **product** hero may use `parsed_products[0].image_url` on the brand's own https CDN — the frontend renders this via `next/image` (any https host), not the body sanitizer, so brand-CDN origins are fine **here only**. Never a hand-written `cdn.aeko.shop`. Renders as the 16:9 hero `<Image>` above body HTML (page.tsx). |
 | `source_content_id` | yes | str | 1..240 chars. Set to `frontmatter.item_id` (keeps the sidecar self-documenting). **Advisory for the content-variation publish path:** that backend derives its own item-scoped key `aeko-item:{item_id}` and ignores this field — re-publishes overwrite the same post in place (idempotent by `(brand_id, aeko-item:{item_id})`). |
@@ -372,6 +372,7 @@ Both `<slug>.md` AND `<slug>.html` must exist. The `.html` parses with `lxml` / 
 
 - `<slug>.meta.json` exists and parses with `json.loads`.
 - `<slug>.meta.json` validates against the `PostUpsert` shape table in §"`<slug>.meta.json`" above: required fields present, every field within its constraint (length, count caps, absolute-https origin for `hero_image_url`, valid `locale`, valid `product_source_id` length, etc.).
+- `<slug>.meta.json` `slug` is present and matches `^[a-z0-9]+(?:-[a-z0-9]+)*$`; when `resolved_title` is non-ASCII (Korean) it is NOT the §5.5.3 romanized filename slug (an already-English title may equal it) — mirrors SKILL §6.3 hard gate. **Hard gate.**
 - `<slug>.html` is sanitizer-safe: zero matches for `<(script|article|header|footer|section|h1|meta|title|link|html|body|head)\b` in the file. **Hard gate.**
 - Every `<a>` tag's attributes are a subset of `{href, title, rel, target, class, data-mention-type, data-mention-id}`. No `data-aeko-product-ref` or `data-product-sku`. **Hard gate.**
 - Every body `<img src>` is on the AEKO media CDN — the presign `public_url` (`settings.allowed_image_origins ∪ {settings.media_public_base_url}`) — no other origins (no brand-domain URL, no hand-written `cdn.aeko.shop`). **Hard gate.** (Confirms the §5.4 upload step ran and no external URL leaked in.)
@@ -400,7 +401,7 @@ Field map — `.meta.json` (this recipe's sidecar) → `aeko_save_content_variat
 | `.meta.json` field | `metadata` key | Required for `aeko_shop`? |
 |---|---|---|
 | `title` | (not in `metadata`; passed as the top-level `title` arg) | yes — top-level arg |
-| `slug` | `slug` | strongly recommended — meaningful English slug (§5.5.6); lowercase-ASCII `^[a-z0-9]+(?:-[a-z0-9]+)*$`. Omit → backend transliterates the title. |
+| `slug` | `slug` | **required (aeko_shop)** — meaningful English slug (§5.5.6); lowercase-ASCII `^[a-z0-9]+(?:-[a-z0-9]+)*$`; for a non-ASCII title, not the §5.5.3 romanized filename slug. Enforced by the SKILL §6.3 hard gate (the backend still allows null and would otherwise romanize the title); omit → fails the draft. |
 | `og_description` | `og_description` | **yes** |
 | `hero_image_url` | `hero_image_url` | recommended (may be `null`; when present, an absolute https URL — the presign `public_url`, or a brand-CDN `parsed_products[0].image_url`) |
 | `featured_products[].product_source_id` | `featured_product_source_ids` (flat `list[str]`) | **yes** (may be `[]`) |
