@@ -61,7 +61,7 @@ Fields that are null/empty show as `(unset)` in the formatter — never hide mis
 
 Offer follow-ups at the bottom of the output:
 - "Run `/aeko-brand-kit <domain_id> edit` to change fields."
-- "Run `/competitive-research <brand_or_competitor>` to research a competitor you're considering adding to the kit's `forbidden` / reference copy."
+- "Run `/aeko-brand-competitor-analysis <brand_or_competitor>` to research a competitor you're considering adding to the kit's `forbidden` / reference copy."
 
 ## Step 4 — If mode is `edit`, gather changes
 
@@ -101,7 +101,7 @@ Then re-print the relevant updated sections (not the whole kit unless asked).
 ## Step 6 — Reference-research launch
 
 If the user added `sample_urls` or wants to expand reference material, offer:
-- `/competitive-research "<brand_or_competitor>"`
+- `/aeko-brand-competitor-analysis "<brand_or_competitor>"`
 so they can deep-dive a reference brand before adding its URL to the kit.
 
 ## Error paths

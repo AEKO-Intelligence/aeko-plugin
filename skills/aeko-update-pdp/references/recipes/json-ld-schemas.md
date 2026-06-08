@@ -29,6 +29,11 @@ Populate when data is available — otherwise omit the key entirely (never `null
 
 - `@type: "FAQPage"` + `mainEntity[]` ≥ 3 Question objects.
 - Every Q&A in JSON-LD must also appear as visible HTML.
+- **Answers must show E-E-A-T**, not restated marketing. Each `acceptedAnswer` carries Experience +
+  Expertise + specifics + an honest trade-off, grounded in a real `context_reviews` entry (SKILL.md §4.5),
+  an on-page review, or a product spec. "약 2% 수축, 건조기 사용 시 더 큼 → 자연건조 권장" beats "관리가
+  쉬워요." Never fabricate experience (SKILL.md §4.5 anti-fabrication rule). See the canonical
+  `skills/aeko-create-content/references/aeo-frameworks.md` (E-E-A-T section).
 
 ### FAQ source priority (use the first that yields ≥ 3 product-relevant questions)
 

@@ -4,3 +4,6 @@
 __pycache__/
 .vscode/
 .idea/
+
+# skill-creator eval scratch (snapshots, fixtures, iteration outputs) — never ship with the plugin
+skills/*-workspace/

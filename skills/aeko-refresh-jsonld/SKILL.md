@@ -86,13 +86,18 @@ Emit an inline diff summary (not shown to user yet — for the completion summar
 
 ## Step 6 — Validate patched HTML
 
-Before writing back:
-- Every `<script type="application/ld+json">` block parses as valid JSON.
-- Every block has `@context: "https://schema.org"` (preserved from original).
-- No `<script>` tags accidentally closed early or broken.
-- The patched `existing_html` length is within ±25% of the original (large swings indicate corruption).
+Before writing back, validate the *content*, not its size:
+- **Parses:** every `<script type="application/ld+json">` block parses with `json.loads` (no trailing
+  commas, no broken/early-closed `<script>` tags).
+- **Schema intact:** `@context: "https://schema.org"` preserved, the block's `@type` is unchanged, and the
+  required fields for that type are still present (e.g. an `AggregateRating` still carries `ratingValue` +
+  `reviewCount`; a `Review` still carries `author` + `reviewRating`). The patch must not drop sibling fields.
+- **Patch landed:** the fields you intended to change (`AggregateRating.ratingValue` / `reviewCount`,
+  `review[]`) now hold the *new* values — confirm the edit actually took, not just that JSON is valid.
+- **Surgical:** everything *outside* the JSON-LD blocks is byte-identical to the original `existing_html`
+  (this is the real corruption guard — only the targeted blocks changed, nothing else was rewritten).
 
-If validation fails → stop; tell user the patch produced invalid HTML and dump the diff for debugging.
+If validation fails → stop; tell the user the patch produced invalid or non-surgical JSON-LD and dump the diff for debugging.
 
 ## Step 7 — Write back
 

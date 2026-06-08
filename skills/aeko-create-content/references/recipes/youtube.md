@@ -6,33 +6,18 @@ load_when: SKILL.md §5.1 selects channel=youtube
 
 # `youtube` — Description recipe
 
-## Audience scope
+> Substance + quality/voice frameworks live in `../aeo-frameworks.md`. This recipe defines YouTube-specific conventions only. Paste-into-platform: YouTube renders the listing; emit clean TEXT (markdown), no HTML/JSON-LD.
 
-Language-neutral channel. Output follows `frontmatter.target_language`:
-
-- **Korean ecommerce brands** (`target_language=ko`): KO title and description. Tags include KO head terms + a few EN long-tails when relevant (`홈카페, 라떼아트, latte art`). Korean YouTube viewers commonly search bilingually for product categories.
-- **Global sellers** (`target_language=en` or other): single-language title and description matching the target market. EN tags only for EN markets — mixing KO tags hurts EN discovery.
-- Chapter labels and on-screen text in the description follow the chosen language end-to-end.
-
-## Structure
-
-- **Title** — ≤60 chars (Latin / EN) or ≤30자 (Hangul). YouTube uses byte count under the hood; 60 EN chars ≈ 30 Hangul chars before mobile truncation. Include the prompt keyword.
-- **Description**:
-  - First 200 chars / 100자 = hook (above the fold)
-  - Then full description
-  - Then chapter list: `00:00 Intro / …` — chapter labels in `target_language`
-  - Then tags — language mix per Audience scope above
+- **Language follows `target_language`.** KO brands: KO title + description, tags KO head terms + a few EN long-tails (`홈카페, 라떼아트, latte art`). Global sellers: single-language end-to-end (EN tags only for EN markets). Chapter labels and on-screen text in the chosen language.
+- **Title** — ≤60 chars (EN) / ≤30자 (KO); YouTube truncates on byte count. Include the prompt keyword.
+- **Description** — hook in the first 200 chars / 100자 (above the fold), then full body, then chapter list (`00:00 Intro / …`, labels in `target_language`), then tags.
+- Reference thumbnail (`Thumbnail: <url-or-path>`, 16:9).
+- No hard CTA — information-handoff voice, not "Buy now / 지금 구매" (`[[feedback_aeko_pdp_is_aeo_content_not_cta]]`). Don't fake a third-party-reviewer voice. Link only to real URLs from the brief; never invent URLs.
 
 ## Acceptance gates
 
-- Title ≤60 chars (EN) / ≤30자 (KO)
-- ≥3 chapters
-- Hook in first 200 chars (EN) / 100자 (KO)
-
-## Media
-
-Visual-first channel. Reference media in description (`Thumbnail: <url-or-path>`). If `media_by_channel[channel]` is null, emit a `media_specs:` YAML block (SKILL.md §5.4) with at minimum a `thumbnail` slot (16:9) and a `hero` slot if the description prose calls for one.
+- Title ≤60 chars (EN) / ≤30자 (KO). ≥3 chapters. Hook in first 200 chars / 100자.
 
 ## File output
 
-Filename is the literal `youtube.md`. Single artifact, markdown only — no HTML pair.
+- Literal filename `youtube.md`. Single artifact, markdown only — no HTML pair.

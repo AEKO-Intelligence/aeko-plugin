@@ -92,6 +92,9 @@ AI answers entirely.">
 - llms.txt on root → declared AI-readability
 - Structured data present → Product / FAQPage / Organization schemas
 - Recent news coverage → fresh signal for news-aware AI engines
+- **Content frameworks** → where the competitor's *cited pages* win on substance, name it in the plugin's
+  AEO vocabulary (BLUF / PREP / Informational Gain / E-E-A-T — see
+  `skills/aeko-create-content/references/aeo-frameworks.md`) so the gap maps to a fix the executor skills apply.
 
 For each present for competitor but absent for user → flag.
 

@@ -87,6 +87,13 @@ Compose three sections:
 
 - <list of JSON-LD types competitors have that user's product doesn't>
 - <list of review / FAQ coverage competitors have that user's product doesn't>
+
+## Content & citability gaps (AEO frameworks)
+
+- <classify each content gap in the plugin's vocabulary so it maps to a fix: BLUF (do competitors lead
+  with the answer while this PDP buries it?), PREP (self-contained benefit blocks?), Informational Gain
+  (lived/specific detail this PDP lacks?), E-E-A-T (FAQ answers showing real experience?). See
+  `skills/aeko-create-content/references/aeo-frameworks.md`.>
 ```
 
 ## Step 6 — Recommended actions

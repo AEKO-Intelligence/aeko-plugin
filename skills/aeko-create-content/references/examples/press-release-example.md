@@ -1,19 +1,21 @@
 <!--
-  Paste a real 보도자료 from your brand below this comment block.
+  Paste a real press release from your brand below this comment block.
 
-  Channel this file covers: 보도자료.
+  Channel this file covers: press_release (works for both Korean 보도자료 and English releases).
 
   Tips:
-    - 합니다체 throughout — the skill enforces this regardless, but seeing your actual cadence helps.
-    - Include the headline, sub-headline, lead, body paragraphs, quote, boilerplate, and 문의처.
-    - If you've published 보도자료 in different formats over time, paste the most recent one
-      that represents the format you want going forward.
+    - Use whichever language you publish in — the skill writes KO in 합니다체 and EN in AP-style.
+      Pasting your actual cadence (KO or EN) helps it match your house style.
+    - Include the headline, sub-headline, lead, body paragraphs, quote, boilerplate, and contact/문의처.
+    - If you've published in different formats over time, paste the most recent one that represents
+      the format you want going forward.
     - Strip embargoed dates / contact emails before saving.
 
-  Delete this comment block once you paste your example.
+  Delete this comment block once you paste your example. Two skeletons follow (KO + EN) — keep the
+  one matching your market.
 -->
 
-<!-- Replace everything below with a real 보도자료 you've issued. -->
+<!-- ===== Korean skeleton (보도자료) — replace with a real one you've issued ===== -->
 
 # [헤드라인 — ≤40자]
 
@@ -37,3 +39,28 @@
 ---
 
 **문의처:** [부서명 / 연락처를 넣을 자리 — 실제 연락처는 비워두세요]
+
+<!-- ===== English skeleton (AP-style) — replace with a real one you've issued ===== -->
+
+# [Headline — Title Case, ≤ ~12 words]
+
+## [Sub-headline — one line]
+
+[CITY, Country — Mon DD, YYYY —] [Lead paragraph carrying the 5W1H in the first two sentences.]
+
+[Body paragraph 1.]
+
+[Body paragraph 2.]
+
+> "[Quote — CEO or product lead]"
+> — [Name], [Title]
+
+[Body paragraph 3.]
+
+## About [Brand]
+
+[One-paragraph brand boilerplate. Tone should match brand_kit.brand_voice_summary.]
+
+---
+
+**Media Contact:** [Department / contact placeholder — leave real contact details blank]

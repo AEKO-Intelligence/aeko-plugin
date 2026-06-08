@@ -85,14 +85,20 @@ For each top source with non-null `crawl`, analyze:
 - **JSON-LD types present** (from `crawl.json_ld[]` — look at `@type` field). Call out `FAQPage`, `Product`, `Review`, `AggregateRating`, `Article`, `BreadcrumbList`.
 - **Source analysis signals** (from `crawl.source_analysis`): citability score if present, heading depth, structural patterns.
 - **Content shape** (from first ~500 chars of `crawl.extracted_text`): Q&A format, first-person review, comparison table, listicle, news article, etc.
+- **Framework read** — *why* does this source get cited? Name it in the plugin's AEO vocabulary (BLUF /
+  PREP / Informational Gain / E-E-A-T — see `skills/aeko-create-content/references/aeo-frameworks.md`): does
+  it lead with the answer (BLUF)? give self-contained Point·Reason·Example blocks (PREP)? carry lived,
+  specific detail a generic page lacks (Informational Gain)? show experience in its FAQ (E-E-A-T)? This is
+  what makes the takeaway *actionable* — it maps straight to a fix the executor skills apply.
 
 Print under each top source:
 
 ```
-   Structure: <content shape>
-   JSON-LD:   <types present, or "none">
+   Structure:  <content shape>
+   JSON-LD:    <types present, or "none">
    Citability: <score if known, else "N/A">
-   Takeaway:  <one sentence on what this source does that the user could mirror>
+   Wins via:   <framework(s) it exploits — e.g. "BLUF + E-E-A-T FAQ">
+   Takeaway:   <one sentence: the framework gap to close on the user's page>
 ```
 
 If `crawl` is null (source never crawled) and the URL is public, do a light `WebFetch` to get a rough structural read — mark the analysis as "live-fetched, not cached" so the user knows the difference.
@@ -113,7 +119,10 @@ If the user's brand is absent, say so plainly: "Your brand isn't surfacing for t
 
 ## Step 6 — One concrete action
 
-Based on the analysis, propose exactly ONE action the user could take. Pick from:
+Based on the analysis, propose exactly ONE action the user could take. **Name the framework gap** behind it
+(from Step 4's "Wins via") so the action is unambiguous — e.g. "the cited winner leads with a BLUF answer;
+your PDP buries it under specs" or "winners show Informational Gain from real usage; yours reads generic."
+Pick from:
 
 - **Mirror a winning PDP structure** — "Three top cited sources are retailer PDPs with FAQPage JSON-LD. Your matching PDP <url> doesn't have FAQPage markup. Run `/aeko-action-center <domain_id> pdp` to see if there's a pending PDP action for this product."
 - **Write content to match a winning format** — "The top cited source is a Naver 블로그 first-person review. AEKO doesn't have an action item for this, but drafting your own review-style piece could help. Run `/aeko-action-center <domain_id> content` to see pending content items, or tell me to draft one standalone."

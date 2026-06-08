@@ -96,6 +96,12 @@ Add the following sections after the summary:
 | ...  | ...       | ...        | ...                   |
 ```
 
+When a competitor's page outranks yours for a prompt, note *why* in the plugin's AEO vocabulary
+(BLUF / PREP / Informational Gain / E-E-A-T — see `skills/aeko-create-content/references/aeo-frameworks.md`):
+"the cited winner leads with the answer (BLUF) and shows lived detail (Informational Gain); your page is
+generic." This makes the report's findings map straight to what the executor skills fix — for a single
+prompt, hand off to `/aeko-prompt-deep-dive <prompt_id>`.
+
 ```
 ## Competitive signal (from mentions[] across responses)
 

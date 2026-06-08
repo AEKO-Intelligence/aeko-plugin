@@ -12,7 +12,7 @@ description: >
   social, editorial) remain generation-only — clients post them
   themselves.
 argument-hint: "<item-id>"
-allowed-tools: aeko_list_content_variations, aeko_publish_content_variation
+allowed-tools: aeko_list_content_variations, aeko_publish_content_variation, aeko_update_content_variation
 ---
 
 # AEKO Publish Content

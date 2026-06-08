@@ -6,35 +6,19 @@ load_when: SKILL.md §5.1 selects channel=magazine
 
 # `magazine` — Editorial recipe
 
-## Audience scope
+> Substance + quality/voice frameworks live in `../aeo-frameworks.md`. This recipe defines magazine format conventions only. Republished by a third-party editor/outlet that controls final markup — emit clean TEXT (markdown) only; no HTML, no structured data.
 
-Language-neutral channel. Output follows `frontmatter.target_language`:
-
-- **Korean ecommerce brands** (`target_language=ko`): Vogue-Korea-style editorial — 감각적 sensory verbs, 해요체 or 합니다체 per brand kit, KO-market cultural references (계절감, 라이프스타일 scene cues).
-- **Global sellers** (`target_language=en` or other): Vogue-US / Harper's Bazaar register — editorial English with sensory verbs, lifestyle scenes anchored to the global market the brand serves (don't fabricate cultural specificity; if the brand kit doesn't name a market, stay neutral).
-- Other languages: use the magazine register native to that market; the recipe's structural rules below (hook quote, lifestyle scenes, no listicles) apply regardless.
-
-Vogue-style editorial.
-
-## Structure
-
-- **Hook quote** — italic, ≤25 words
-- **Editor's note** — one paragraph
-- **3–4 lifestyle scenes** weaving the product/topic in (NOT a listicle)
-- Subject named per paragraph
-- Sensory verbs throughout
-- Minimal hashtags (this is a magazine, not social)
+- **Language follows `target_language`.** KO brands: Vogue-Korea register — 감각적 sensory verbs, 해요체 or 합니다체 per brand kit, KO-market cultural cues (계절감, 라이프스타일 scenes). Global sellers: Vogue-US / Harper's Bazaar editorial English; don't fabricate cultural specificity — stay neutral if the brand kit names no market. Other languages: that market's native magazine register.
+- **Hook + thesis** — italic hook quote ≤25 words, then a 2–3문장 editor's note framing the piece.
+- **3–5 sections**, each with a subhead + body — lifestyle scenes weaving the product/topic in, NOT a listicle. Subject named per paragraph; sensory verbs throughout.
+- **Optional callout** — one short pull-quote / aside where it earns the space.
+- **Conclusion** — a closing scene or reflection, not a hard CTA.
+- Minimal hashtags (this is a magazine, not social). Information-handoff voice, not "Buy now / 지금 구매" (`[[feedback_aeko_pdp_is_aeo_content_not_cta]]`). Don't fake a third-party-reviewer voice. Link only to real URLs from the brief; never invent URLs.
 
 ## Acceptance gates
 
-- Hook quote present
-- Narrative scenes ≥3
-- No bullet lists
+- Hook quote present. ≥3 narrative scenes/sections. No bullet lists.
 
-## Pairs with HTML/JSON-LD
+## File output
 
-`magazine` is an editorial channel: it writes BOTH `<slug>.md` AND `<slug>.html` with embedded `Article` JSON-LD. See `references/recipes/editorial-html-jsonld.md`.
-
-## Media
-
-Visual-first channel. If `media_by_channel[channel]` is null (user replied `skip`), emit a `media_specs:` YAML block at the top with one entry per slot the recipe expects (typically `hero` + 0–3 `inline`). See SKILL.md §5.4 for the exact YAML shape.
+- Single artifact, markdown only: `./aeko-artifacts/<domain_id>/<item_id>/magazine/<slug>.md` (`<slug>` per §5.5).

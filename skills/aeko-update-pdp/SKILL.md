@@ -8,7 +8,7 @@ description: >
   marks complete with full audit trail. Splits the PDP branch out of the
   retired `/aeko-run-action`.
 argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_brand_kit_by_id, aeko_list_brand_kits, aeko_get_product_description, aeko_list_store_integrations, aeko_update_product_description, aeko_update_product_tags, aeko_update_product_meta, aeko_revert_store_write, aeko_list_store_writes, aeko_complete_action_item, Read, Write, WebFetch, Bash
+allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_brand_kit_by_id, aeko_list_brand_kits, aeko_get_product_description, aeko_get_product_context_reviews, aeko_list_store_integrations, aeko_update_product_description, aeko_update_product_tags, aeko_update_product_meta, aeko_revert_store_write, aeko_list_store_writes, aeko_complete_action_item, Read, Write, WebFetch, Bash
 ---
 
 # AEKO Update PDP
@@ -103,6 +103,24 @@ If `image_strategy != rebuild_with_local`:
 4. **Review detection pass:** scan OCR text + raw HTML for review-shaped blocks (customer quotes, star ratings, "리뷰 N개", structured review widgets). Build `reviews_payload = [{author, rating, text, date_if_present}]` capped at top-10 recent/high-rated. Null if nothing review-shaped.
 5. If every image OCR failed → stop. Do NOT hallucinate copy.
 
+## Step 4.5 — Pull product context-reviews (originality source — runs for ALL strategies)
+
+The on-page review detection in Step 4.4 captures whatever the live page already shows. The richer source
+of **lived experience** — the thing AI engines reward and a generic description can't fake — is AEKO's
+context-mapped reviews. Fetch them (this runs even for `rebuild_with_local`, since it doesn't depend on the
+page fetch):
+
+- Call `aeko_get_product_context_reviews(<product_source_id>)` where `product_source_id` is the store
+  product id (the `external_product_id` resolved for this item / from `aeko_list_store_integrations`).
+- Build `context_reviews = [{context, persona, quote, detail}]` — the concrete, situational details
+  (numbers, surprises, trade-offs) you'll mine for Originality and for E-E-A-T FAQ answers in Step 5.
+
+**Degrade gracefully:** tool absent/empty → continue. The product copy + specs + Step 4.4 on-page reviews
+still carry substance; just note in the Step 9 summary that adding context-reviews would make the PDP more
+original. **Anti-fabrication rule (hard):** every experiential claim in the description or FAQ must trace to
+a real `context_reviews` entry, an on-page review, or a product spec — never invent a lived experience. With
+no reviews, write from honest expertise (correct mechanism, real specs), not a manufactured anecdote.
+
 ## Step 5 — Generate responsive HTML
 
 ### 5.0 Load references (on-demand)
@@ -126,6 +144,20 @@ The Step 9 summary must list which reference files were loaded so the user can v
 ### 5.1 Apply
 
 Read `prose` for voice/structure guidance, `frontmatter.pdp_responsive_contract.*` for hard rules, live brand kit from Step 2, OCR payload from Step 4. Apply the loaded recipes (§5.0) — citability baseline, pending-verification handling, scaffold + strategy branches, responsive contract, JSON-LD schemas all live in the recipe files.
+
+**Apply the AEO frameworks** — the PDP is the #1 ecommerce surface AI engines cite, so write it to the
+same standard as `/aeko-create-content`. Definitions live in
+`skills/aeko-create-content/references/aeo-frameworks.md` (the plugin's canonical source); apply them here:
+- **BLUF** — the description opens with the bottom-line answer to "what is this and why does it matter for
+  *this* buyer," not a feature dump or brand preamble. AI engines lift the direct answer.
+- **PREP** — each benefit/feature block is Point → Reason → Example → Point, so each is independently
+  citable. The **Example** is where substance lives: a real spec or a concrete detail from `context_reviews`.
+- **Informational Gain** — inject specificity and **originality from `context_reviews`** (the lived,
+  situational detail a generic PDP can't have); name the specific buyer cohort. This is the AEO differentiator.
+- **E-E-A-T in the FAQ** — every FAQ answer (and its `FAQPage` JSON-LD) must show Experience + Expertise +
+  specifics + honest trade-offs drawn from real reviews/specs — never a restated marketing line.
+
+This stays within the existing conventions: **no hard CTAs** in the body (`[[feedback_aeko_pdp_is_aeo_content_not_cta]]` — AEKO injects citability content; the store owns the buy button), responsive contract, and the anti-fabrication rule from §4.5.
 
 Honor `frontmatter.must_include` (every string present) + `forbidden` (none present). Acceptance gate for `sections_required`: every entry maps to a `<section>` heading (case-insensitive, trimmed). Missing → iterate or fail; do NOT call `aeko_complete_action_item`.
 

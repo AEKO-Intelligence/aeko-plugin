@@ -7,9 +7,9 @@
 
   When to use this file:
     - You run multiple brands from one AEKO install and they have different voices.
-    - One channel needs a different register than the rest of your voice (e.g., 보도자료
-      always 합니다체 even though brand voice is 요체 — though the skill already enforces
-      this for 보도자료 specifically).
+    - One channel needs a different register than the rest of your voice (e.g., `press_release`
+      always 합니다체 / AP-style even though brand voice is casual — though the skill already
+      enforces a formal register for `press_release` per language).
     - You want to lock down a glossary of preferred terms / forbidden words that the
       brand kit doesn't capture.
 
@@ -29,7 +29,7 @@
 - Hook은 항상 질문형으로 시작
 - Forbidden: "출시", "런칭" — 우리는 "공개"라고 말함
 
-## channel: 보도자료
+## channel: press_release
 
 - Boilerplate 마지막 줄에 항상 영문 사명을 병기 (예: "<브랜드명> (<English Name>)")
 - Quote는 항상 직책+이름 순서 (이름+직책 X)
