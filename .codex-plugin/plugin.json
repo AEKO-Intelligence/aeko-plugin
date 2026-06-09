@@ -1,7 +1,7 @@
 {
   "name": "aeko-plugin",
-  "version": "0.15.0",
-  "description": "AEKO skills for Codex — AEO workflows (PDP optimization, content briefs, JSON-LD, brand kit, action center). Pair with the AEKO MCP connector for backend tool access.",
+  "version": "0.15.1",
+  "description": "AEKO skills for Codex — first-run onboarding plus AEO workflows for ecommerce visibility, product pages, content, schema, and action items. Pair with the AEKO MCP connector for backend tool access.",
   "author": {
     "name": "AEKO",
     "url": "https://aeko-intelligence.com"
@@ -13,8 +13,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "AEKO",
-    "shortDescription": "AEO skills for ecommerce — PDP, content, schema, brand kit",
-    "longDescription": "AEKO skills guide Codex through AEO (AI Engine Optimization) workflows for cross-border ecommerce: optimize product pages for ChatGPT/Claude/Gemini/Perplexity citations, draft persona-targeted content from live suggestions, generate JSON-LD structured data, manage your brand kit, and execute action items. Requires the AEKO MCP connector for backend access.",
+    "shortDescription": "AEO skills for ecommerce — onboarding, visibility, PDP, content, schema",
+    "longDescription": "AEKO skills guide Codex through AEO (AI Engine Optimization) workflows for cross-border ecommerce. After install, run /aeko-onboarding to confirm setup, tour the skills, and choose the right next step. Then measure AI visibility, improve product pages for ChatGPT/Claude/Gemini/Perplexity citations, draft citation-ready content, manage your brand kit, and execute action items. Requires the AEKO MCP connector for backend access.",
     "developerName": "AEKO",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],
@@ -22,9 +22,9 @@
     "privacyPolicyURL": "https://aeko-intelligence.com/en/privacy",
     "termsOfServiceURL": "https://aeko-intelligence.com/en/terms",
     "defaultPrompt": [
-      "Run an AEO audit on this product page.",
-      "Generate Product JSON-LD for this PDP.",
-      "Show me my AEKO action items."
+      "Run /aeko-onboarding and show me where to start.",
+      "Show me my AEKO action items.",
+      "Create an AI visibility report for my domain."
     ],
     "brandColor": "#0F766E"
   }

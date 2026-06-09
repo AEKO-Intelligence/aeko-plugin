@@ -20,11 +20,11 @@ So example files steer *feel*; the frameworks + substance drive *what gets said*
 | `blog-example.md` | A real Naver / Tistory blog post you'd be proud of | `naver_blog`, `tistory` |
 | `instagram-post-example.md` | A real Instagram caption + hashtags + alt text | `instagram` |
 | `in-store-content-example.md` | A real PDP, brand-page section, or owned-blog post | informs voice across all channels |
-| `press-release-example.md` | A real press release you've issued (보도자료 or English) | `press_release` |
+| `press-release-example.md` | A real press release you've issued (Korean 보도자료 or English) | `press_release` |
 | `context-reviews-fixture.md` | Sample product context-reviews (the lived-experience substance) — used as a **fallback** when the `aeko_get_product_context_reviews` tool isn't live yet, and for evals | all channels (originality source) |
 | `aeko_shop-fixture.*` | A worked aeko.shop article (`.md` + `.html` + `.meta.json`) showing the publish-ready triple | `aeko_shop` (reference only) |
 
-You can add more — e.g., `tiktok-script-example.md`, `magazine-feature-example.md` — and the skill will pick them up as long as the filename matches `<channel>-*example*.md` (the SKILL.md's References section names the exact patterns it looks for).
+You can add more — e.g., `tiktok-script-example.md`, `magazine-feature-example.md` — and the skill will pick them up as long as the filename matches `<channel>-*example*.md`. Bundled aliases also work: `blog-example.md` for `naver_blog`/`tistory`, `press-release-example.md` for `press_release`, and `in-store-content-example.md` as the global owned-content voice signal. For new press-release examples, prefer `press_release-<slug>-example.md`; Korean users still see the channel as 보도자료 in the picker.
 
 ## Format
 
@@ -48,7 +48,7 @@ The skill reads these notes too — they steer it more reliably than abstract st
 
 ## Verifying it worked
 
-After running `/aeko-create-content <item_id>`, check the user-facing summary at the bottom. The **substance used** line shows how many products and context-reviews fed the draft, and the per-channel artifact lines show what was produced. If your exemplar file isn't being picked up, the most common cause is a filename that doesn't match the pattern (`<channel>-*example*.md`).
+After running `/aeko-create-content <item_id>`, check the user-facing summary at the bottom. The **substance used** line shows how many products and context-reviews fed the draft, and the per-channel artifact lines show what was produced. If your exemplar file isn't being picked up, the most common cause is a filename that doesn't match the pattern (`<channel>-*example*.md`) or one of the bundled aliases above.
 
 ## Contributing back
 

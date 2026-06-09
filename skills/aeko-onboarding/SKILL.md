@@ -141,6 +141,9 @@ Three executor skills accept overrides under `references/{recipes,examples,style
 - `aeko-update-pdp` — PDP HTML structure, JSON-LD field preferences, verification prompts
 - `aeko-fix-technical` — llms.txt format, robots.txt additions, JSON-LD shape
 
+Mention that the same self-serve guide lives in `CUSTOMIZATION.md`; it is the best handoff if the user wants
+to customize later instead of doing it during onboarding.
+
 Ask the user (in `session_language`): "Want to customize one of these now? Reply with the skill name, `all` to walk through each in turn, or `skip` to wrap up."
 
 For each skill the user picks, run the same 4-substep loop.
@@ -172,7 +175,7 @@ For "add an example" / "add a recipe modeled on a real post":
 
 Detect by checking for any indicator that the Chrome bridge is wired up. If unsure, ask the user once: "Is `/chrome` connected on this session?"
 
-If yes: ask the user to authorize navigation to **one specific domain** (e.g. `instagram.com/<their-handle>`, `blog.naver.com/<their-handle>`). On their `yes`, navigate via the bridge using their authenticated session, pull the 1–3 most recent posts, and normalize each into a `references/examples/<channel>-<slug>.md` file.
+If yes: ask the user to authorize navigation to **one specific domain** (e.g. `instagram.com/<their-handle>`, `blog.naver.com/<their-handle>`). On their `yes`, navigate via the bridge using their authenticated session, pull the 1–3 most recent posts, and normalize each into a `references/examples/<channel>-<slug>-example.md` file.
 
 **One-domain-per-confirmation gate.** Never navigate to a second domain without re-asking. The bridge runs against the user's full Chrome session, so silent roaming is unacceptable. If the user wants three platforms scraped, ask three separate times.
 
@@ -227,7 +230,7 @@ The "Suggested next step" line should be context-aware:
 - Customized `aeko-fix-technical` → `/aeko-action-center <domain_id> technical`.
 - Skipped Phase 4 → `/aeko-action-center <domain_id>` (or `/aeko-visibility-report <domain_id>` if no domain has pending items).
 
-End with the docs link (`https://aeko-intelligence.com`) and an invitation to come back to `/aeko-onboarding` whenever they want to add more recipes / examples.
+End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION.md` for the self-serve file guide, and invite them to come back to `/aeko-onboarding` whenever they want to add more recipes / examples.
 
 ---
 
@@ -300,12 +303,12 @@ End with the docs link (`https://aeko-intelligence.com`) and an invitation to co
 
 ### 4단계 — 실행 스킬 커스터마이즈
 
-세 실행 스킬(`aeko-create-content`, `aeko-update-pdp`, `aeko-fix-technical`)에 대해 동일한 4단계 루프를 돕니다.
+세 실행 스킬(`aeko-create-content`, `aeko-update-pdp`, `aeko-fix-technical`)에 대해 동일한 4단계 루프를 돕니다. 나중에 직접 파일을 수정하고 싶다면 같은 내용이 `CUSTOMIZATION.md`에 정리되어 있다고 안내합니다.
 
 1. **현재 파일 트리 보여주기** — `references/recipes`, `references/examples`, `references/style`을 Glob으로 나열하고 각 폴더의 역할을 설명합니다.
 2. **무엇을 추가/수정할지 묻기** — 새 레시피 추가, 예시 추가, 음성 톤 오버라이드, 기존 파일 편집 중 선택.
 3. **예시 출처 — 우선순위 3계층:**
-   - **A — `/chrome` 브릿지 사용**: Claude for Chrome이 연결되어 있고 사용자가 동의하면, 사용자의 인증된 세션으로 단일 도메인 1개에 한정해 최근 게시물 1–3개를 읽어와 `references/examples/<채널>-<slug>.md`로 저장합니다. **도메인 1개당 사용자 명시 동의 필수.** 절대 게시·작성 폼 클릭 없이 읽기 전용으로만 동작합니다.
+   - **A — `/chrome` 브릿지 사용**: Claude for Chrome이 연결되어 있고 사용자가 동의하면, 사용자의 인증된 세션으로 단일 도메인 1개에 한정해 최근 게시물 1–3개를 읽어와 `references/examples/<채널>-<slug>-example.md`로 저장합니다. **도메인 1개당 사용자 명시 동의 필수.** 절대 게시·작성 폼 클릭 없이 읽기 전용으로만 동작합니다.
    - **B — 공개 URL 붙여넣기**: 사용자가 URL을 주면 `WebFetch`로 가져옵니다. 네이버 블로그·티스토리는 잘 됩니다. 인스타그램·틱톡 비디오 페이지는 페이로드가 빈약하면 C로 폴백.
    - **C — 본문 직접 붙여넣기**: 사용자가 글을 직접 붙여 넣으면 채널·날짜 헤더를 한 줄 추가해 그대로 저장.
 4. **저장 + 확인** — 같은 폴더의 기존 파일 1–2개를 Read해 구조/헤딩 스타일/태그 형식을 맞춘 뒤, 사용자에게 경로를 확인받고 **로컬 플러그인 설치 경로**에만 Write합니다. AEKO 저장소에는 절대 쓰지 않습니다. 동일 파일이 이미 있으면 3-way 차이점을 보여주고 묻습니다.

@@ -32,7 +32,7 @@ Most skills read files, write artifacts (HTML, markdown, JSON), or shell out to 
 2. Paste: `AEKO-Intelligence/aeko-plugin`
 3. Install **aeko-plugin**
 
-After both steps, `/aeko-plugin:aeko-brand-kit`, `/aeko-plugin:aeko-action-center`, etc. are available in any chat.
+After both steps, `/aeko-plugin:aeko-onboarding`, `/aeko-plugin:aeko-action-center`, etc. are available in any chat.
 
 ### Claude Code
 
@@ -63,15 +63,33 @@ gemini extensions install https://github.com/AEKO-Intelligence/aeko-plugin
 
 Restart Gemini CLI after install. The Gemini extension manifest (`gemini-extension.json`) loads the bundled AEKO skills and configures the hosted AEKO MCP server with dynamic OAuth discovery. Claude/Codex use `plugin.json` and marketplace manifests; Gemini CLI uses `gemini-extension.json`.
 
+## After Install
+
+Run this first in a new chat:
+
+```text
+/aeko-onboarding
+```
+
+If your host namespaces plugin commands, use `/aeko-plugin:aeko-onboarding`.
+
+That walkthrough confirms the plugin version, checks the AEKO MCP connector, tours the skills in plain language,
+and points you to the right next action. Most marketers then choose one of these paths:
+
+1. **I want to see current AI visibility** — run `/aeko-visibility-report [domain_id]`.
+2. **I want AEKO to tell me what to fix next** — run `/aeko-action-center [domain_id]`.
+3. **I want my drafts to sound like our brand** — use `/aeko-onboarding` step 4, or follow [CUSTOMIZATION.md](CUSTOMIZATION.md).
+
 ## Available Skills
 
 See [`skills/`](skills/). Each is a self-contained SKILL.md consumed by Claude, Codex, or Gemini CLI.
 
 **Start here for marketers:**
 
-1. **See where AI finds you** — `/aeko-visibility-report [domain_id]`
-2. **Fix what blocks AI discovery** — `/aeko-action-center [domain_id] technical`
-3. **Improve product pages and content AI can cite** — `/aeko-action-center [domain_id] pdp` or `/aeko-action-center [domain_id] content`
+1. **First run after install** — `/aeko-onboarding`
+2. **See where AI finds you** — `/aeko-visibility-report [domain_id]`
+3. **Fix what blocks AI discovery** — `/aeko-action-center [domain_id] technical`
+4. **Improve product pages and content AI can cite** — `/aeko-action-center [domain_id] pdp` or `/aeko-action-center [domain_id] content`
 
 AEKO will describe each run in plain business language: what it checks, why it matters, whether it is read-only or affects store content, and the single best next step.
 
@@ -100,7 +118,7 @@ AEKO will describe each run in plain business language: what it checks, why it m
 
 ## Customizing skills
 
-**[CUSTOMIZATION.md](CUSTOMIZATION.md)** explains how to add brand-specific examples, custom recipes, and voice overrides without forking the plugin. Currently covers `/aeko-create-content` (Skills 2.0 / progressive-disclosure pattern with `references/` folder); future skills will follow the same model.
+**[CUSTOMIZATION.md](CUSTOMIZATION.md)** explains how to add brand-specific examples, custom recipes, and voice overrides without forking the plugin. It covers the three customizable executor skills: `/aeko-create-content`, `/aeko-update-pdp`, and `/aeko-fix-technical`.
 
 ### Retired
 
@@ -170,7 +188,7 @@ MIT
 2. 붙여넣기: `AEKO-Intelligence/aeko-plugin`
 3. **aeko-plugin** 설치
 
-두 단계 후, 모든 채팅에서 `/aeko-plugin:aeko-brand-kit`, `/aeko-plugin:aeko-action-center` 등을 사용할 수 있습니다.
+두 단계 후, 모든 채팅에서 `/aeko-plugin:aeko-onboarding`, `/aeko-plugin:aeko-action-center` 등을 사용할 수 있습니다.
 
 ### Claude Code
 
@@ -201,15 +219,33 @@ gemini extensions install https://github.com/AEKO-Intelligence/aeko-plugin
 
 설치 후 Gemini CLI를 재시작하세요. Gemini 확장 매니페스트(`gemini-extension.json`)가 번들된 AEKO 스킬을 로드하고, 동적 OAuth 디스커버리로 호스팅된 AEKO MCP 서버를 설정합니다. Claude/Codex는 `plugin.json` 및 marketplace 매니페스트를 사용하고, Gemini CLI는 `gemini-extension.json`을 사용합니다.
 
+## 설치 후 먼저 할 일
+
+새 채팅에서 이 명령을 먼저 실행하세요:
+
+```text
+/aeko-onboarding
+```
+
+호스트가 플러그인 명령을 namespace로 표시하면 `/aeko-plugin:aeko-onboarding`을 사용하세요.
+
+이 안내는 플러그인 버전, AEKO MCP 연결 상태, 사용 가능한 스킬을 비기술 언어로 확인하고 다음 행동을 추천합니다.
+대부분의 마케터는 이후 아래 중 하나로 시작하면 됩니다:
+
+1. **AI가 우리 브랜드를 어디서 찾는지 보기** — `/aeko-visibility-report [domain_id]`
+2. **AEKO가 다음 수정 작업을 추천하게 하기** — `/aeko-action-center [domain_id]`
+3. **초안이 우리 브랜드처럼 들리게 만들기** — `/aeko-onboarding` 4단계 또는 [CUSTOMIZATION.md](CUSTOMIZATION.md)
+
 ## 사용 가능한 스킬
 
 [`skills/`](skills/) 참조. 각 스킬은 Claude, Codex 또는 Gemini CLI가 실행하는 자체 완결형 SKILL.md입니다.
 
 **마케터용 시작 흐름:**
 
-1. **AI가 우리 브랜드를 어디서 찾는지 보기** — `/aeko-visibility-report [domain_id]`
-2. **AI 발견을 막는 요소 고치기** — `/aeko-action-center [domain_id] technical`
-3. **AI가 인용할 수 있는 상품 페이지/콘텐츠 개선하기** — `/aeko-action-center [domain_id] pdp` 또는 `/aeko-action-center [domain_id] content`
+1. **설치 후 첫 실행** — `/aeko-onboarding`
+2. **AI가 우리 브랜드를 어디서 찾는지 보기** — `/aeko-visibility-report [domain_id]`
+3. **AI 발견을 막는 요소 고치기** — `/aeko-action-center [domain_id] technical`
+4. **AI가 인용할 수 있는 상품 페이지/콘텐츠 개선하기** — `/aeko-action-center [domain_id] pdp` 또는 `/aeko-action-center [domain_id] content`
 
 AEKO는 매 실행마다 무엇을 확인하는지, 왜 중요한지, 읽기 전용인지/스토어에 영향을 줄 수 있는지, 다음 한 가지 행동이 무엇인지 비기술 언어로 설명합니다.
 
@@ -238,7 +274,7 @@ AEKO는 매 실행마다 무엇을 확인하는지, 왜 중요한지, 읽기 전
 
 ## 스킬 커스터마이징
 
-**[CUSTOMIZATION.md](CUSTOMIZATION.md)** — 플러그인을 포크하지 않고 브랜드 전용 예시, 커스텀 레시피, 보이스 오버라이드를 추가하는 방법을 설명합니다. 현재 `/aeko-create-content`를 다룹니다 (`references/` 폴더를 사용한 Skills 2.0 / 점진적 공개 패턴). 향후 스킬도 동일 모델을 따를 예정입니다.
+**[CUSTOMIZATION.md](CUSTOMIZATION.md)** — 플러그인을 포크하지 않고 브랜드 전용 예시, 커스텀 레시피, 보이스 오버라이드를 추가하는 방법을 설명합니다. 커스터마이즈 가능한 세 실행 스킬(`/aeko-create-content`, `/aeko-update-pdp`, `/aeko-fix-technical`)을 다룹니다.
 
 ### 폐기된 스킬
 

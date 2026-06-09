@@ -1,6 +1,6 @@
 ---
 name: aeko-create-content
-version: 0.15.0
+version: 0.15.1
 description: >
   Multi-channel AEO content executor for Action-tab items with
   `execution_class=local_content_artifact`. Fetches a Plan.md, pulls
@@ -19,6 +19,9 @@ allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_brand_kit_by_i
 ---
 
 # AEKO Create Content
+
+**Changelog v0.15.1** — Restored example-file loading in the parallel drafter contract, added `Refs loaded`
+reporting so marketers can verify customization, and clarified `press_release` / 보도자료 slug handling.
 
 **Changelog v0.15.0** — Added AI-shopping decision-guide blocks, visible-content/schema parity, and
 anti-manipulation guardrails across content + JSON-LD recipes. Updated completion summaries to explain
@@ -208,8 +211,9 @@ concurrently). Each drafter's prompt instructs it to:
 > Read `skills/aeko-create-content/references/drafter-instructions.md` and
 > `skills/aeko-create-content/references/aeo-frameworks.md` (and, for editorial/HTML channels,
 > `skills/aeko-create-content/references/recipes/editorial-html-jsonld.md`; for channels with a recipe,
-> `skills/aeko-create-content/references/recipes/<channel>.md`). Then draft this channel and return the
-> self-check JSON defined in drafter-instructions.md §4.
+> `skills/aeko-create-content/references/recipes/<channel>.md`). Also read matching example files when
+> present per drafter-instructions.md §2. Then draft this channel and return the self-check JSON defined
+> in drafter-instructions.md §4.
 
 Pass the JSON brief (the shape in drafter-instructions.md §1): `channel`, `domain_id`, `item_id`,
 `resolved_title`, `slug`, `filename_token`, `aeko_shop_publish_slug` (aeko_shop only), `target_language`,
@@ -225,7 +229,8 @@ no in-body JSON-LD; `own_store_blog` = self-contained HTML with *embedded* JSON-
 since the brand's store won't regenerate schema). Paste-tier channels with a recipe (`naver_blog`,
 `tistory`, `instagram`, `tiktok`, `youtube`, `press_release`, `magazine`) get their thin
 `references/recipes/<channel>.md`. Channels with no recipe (`reddit`, `partner_media`, `other:<name>`) get
-`recipe_path: null` — the drafter works from frameworks + brand voice (+ `references/examples/in-store-content-example.md` for voice when present).
+`recipe_path: null` — the drafter works from frameworks + brand voice (+ matching example files per
+drafter-instructions.md §2 when present).
 
 Collect each drafter's returned self-check into `drafter_results[]`. A drafter that returns no usable
 result (skipped/errored) is recorded as a failed channel; continue with the rest.
@@ -320,6 +325,7 @@ Recommended next step
 ```
 
 After that, include artifacts (one bilingual line + path per file), media refs (N with alt / M skipped),
+`Refs loaded` (recipe + example paths per channel, so users can verify customization was picked up),
 citability (passed N/N · failed: list or none), and the "publish checklist (never auto-published by AEKO)"
 for client-managed channels.
 

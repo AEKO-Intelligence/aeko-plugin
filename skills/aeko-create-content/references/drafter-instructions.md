@@ -43,6 +43,12 @@ from the prompt + brand voice + your own expertise, and follow the anti-fabricat
    (channel format conventions) if one was given. For the **owned-web channels** (`aeko_shop`,
    `own_store_blog`) your `recipe_path` IS `references/recipes/editorial-html-jsonld.md` — follow §3 below.
    Paste-tier channels only need their thin recipe (or none) + the frameworks.
+   Also read brand example files when present:
+   - Always read `references/examples/in-store-content-example.md` if it exists; it is the global owned-content voice signal.
+   - `naver_blog` and `tistory`: read `references/examples/blog-example.md` plus any `references/examples/<channel>-*example*.md`.
+   - `press_release`: read `references/examples/press-release-example.md` plus any `references/examples/press_release-*example*.md`. The Korean UI label is `보도자료`, but the channel slug is `press_release`.
+   - Other paste-tier channels: read any `references/examples/<channel>-*example*.md`.
+   - If an example file is missing, skip it silently. Examples shape tone and structure; they do not supply facts, URLs, or claims.
 2. **Plan the substance, then the shape.** Decide the BLUF answer, the 2–4 PREP blocks, which
    context-review supplies the originality detail for each, the cohort, and the contrarian angle.
    *Then* fit it to the channel's format from the recipe.
@@ -106,6 +112,7 @@ Return ONLY this object — it's data for the coordinator, not a message to a hu
 {
   "channel": "naver_blog",
   "artifact_paths": ["<absolute path>", ...],
+  "references_loaded": ["references/recipes/naver_blog.md", "references/examples/blog-example.md"],
   "framework_check": {
     "bluf": true, "prep": true, "specific_cohort": true, "contrarian": true,
     "originality_source": "context_review" | "expertise_only",  // expertise_only = no reviews; flag it

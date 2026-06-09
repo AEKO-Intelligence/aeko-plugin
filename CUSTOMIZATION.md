@@ -2,9 +2,9 @@
 
 > 한국어 버전은 아래를 참고하세요 → [한국어](#한국어-버전).
 
-The AEKO plugin ships generic best-practice recipes. Your brand isn't generic. This guide shows how to add **brand-specific exemplars, custom recipes, and voice overrides** so the three executor skills — `/aeko-create-content`, `/aeko-update-pdp`, `/aeko-fix-technical` — work in *your* voice and structural conventions, without forking the plugin.
+The AEKO plugin ships generic best-practice recipes. Your brand isn't generic. This guide shows how to add **brand-specific exemplars, recipe preferences, and voice overrides** so the three executor skills — `/aeko-create-content`, `/aeko-update-pdp`, `/aeko-fix-technical` — work in *your* voice and structural conventions, without forking the plugin for normal customization.
 
-The pattern works because of [Anthropic's progressive-disclosure model for skills](https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/best-practices) (sometimes called Skills 2.0): SKILL.md tells Claude *when* to load a reference file, and reference files contain the heavy detail. You add files to `references/` and Claude picks them up automatically when the relevant channel runs.
+The pattern works because of [Anthropic's progressive-disclosure model for skills](https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/best-practices) (sometimes called Skills 2.0): SKILL.md tells Claude *when* to load a reference file, and reference files contain the heavy detail. For supported example and override patterns, you add files to `references/` and Claude picks them up automatically when the relevant channel runs.
 
 **Audience.** This guide is layered:
 - **Brand operators** (no engineering background): start at §2. You'll be customizing in under 10 minutes.
@@ -14,7 +14,7 @@ The pattern works because of [Anthropic's progressive-disclosure model for skill
 
 | Skill | Customizes | Section |
 | --- | --- | --- |
-| `/aeko-create-content` | Channel-specific tone (Instagram, blog, 보도자료, etc.) | §2, §4 |
+| `/aeko-create-content` | Channel-specific tone (Instagram, blog, `press_release` / 보도자료, etc.) | §2, §4 |
 | `/aeko-update-pdp` | PDP HTML structure + JSON-LD field choices | §5 |
 | `/aeko-fix-technical` | llms.txt format, robots.txt additions, JSON-LD shape, deploy notes | §6 |
 
@@ -24,12 +24,14 @@ After installing the AEKO plugin, the files you'll edit are at:
 
 | Host | Path |
 | --- | --- |
-| Claude Desktop (macOS) | `~/Library/Application Support/Claude/Claude Extensions/aeko-plugin/skills/aeko-create-content/` |
-| Claude Desktop (Windows) | `%APPDATA%\Claude\Claude Extensions\aeko-plugin\skills\aeko-create-content\` |
-| Claude Code | `~/.claude/plugins/aeko-plugin/skills/aeko-create-content/` |
-| Codex Desktop | `~/.codex/plugins/aeko-plugin/skills/aeko-create-content/` |
+| Claude Desktop (macOS) | `~/Library/Application Support/Claude/Claude Extensions/aeko-plugin/skills/` |
+| Claude Desktop (Windows) | `%APPDATA%\Claude\Claude Extensions\aeko-plugin\skills\` |
+| Claude Code | `~/.claude/plugins/aeko-plugin/skills/` |
+| Codex Desktop | `~/.codex/plugins/aeko-plugin/skills/` |
 
-If you're not sure where it is, run `/aeko-create-content` once and look at any `Read` calls in the transcript — the absolute path will be there.
+Open the folder for the skill you want to customize, for example `aeko-create-content/` or
+`aeko-update-pdp/`. If you're not sure where it is, run `/aeko-onboarding` and choose the customization
+step; it locates the local plugin install for you.
 
 ## 2. Quick-start — make Instagram (or any channel) sound like you
 
@@ -66,16 +68,16 @@ Refs loaded:
 
 If your example file appears there, you're done. The drafted Instagram post should now mirror your hook style, body cadence, hashtag count, and emoji density.
 
-If the line says only `recipes/instagram.md` (no `examples/...`), your file isn't being picked up — most common cause is filename. The skill scans for `<channel>-*example*.md`. If you renamed the file, change it back to `instagram-post-example.md`.
+If the line says only `recipes/instagram.md` (no `examples/...`), your file isn't being picked up — most common cause is filename. New example files should include the channel slug and `example`, such as `instagram-summer-example.md`. The bundled aliases (`blog-example.md`, `press-release-example.md`, `in-store-content-example.md`) also work.
 
 ### 2d. Repeat for other channels
 
 Same flow:
 - `blog-example.md` → covers Naver Blog and Tistory drafts
-- `press-release-example.md` → covers 보도자료 drafts
+- `press-release-example.md` → covers the `press_release` channel (shown as 보도자료 in Korean UI)
 - `in-store-content-example.md` → informs voice across all channels (this is your owned-content style signal — your PDP, brand-story page, or category landing copy)
 
-You can add more files: `tiktok-script-example.md`, `youtube-description-example.md`, `magazine-feature-example.md`. The pattern is `<channel>-*example*.md` — any filename matching that pattern in `references/examples/` gets picked up.
+You can add more files: `tiktok-script-example.md`, `youtube-description-example.md`, `magazine-feature-example.md`. The normal pattern is `<channel>-*example*.md`; the bundled aliases `blog-example.md`, `press-release-example.md`, and `in-store-content-example.md` are also recognized. For new press-release examples, prefer the slug form: `press_release-summer-launch-example.md`.
 
 ## 3. How progressive disclosure works
 
@@ -94,7 +96,7 @@ For `aeko-create-content`, that mapping lives in §5.0 of [SKILL.md](skills/aeko
 
 The **precedence rule** when these conflict:
 
-> voice-overrides > example file > recipe defaults > brand kit `tone_of_voice` > cited-source structural template
+> voice-overrides > example file > recipe defaults > brand kit `tone_of_voice`
 
 So your example file overrides the generic recipe's defaults, but the recipe's hard acceptance gates (like "5–12 hashtags" for Instagram) still apply. If you want to override an acceptance gate too — e.g., your brand uses 3 hashtags, not 5 — that's what `voice-overrides.md` is for (§5).
 
@@ -104,7 +106,7 @@ Two ways to handle a channel that isn't built in:
 
 ### Option A: one-shot (no file change)
 
-When `/aeko-create-content` asks "Add any of these formats?", you can reply `other:linkedin` and paste a reference URL. The skill does mini-forensics on the URL and drafts in that style for *that run only*. Good for experiments.
+When `/aeko-create-content` asks "Add any of these formats?", you can reply `other:linkedin` and paste a reference URL or short style note. The skill uses that input as style guidance for *that run only*. Good for experiments.
 
 ### Option B: permanent (add a recipe file)
 
@@ -140,7 +142,7 @@ load_when: SKILL.md §5.1 selects channel=linkedin
 - Hashtags 3–6
 ```
 
-Then add a one-line entry to SKILL.md §5.0's channel table so Claude knows to load it. Currently you'd need to fork to do that — track [issue #_TBD_](https://github.com/AEKO-Intelligence/aeko-plugin/issues) for an upcoming `references/recipes/_extra.json` registry that lets you add channels without editing SKILL.md.
+Then add a one-line entry to SKILL.md §5.0's channel table so Claude knows to load it. That means editing your local installed plugin or maintaining a fork. If you do not want to edit SKILL.md, use the `other:<name>` route above.
 
 In the meantime, the `other:<name>` route covers the same ground for the channels you draft a few times per quarter. Permanent recipe files are best for channels you draft weekly.
 
@@ -194,14 +196,14 @@ Technical-artifact customization covers four files:
 | File | What it changes |
 | --- | --- |
 | `references/examples/llms-txt-example.txt` | Section ordering, heading wording, link-description style of generated llms.txt |
-| `references/examples/robots-txt-additions-example.txt` | Custom partner-crawler rules / path disallows appended after the AEKO AI-crawler allowlist |
+| `references/examples/robots-txt-additions-example.txt` | Custom partner-crawler rules / path disallows appended after the AEKO AI search/shopping visibility block |
 | `references/examples/json-ld-example.json` | Preferred Organization / WebSite shape (single block vs. `@graph`), optional fields you always emit (e.g., `foundingDate`, `potentialAction.SearchAction`) |
 | `references/examples/deploy-notes-example.md` | Internal deploy steps appended to the generated DEPLOY.md (your CI script, staging URL, owner contacts) |
 
 ### 6a. Hard rules that always apply
 
 - llms.txt: H1 first line, `## ` headings + markdown lists, absolute URLs.
-- robots.txt: must parse as valid robots.txt syntax. AEKO AI-crawler allowlist (GPTBot, ChatGPT-User, ClaudeBot, etc.) is always added — examples can only add rules, not remove the allowlist.
+- robots.txt: must parse as valid robots.txt syntax. AEKO separates AI search/shopping visibility bots from training/data crawlers. Examples can add partner/path rules, but cannot override that crawler policy.
 - JSON-LD: valid JSON, no trailing commas, no comments, `<script type="application/ld+json">` exactly.
 
 ### 6b. Per-domain technical voice
@@ -226,7 +228,9 @@ Format (H2 blocks scope the rule):
 - Hook always opens as a question
 - Forbidden: "출시", "런칭" — we say "공개" instead
 
-## channel: 보도자료
+## channel: press_release
+
+<!-- Korean users see this as 보도자료 in the channel picker; the internal slug is press_release. -->
 
 - Boilerplate last line always includes English company name in parens
 - Quote attribution: title + name (not name + title)
@@ -260,10 +264,12 @@ skills/aeko-create-content/
 ├── SKILL.md                                    ← executor logic (don't edit unless forking)
 └── references/
     ├── recipes/                                ← structural rules per channel (don't edit)
-    │   ├── 보도자료.md
+    │   ├── press_release.md
     │   ├── magazine.md
     │   ├── instagram.md
+    │   ├── naver_blog.md
     │   ├── tiktok.md
+    │   ├── tistory.md
     │   ├── youtube.md
     │   └── editorial-html-jsonld.md
     ├── examples/                               ← YOUR CUSTOMIZATION GOES HERE
@@ -271,7 +277,9 @@ skills/aeko-create-content/
     │   ├── blog-example.md                     ← edit me
     │   ├── instagram-post-example.md           ← edit me
     │   ├── in-store-content-example.md        ← edit me
-    │   └── press-release-example.md           ← edit me
+    │   ├── press-release-example.md           ← edit me
+    │   ├── context-reviews-fixture.md          ← fallback/eval fixture
+    │   └── aeko_shop-fixture.*                 ← reference only
     └── style/
         └── voice-overrides.md                  ← edit for multi-brand / per-channel rules
 
@@ -315,9 +323,9 @@ Other AEKO skills (research, reporting, brand-kit) don't currently use `referenc
 
 # 한국어 버전
 
-AEKO 플러그인은 일반적인 레시피로 시작하지만, 당신의 브랜드는 일반적이지 않습니다. 이 가이드는 세 개의 executor 스킬 — `/aeko-create-content`, `/aeko-update-pdp`, `/aeko-fix-technical` — 가 *당신의 목소리와 구조 컨벤션*으로 작동하도록 **브랜드 전용 예시, 맞춤 레시피, 보이스 오버라이드**를 추가하는 방법을 설명합니다 — 플러그인을 포크하지 않고.
+AEKO 플러그인은 일반적인 레시피로 시작하지만, 당신의 브랜드는 일반적이지 않습니다. 이 가이드는 세 개의 executor 스킬 — `/aeko-create-content`, `/aeko-update-pdp`, `/aeko-fix-technical` — 가 *당신의 목소리와 구조 컨벤션*으로 작동하도록 **브랜드 전용 예시, 레시피 선호도, 보이스 오버라이드**를 추가하는 방법을 설명합니다. 일반적인 커스터마이징은 플러그인을 포크하지 않아도 됩니다.
 
-이 패턴은 [Anthropic의 점진적 공개(progressive disclosure) 모델](https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/best-practices) — 일명 Skills 2.0 — 에 기반합니다. SKILL.md가 Claude에게 *언제* 어떤 참조 파일을 읽어야 하는지 지시하고, 무거운 디테일은 참조 파일에 둡니다. 사용자가 `references/`에 파일을 추가하면, 해당 채널이 실행될 때 Claude가 자동으로 가져옵니다.
+이 패턴은 [Anthropic의 점진적 공개(progressive disclosure) 모델](https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/best-practices) — 일명 Skills 2.0 — 에 기반합니다. SKILL.md가 Claude에게 *언제* 어떤 참조 파일을 읽어야 하는지 지시하고, 무거운 디테일은 참조 파일에 둡니다. 지원되는 예시/오버라이드 패턴의 경우 사용자가 `references/`에 파일을 추가하면 해당 채널 실행 시 Claude가 자동으로 가져옵니다.
 
 **대상 독자.** 이 가이드는 계층적으로 작성되었습니다:
 - **브랜드 운영자** (개발 배경 없음): §2부터 시작하세요. 10분 안에 첫 커스터마이징을 마칠 수 있습니다.
@@ -327,7 +335,7 @@ AEKO 플러그인은 일반적인 레시피로 시작하지만, 당신의 브랜
 
 | 스킬 | 커스터마이즈 대상 | 섹션 |
 | --- | --- | --- |
-| `/aeko-create-content` | 채널별 톤 (Instagram, 블로그, 보도자료 등) | §2, §4 |
+| `/aeko-create-content` | 채널별 톤 (Instagram, 블로그, `press_release` / 보도자료 등) | §2, §4 |
 | `/aeko-update-pdp` | PDP HTML 구조 + JSON-LD 필드 선택 | §5 |
 | `/aeko-fix-technical` | llms.txt 형식, robots.txt 추가 규칙, JSON-LD 형태, 배포 노트 | §6 |
 
@@ -337,12 +345,13 @@ AEKO 플러그인 설치 후 편집할 파일은 다음 경로에 있습니다:
 
 | 호스트 | 경로 |
 | --- | --- |
-| Claude Desktop (macOS) | `~/Library/Application Support/Claude/Claude Extensions/aeko-plugin/skills/aeko-create-content/` |
-| Claude Desktop (Windows) | `%APPDATA%\Claude\Claude Extensions\aeko-plugin\skills\aeko-create-content\` |
-| Claude Code | `~/.claude/plugins/aeko-plugin/skills/aeko-create-content/` |
-| Codex Desktop | `~/.codex/plugins/aeko-plugin/skills/aeko-create-content/` |
+| Claude Desktop (macOS) | `~/Library/Application Support/Claude/Claude Extensions/aeko-plugin/skills/` |
+| Claude Desktop (Windows) | `%APPDATA%\Claude\Claude Extensions\aeko-plugin\skills\` |
+| Claude Code | `~/.claude/plugins/aeko-plugin/skills/` |
+| Codex Desktop | `~/.codex/plugins/aeko-plugin/skills/` |
 
-경로를 모르겠다면 `/aeko-create-content`를 한 번 실행하고 트랜스크립트의 `Read` 호출을 보세요. 절대 경로가 표시됩니다.
+커스터마이즈하려는 스킬 폴더를 여세요. 예: `aeko-create-content/`, `aeko-update-pdp/`.
+경로를 모르겠다면 `/aeko-onboarding`을 실행하고 커스터마이즈 단계를 선택하세요. 로컬 플러그인 설치 위치를 찾아줍니다.
 
 ## 2. 빠른 시작 — Instagram(또는 어떤 채널이든)이 우리 브랜드처럼 들리게 만들기
 
@@ -379,16 +388,16 @@ Refs loaded:
 
 여기에 예시 파일이 보이면 완료입니다. 작성된 Instagram 포스트가 당신의 후크 스타일, 본문 리듬, 해시태그 수, 이모지 밀도를 반영해야 합니다.
 
-`recipes/instagram.md`만 보이고 `examples/...`가 없다면 파일이 인식되지 않은 것입니다 — 가장 흔한 원인은 파일명입니다. 스킬은 `<channel>-*example*.md` 패턴을 스캔합니다. 파일명을 바꿨다면 `instagram-post-example.md`로 되돌리세요.
+`recipes/instagram.md`만 보이고 `examples/...`가 없다면 파일이 인식되지 않은 것입니다 — 가장 흔한 원인은 파일명입니다. 새 예시 파일은 `instagram-summer-example.md`처럼 채널 slug와 `example`을 포함하세요. 번들 alias(`blog-example.md`, `press-release-example.md`, `in-store-content-example.md`)도 인식됩니다.
 
 ### 2d. 다른 채널도 동일하게
 
 같은 흐름으로:
 - `blog-example.md` → 네이버 블로그, 티스토리 초안에 적용
-- `press-release-example.md` → 보도자료 초안에 적용
+- `press-release-example.md` → `press_release` 채널에 적용 (한국어 UI에서는 보도자료로 표시)
 - `in-store-content-example.md` → 모든 채널의 보이스에 영향 (PDP, 브랜드 스토리 페이지, 카테고리 랜딩 카피 등 자사 콘텐츠 보이스 시그널)
 
-파일을 더 추가할 수 있습니다: `tiktok-script-example.md`, `youtube-description-example.md`, `magazine-feature-example.md`. 패턴은 `<channel>-*example*.md` — `references/examples/`에서 이 패턴에 맞는 파일이면 모두 자동 인식됩니다.
+파일을 더 추가할 수 있습니다: `tiktok-script-example.md`, `youtube-description-example.md`, `magazine-feature-example.md`. 일반 패턴은 `<channel>-*example*.md`입니다. 새 보도자료 예시는 slug 형태인 `press_release-summer-launch-example.md`를 권장합니다.
 
 ## 3. 점진적 공개(progressive disclosure)는 어떻게 작동하나
 
@@ -407,7 +416,7 @@ Anthropic의 스킬 시스템은 콘텐츠를 3단계로 로드합니다:
 
 이들이 충돌할 때의 **우선순위 규칙**:
 
-> voice-overrides > 예시 파일 > 레시피 기본값 > 브랜드 키트의 `tone_of_voice` > 인용 출처 구조 템플릿
+> voice-overrides > 예시 파일 > 레시피 기본값 > 브랜드 키트의 `tone_of_voice`
 
 즉, 예시 파일이 일반 레시피의 기본값을 덮어씁니다. 단, 레시피의 하드 수용 게이트(예: Instagram의 "해시태그 5–12개")는 여전히 적용됩니다. 수용 게이트도 덮어쓰고 싶다면 — 예: 우리 브랜드는 해시태그 3개 — 그게 `voice-overrides.md`의 역할입니다(§5).
 
@@ -417,7 +426,7 @@ Anthropic의 스킬 시스템은 콘텐츠를 3단계로 로드합니다:
 
 ### 옵션 A: 일회성 (파일 변경 없음)
 
-`/aeko-create-content`가 "Add any of these formats?" 질문을 할 때 `other:linkedin`이라고 답하고 참고 URL을 붙여넣을 수 있습니다. 스킬이 그 URL에 대한 미니 포렌식을 수행하고 *그 실행에 한해서* 해당 스타일로 작성합니다. 실험에 좋습니다.
+`/aeko-create-content`가 "Add any of these formats?" 질문을 할 때 `other:linkedin`이라고 답하고 참고 URL이나 짧은 스타일 설명을 붙여넣을 수 있습니다. 스킬은 그 입력을 *그 실행에 한해서* 스타일 가이드로 사용합니다. 실험에 좋습니다.
 
 ### 옵션 B: 영구 (레시피 파일 추가)
 
@@ -453,7 +462,7 @@ load_when: SKILL.md §5.1 selects channel=linkedin
 - 해시태그 3–6개
 ```
 
-그 후 SKILL.md §5.0의 채널 표에 한 줄을 추가해야 Claude가 로드합니다. 현재는 이걸 위해 포크가 필요합니다 — SKILL.md를 직접 편집하지 않고도 채널을 추가할 수 있게 해주는 `references/recipes/_extra.json` 레지스트리를 추후 도입 예정입니다 ([이슈 #_TBD_](https://github.com/AEKO-Intelligence/aeko-plugin/issues) 참조).
+그 후 SKILL.md §5.0의 채널 표에 한 줄을 추가해야 Claude가 로드합니다. 즉, 로컬 설치본의 SKILL.md를 편집하거나 포크를 유지해야 합니다. SKILL.md를 편집하고 싶지 않다면 위의 `other:<name>` 경로를 사용하세요.
 
 당분간 분기에 몇 번만 작성하는 채널은 `other:<name>` 경로로 충분합니다. 영구 레시피 파일은 매주 작성하는 채널에 적합합니다.
 
@@ -507,14 +516,14 @@ Refs loaded:   recipes/{pdp-scaffold,responsive-html-contract,json-ld-schemas}.m
 | 파일 | 변경되는 것 |
 | --- | --- |
 | `references/examples/llms-txt-example.txt` | 생성되는 llms.txt의 섹션 순서, 헤딩 표현, 링크 설명 스타일 |
-| `references/examples/robots-txt-additions-example.txt` | AEKO AI 크롤러 allowlist 뒤에 추가되는 커스텀 파트너 크롤러 규칙 / 경로 disallow |
+| `references/examples/robots-txt-additions-example.txt` | AEKO AI 검색/쇼핑 가시성 블록 뒤에 추가되는 커스텀 파트너 크롤러 규칙 / 경로 disallow |
 | `references/examples/json-ld-example.json` | 선호하는 Organization / WebSite 형태 (단일 블록 vs `@graph`), 항상 내보내는 선택 필드 (예: `foundingDate`, `potentialAction.SearchAction`) |
 | `references/examples/deploy-notes-example.md` | 생성된 DEPLOY.md에 추가되는 내부 배포 단계 (CI 스크립트, 스테이징 URL, 담당자 연락처) |
 
 ### 6a. 항상 적용되는 하드 룰
 
 - llms.txt: 첫 줄 H1, `## ` 헤딩 + 마크다운 리스트, 절대 URL.
-- robots.txt: 유효한 robots.txt 문법으로 파싱되어야 함. AEKO AI 크롤러 allowlist (GPTBot, ChatGPT-User, ClaudeBot 등)는 항상 추가 — 예시는 규칙을 추가만 가능, allowlist 제거 불가.
+- robots.txt: 유효한 robots.txt 문법으로 파싱되어야 함. AEKO는 AI 검색/쇼핑 가시성 봇과 training/data 크롤러를 분리합니다. 예시는 파트너/경로 규칙을 추가할 수 있지만 이 크롤러 정책을 덮어쓸 수 없습니다.
 - JSON-LD: 유효한 JSON, trailing comma 금지, 주석 금지, `<script type="application/ld+json">` 정확히 그대로.
 
 ### 6b. 도메인별 기술 보이스
@@ -539,7 +548,9 @@ Refs loaded:   recipes/{pdp-scaffold,responsive-html-contract,json-ld-schemas}.m
 - Hook은 항상 질문형으로 시작
 - Forbidden: "출시", "런칭" — 우리는 "공개"라고 말함
 
-## channel: 보도자료
+## channel: press_release
+
+<!-- 한국어 UI에서는 보도자료로 보이지만 내부 channel slug는 press_release입니다. -->
 
 - Boilerplate 마지막 줄에 항상 영문 사명을 병기
 - Quote 표기: 직책 + 이름 (이름 + 직책 X)
@@ -573,10 +584,12 @@ skills/aeko-create-content/
 ├── SKILL.md                                    ← 실행기 로직 (포크하지 않는 한 편집 금지)
 └── references/
     ├── recipes/                                ← 채널별 구조 규칙 (편집 금지)
-    │   ├── 보도자료.md
+    │   ├── press_release.md
     │   ├── magazine.md
     │   ├── instagram.md
+    │   ├── naver_blog.md
     │   ├── tiktok.md
+    │   ├── tistory.md
     │   ├── youtube.md
     │   └── editorial-html-jsonld.md
     ├── examples/                               ← 커스터마이징은 여기서
@@ -584,7 +597,9 @@ skills/aeko-create-content/
     │   ├── blog-example.md                     ← 편집 대상
     │   ├── instagram-post-example.md           ← 편집 대상
     │   ├── in-store-content-example.md        ← 편집 대상
-    │   └── press-release-example.md           ← 편집 대상
+    │   ├── press-release-example.md           ← 편집 대상
+    │   ├── context-reviews-fixture.md          ← fallback/eval fixture
+    │   └── aeko_shop-fixture.*                 ← 참고용
     └── style/
         └── voice-overrides.md                  ← 멀티브랜드 / 채널별 규칙 시 편집
 
