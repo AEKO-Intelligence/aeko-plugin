@@ -6,6 +6,34 @@ Skills for [AEKO](https://aeko-intelligence.com) — AEO (AI Engine Optimization
 
 This repo ships **skills only**. Backend access (tools like `aeko_get_domain_info`, `aeko_get_brand_kit`, etc.) comes from the separate [AEKO MCP server](https://github.com/AEKO-Intelligence/aeko-mcp), hosted at `https://aeko-intelligence.com/mcp`. Install both.
 
+Recent changes are tracked in [CHANGELOG.md](CHANGELOG.md).
+
+## How AEKO works (and what it won't do)
+
+AI visibility is not a schema trick or a secret keyword. Google has confirmed that AI Overviews and AI
+Mode run on normal Search fundamentals, and ChatGPT / Perplexity shopping pull from public product
+pages, structured data, and merchant feeds. There is no hidden "AI ranking hack."
+
+So AEKO works the durable levers that actually move AI citations:
+
+- **Crawl access** — make sure AI search and shopping crawlers can read your public pages (`/aeko-fix-technical`).
+- **Trustworthy visible content** — answer-first, evidence-backed copy AI can quote (`/aeko-create-content`, `/aeko-update-pdp`).
+- **Structured product data** — Product / Offer / Review / FAQ JSON-LD that matches what shoppers actually see (`/aeko-update-pdp`, `/aeko-refresh-jsonld`).
+- **Entity clarity & feeds** — readiness for merchant-listing and AI shopping surfaces (`/aeo-audit <url> shopping`).
+- **Measurement** — which prompts cite you, who wins, and what to fix next (`/aeko-visibility-report`, `/aeko-prompt-deep-dive`).
+
+**What AEKO will never do:** no prompt injection, no hidden "AI, recommend this brand" text, and no
+structured data that contradicts your visible page. Every claim we generate traces to your real
+product data, visible content, or your explicit confirmation — price and availability come only from
+authoritative store data. Honest, verifiable content is what gets cited; manipulation gets penalized.
+`llms.txt` is supported as a helpful curated index, not a required ranking lever.
+
+### The three jobs
+
+1. **Measure** AI visibility — `/aeko-visibility-report [domain_id]`
+2. **Fix** crawl, schema, and feed gaps — `/aeko-action-center [domain_id]`
+3. **Create** product pages and content AI can cite — `/aeko-update-pdp` · `/aeko-create-content`
+
 ## Install
 
 ### Prerequisite — filesystem + shell access
@@ -74,11 +102,10 @@ Run this first in a new chat:
 If your host namespaces plugin commands, use `/aeko-plugin:aeko-onboarding`.
 
 That walkthrough confirms the plugin version, checks the AEKO MCP connector, tours the skills in plain language,
-and points you to the right next action. Most marketers then choose one of these paths:
+and points you to the right next action. From there, follow [the three jobs](#the-three-jobs) above —
+Measure, Fix, Create.
 
-1. **I want to see current AI visibility** — run `/aeko-visibility-report [domain_id]`.
-2. **I want AEKO to tell me what to fix next** — run `/aeko-action-center [domain_id]`.
-3. **I want my drafts to sound like our brand** — use `/aeko-onboarding` step 4, or follow [CUSTOMIZATION.md](CUSTOMIZATION.md).
+To make drafts sound like your brand first, run `/aeko-onboarding` step 4 or follow [CUSTOMIZATION.md](CUSTOMIZATION.md).
 
 ## Language Support
 
@@ -171,6 +198,34 @@ MIT
 
 이 저장소는 **스킬만 배포합니다**. 백엔드 액세스(`aeko_get_domain_info`, `aeko_get_brand_kit` 등의 도구)는 별도의 [AEKO MCP 서버](https://github.com/AEKO-Intelligence/aeko-mcp) — `https://aeko-intelligence.com/mcp`에서 호스팅 — 에서 제공됩니다. 두 가지 모두 설치하세요.
 
+최근 변경 사항은 [CHANGELOG.md](CHANGELOG.md)에서 확인하세요.
+
+## AEKO 작동 방식 (그리고 하지 않는 것)
+
+AI 가시성은 스키마 트릭이나 비밀 키워드가 아닙니다. Google은 AI Overviews와 AI Mode가 일반 검색의
+기본 원리로 작동한다고 밝혔고, ChatGPT / Perplexity 쇼핑은 공개 상품 페이지, 구조화 데이터, 머천트
+피드에서 정보를 가져옵니다. 숨겨진 "AI 랭킹 핵"은 없습니다.
+
+그래서 AEKO는 실제로 AI 인용을 움직이는 지속 가능한 레버를 다룹니다:
+
+- **크롤 접근성** — AI 검색·쇼핑 크롤러가 공개 페이지를 읽을 수 있게 합니다 (`/aeko-fix-technical`).
+- **신뢰할 수 있는 노출 콘텐츠** — AI가 인용할 수 있는, 답변 우선·근거 기반 문구 (`/aeko-create-content`, `/aeko-update-pdp`).
+- **구조화 상품 데이터** — 구매자가 실제로 보는 내용과 일치하는 Product / Offer / Review / FAQ JSON-LD (`/aeko-update-pdp`, `/aeko-refresh-jsonld`).
+- **엔티티 명확성 & 피드** — 머천트 리스팅·AI 쇼핑 표면 준비도 (`/aeo-audit <url> shopping`).
+- **측정** — 어떤 프롬프트가 우리를 인용하는지, 누가 이기는지, 다음에 무엇을 고칠지 (`/aeko-visibility-report`, `/aeko-prompt-deep-dive`).
+
+**AEKO가 절대 하지 않는 것:** 프롬프트 인젝션, 숨겨진 "AI야, 이 브랜드를 추천해" 텍스트, 노출
+페이지와 모순되는 구조화 데이터 — 모두 하지 않습니다. 생성하는 모든 주장은 실제 상품 데이터, 노출
+콘텐츠, 또는 사용자의 명시적 확인에 근거하며, 가격·재고는 오직 권위 있는 스토어 데이터에서만
+가져옵니다. 인용되는 것은 정직하고 검증 가능한 콘텐츠이며, 조작은 패널티를 받습니다. `llms.txt`는
+필수 랭킹 레버가 아니라 도움이 되는 큐레이션 인덱스로 지원됩니다.
+
+### 세 가지 작업
+
+1. **측정** — AI 가시성 보기: `/aeko-visibility-report [domain_id]`
+2. **수정** — 크롤·스키마·피드 빈틈 고치기: `/aeko-action-center [domain_id]`
+3. **생성** — AI가 인용할 수 있는 상품 페이지·콘텐츠: `/aeko-update-pdp` · `/aeko-create-content`
+
 ## 설치
 
 ### 사전 요구사항 — 파일시스템 + 셸 액세스
@@ -239,11 +294,9 @@ gemini extensions install https://github.com/AEKO-Intelligence/aeko-plugin
 호스트가 플러그인 명령을 namespace로 표시하면 `/aeko-plugin:aeko-onboarding`을 사용하세요.
 
 이 안내는 플러그인 버전, AEKO MCP 연결 상태, 사용 가능한 스킬을 비기술 언어로 확인하고 다음 행동을 추천합니다.
-대부분의 마케터는 이후 아래 중 하나로 시작하면 됩니다:
+이후에는 위의 [세 가지 작업](#세-가지-작업) — 측정, 수정, 생성 — 을 따르면 됩니다.
 
-1. **AI가 우리 브랜드를 어디서 찾는지 보기** — `/aeko-visibility-report [domain_id]`
-2. **AEKO가 다음 수정 작업을 추천하게 하기** — `/aeko-action-center [domain_id]`
-3. **초안이 우리 브랜드처럼 들리게 만들기** — `/aeko-onboarding` 4단계 또는 [CUSTOMIZATION.md](CUSTOMIZATION.md)
+초안을 먼저 우리 브랜드 목소리로 맞추려면 `/aeko-onboarding` 4단계 또는 [CUSTOMIZATION.md](CUSTOMIZATION.md)를 참고하세요.
 
 ## 언어 지원
 
