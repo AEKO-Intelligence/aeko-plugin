@@ -13,7 +13,7 @@ allowed-tools: aeko_get_brand_kit, aeko_get_brand_kit_by_id, aeko_list_brand_kit
 
 # AEKO Brand Kit
 
-Manages the live Brand Kit consumed by Plan.md and guide.md generation. The live kit is the source of truth; Plan.md snapshots point back at a `snapshot_version`. Every edit here bumps the version — downstream `aeko-run-action` / `aeko-fix-technical` runs will warn if their plan is older than the live kit.
+Manages the live Brand Kit consumed by Plan.md and guide.md generation. The live kit is the source of truth; Plan.md snapshots point back at a `snapshot_version`. Semantic edits can bump the version — downstream `/aeko-update-pdp`, `/aeko-create-content`, and `/aeko-fix-technical` runs will warn if their plan is older than the live kit.
 
 > **What a Brand Kit is (and isn't).** The Brand Kit is your **content voice kit** — name, tagline, tone, audience, and guardrails that steer how AEKO *writes* content. It is **not** a separate "aeko.shop brand" you manage here. When you publish to aeko.shop, the shop brand identity (the public brand page at `aeko.shop/brands/<slug>`) is **derived from this kit on publish** and keyed by your store **domain** (one shop brand per domain). You don't create or claim a shop brand to publish — publishing auto-creates/updates it. "Connect your brand" (`aeko.shop/connect-brand`) is a separate, optional step that verifies you own the site to unlock the on-site shop agent; it does not gate publishing.
 
@@ -55,7 +55,7 @@ Backend-exposed fields (source: `api/schemas/brand_kits.py::BrandKitResponse`):
 - Account: `metadata.account_tier`, `metadata.billing_url` (drives tier-gate copy in other skills)
 - Versioning: `snapshot_version` (bumps only on semantic changes — voice/target_audience/must_include/forbidden), `updated_at`, `status` (active / draft / generating / failed)
 
-Fields that are null/empty show as `(unset)` in the formatter — never hide missing fields; missing fields are what the user should consider filling in. Voice fields (`tone_of_voice` + `brand_voice_summary`) are the highest-leverage — they feed `aeko-run-action` and `aeko-fix-technical` at execution time.
+Fields that are null/empty show as `(unset)` in the formatter — never hide missing fields; missing fields are what the user should consider filling in. Voice fields (`tone_of_voice` + `brand_voice_summary`) are the highest-leverage — they feed `/aeko-update-pdp`, `/aeko-create-content`, and `/aeko-fix-technical` at execution time.
 
 ## Step 3 — If mode is `view`, stop here.
 

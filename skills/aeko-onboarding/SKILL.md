@@ -115,8 +115,8 @@ Render in `session_language`:
 
 ```
 Setup check
-  Plugin version:     0.7.0 (installed at <path>)
-  Skills installed:   13
+  Plugin version:     <version from plugin.json> (installed at <path>)
+  Skills installed:   <count from skills directory>
   MCP connector:      connected · 2 domain(s) on file
   Brand kit:          loaded (brand_name: "<...>")    ← optional line
 ```
@@ -205,7 +205,7 @@ Print a summary in `session_language`:
 
 ```
 Onboarding complete.
-  Plugin:        0.7.0 · 13 skills installed
+  Plugin:        <version from plugin.json> · <count from skills directory> skills installed
   MCP:           connected · 2 domain(s)
   Customized:    aeko-create-content/references/examples/instagram-2026-summer.md
                  aeko-create-content/references/style/voice-overrides.md (edited)
