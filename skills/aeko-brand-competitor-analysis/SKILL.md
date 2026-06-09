@@ -15,6 +15,12 @@ allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_brand_kit, aeko
 
 Produces a competitor-positioning analysis at the **brand level** (not product level — for that use `/aeko-product-competitor-analysis`). Output: a clear picture of what the competitor stands for publicly, where they win AI answers, and one concrete action the user could take.
 
+## Marketer-facing output contract
+
+Frame this as "why AI may mention this competitor instead of us." Start with public positioning, AI visibility
+gap, and one practical next move. Keep source caveats clear; never imply AEKO has measured a signal when it is
+inferred from WebSearch/WebFetch.
+
 ## Inputs
 
 - `domain-id` (optional) — UUID. Missing → `aeko_list_domains` pick-list.

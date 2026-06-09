@@ -15,6 +15,12 @@ allowed-tools: aeko_get_product_description, aeko_update_product_description, ae
 
 Surgical JSON-LD update flow. Reads the full description, patches just the JSON-LD `<script>` blocks (review count, rating, fresh reviews), writes back. Never rewrites the surrounding HTML.
 
+## Marketer-facing output contract
+
+Explain this as "refreshing review facts AI can read" rather than "editing JSON-LD." It can write to the store, so
+show Before / After / Risk / Undo before completion. This skill does not refresh price or availability unless a
+future backend supplies authoritative current offer fields.
+
 ## Inputs
 
 - `product-id` (required) — `$1`. External product id (Cafe24 product_no / Shopify product id).
@@ -55,7 +61,8 @@ Then stop.
 
 ## Step 4 — Identify patch targets
 
-Typical refresh targets (pick whichever apply based on what's present):
+Typical refresh targets (pick whichever apply based on what's present). Keep this skill scoped to review/rating
+freshness:
 
 - `Product.aggregateRating.ratingValue` — current average rating
 - `Product.aggregateRating.reviewCount` — total review count
@@ -63,9 +70,13 @@ Typical refresh targets (pick whichever apply based on what's present):
 - `Review[]` at root (if Reviews are not nested under Product)
 - `AggregateRating` block standalone
 
+Do not refresh `Offer.price`, `Offer.availability`, shipping, or return-policy fields in this skill. Those fields
+must come from authoritative store/product data and visible-content parity checks handled by `/aeko-update-pdp` or
+a future backend offer-refresh tool.
+
 **Source of truth for the new values** (pick whichever is available, in priority order):
 1. **If prose in an Action Item pointed you here** — the Plan.md frontmatter may already carry the new review count / rating. Use it.
-2. **Scrape the live storefront page** via `WebFetch(<target_url>)` — most storefronts render review widgets with current counts visible in the HTML. Extract from visible text / review-widget markup.
+2. **Read visible review widgets only** via `WebFetch(<target_url>)` when the current review count/rating is clearly shown in text or review-widget markup. Do not use this path for price, stock, shipping, or returns.
 3. **Ask the user** — "I found existing JSON-LD but couldn't detect a fresh review count. Paste the current review count and average rating, or cancel."
 
 Never fabricate values. If you can't find or confirm new values, abort with a clear message.
@@ -118,6 +129,9 @@ Parse response for `audit_id` + `admin_url` + status. On 4xx, surface verbatim; 
 ✔ JSON-LD refreshed on <product_title or id>
   Platform:   <cafe24 | shopify>
   Audit ID:   <audit_id>
+  Changed:    review/rating facts only
+  Risk:       store description was updated, but only JSON-LD review blocks changed
+  Undo:       aeko_revert_store_write("<audit_id>")
   Admin URL:  <admin_url>
   Changes:
     - Product.aggregateRating.ratingValue: 4.6 → 4.7

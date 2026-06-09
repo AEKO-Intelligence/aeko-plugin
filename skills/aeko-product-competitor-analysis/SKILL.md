@@ -15,6 +15,12 @@ allowed-tools: aeko_get_domain_info, aeko_get_brand_kit, aeko_get_product_descri
 
 Produces a comparison matrix between one of the user's products and 3-5 competing products across the same category. Drives PDP strategy — output tells the user exactly where their PDP lags or leads.
 
+## Marketer-facing output contract
+
+Frame this as "how shoppers and AI assistants compare this product." Lead with practical differences:
+price band, material, claims, reviews, return/shipping clarity, and AI-readable product facts. End with one
+recommended PDP/content action.
+
 ## Inputs
 
 - `product-id` (required) — `$1`. AEKO `external_product_id` from a connected Cafe24 / Shopify integration, OR a direct product URL (skill will parse and confirm).

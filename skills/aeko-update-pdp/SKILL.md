@@ -17,6 +17,12 @@ Executes one Action-tab PDP item end-to-end: fetch Plan.md → parse frontmatter
 
 Contract reference: `docs/contracts/action-item-contract.md` §3 (Plan.md), §7 (shadow product), §6 (completion).
 
+## Marketer-facing output contract
+
+Frame this as "improving a product page so AI shopping/search tools can understand and cite it." Open with what
+will change, why it matters, and whether the run is preview/shadow/live. Before any store write, show Before /
+After / Risk / Undo. Do not show raw Plan frontmatter, `execution_class`, or schema internals unless debugging.
+
 ## Input
 
 - `item-id` (required) — `$1`. If missing, stop and point user to `/aeko-action-center <domain_id> pdp`.
@@ -35,9 +41,13 @@ Call `aeko_get_action_plan(item_id)`. Parse YAML frontmatter + prose body.
 - `tier_required` gate via the resolved Brand Kit metadata (`aeko_get_brand_kit_by_id` when `brand_kit_id` is present, otherwise `aeko_get_brand_kit`).
 
 Print header in `target_language`:
-1. Action label — KO: "상품 페이지 개선: `<write_mode>`" / EN: "PDP update: `<write_mode>`"
+1. Action label — KO: "상품 페이지 개선" / EN: "Product page improvement"
 2. Context: domain, product title (resolve via `target_url` inspection), channels.
 3. Persona: `persona_label` if present.
+4. Safety: KO/EN readout of `write_mode` as one of:
+   - `shadow_product` → "Draft/shadow copy first — safest"
+   - `append_below_existing` → "Can affect live store description"
+   - `preview_only` → "Read-only preview file"
 
 Print prose body verbatim. Never echo raw frontmatter.
 
@@ -183,6 +193,22 @@ Open the HTML in the default browser for review:
 
 ## Step 7 — Write-back per write_mode
 
+Before any write-back call, print a marketer-facing confirmation block:
+
+```
+Before
+- Current PDP description stays available through the store audit trail.
+
+After
+- Adds AI-readable product facts, review proof, FAQ content, and shopping facts AEKO can verify.
+
+Risk
+- <preview_only: none to live store | shadow_product: low | append_below_existing: live PDP changes>
+
+Undo
+- <preview_only: delete/ignore the file | write: use aeko_revert_store_write("<audit_id>") after the audit id returns>
+```
+
 **`shadow_product` (default):** the v0.5.0 MCP surface retains only `aeko_update_product_description`, `aeko_update_product_tags`, `aeko_update_product_meta`, `aeko_list_store_writes`, and `aeko_revert_store_write`. If the backend exposes a distinct shadow-product creation endpoint through one of these calls (e.g. `aeko_update_product_description` with a shadow flag in the payload), follow the prose's instructions for that call. Otherwise surface the constraint to the user: "Shadow-product write is not yet exposed via MCP — I'll write to `preview_only` and you can paste into Cafe24 admin under a new draft product." Do NOT silently downgrade without telling the user.
 
 **`append_below_existing`:**
@@ -214,11 +240,12 @@ Only complete if:
 ## Step 9 — User-facing summary
 
 ```
-✔ PDP update complete
-  Write mode:    <write_mode>
+✔ Product page improvement complete
+  Safety:        <preview file | draft/shadow | live PDP updated>
   Audit ID:      <audit_id>         (revert: aeko_revert_store_write("<audit_id>"))
   Admin URL:     <admin_url>
   Artifact:      <pdp.html path>
+  AI-readable:   product facts, review proof, FAQ, shopping facts AEKO could verify
   Refs loaded:   recipes/{pdp-scaffold,responsive-html-contract,json-ld-schemas}.md
                  + examples/pdp-html-example.html  (when present)
                  + examples/json-ld-preferences.json  (when present)

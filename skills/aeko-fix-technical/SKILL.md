@@ -16,6 +16,13 @@ Executor for one Technical-tab item, end-to-end: fetch Plan.md → parse frontma
 
 Contract reference: `docs/contracts/action-item-contract.md` §4 (guide.md / Plan.md format for technical items), §6 (completion).
 
+## Marketer-facing output contract
+
+Open with: what AEKO will generate, why it matters, and that this skill creates files/checklists only — it does
+not deploy changes or touch the live store. For robots.txt, explain "AI search/shopping tools can read public
+pages" separately from "training crawlers may collect content." End with Before / After / Risk / Undo and one
+recommended next step.
+
 ## Input
 
 - `item-id` (required) — `$1`. If missing, stop and point user to `/aeko-action-center <domain_id> technical`.
@@ -39,9 +46,19 @@ Dispatch is driven by `frontmatter`. Prose is narrative guidance only.
 - `status ∈ {pending, ready}` — else stop with appropriate message.
 - `tier_required` gate: compare against the resolved Brand Kit metadata (`aeko_get_brand_kit_by_id` when `brand_kit_id` is present, otherwise `aeko_get_brand_kit`); block if caller tier is below (bilingual tier-gate copy in §Copy).
 
-Print a plain-language header in `target_language` (default English if unsupported), then the prose body verbatim. Header format:
+Print a plain-language header in `target_language` (default English if unsupported), then the prose body verbatim. Translate
+`artifact_type` before showing it:
 
-1. Action label — KO: "기술 수정 생성: `<artifact_type>` (`<deploy_mode>`)" / EN: "Generating technical fix: `<artifact_type>` (`<deploy_mode>`)"
+| `artifact_type` | EN label | KO label |
+|---|---|---|
+| `llms_txt` | AI content index | AI 콘텐츠 인덱스 |
+| `robots_txt_patch` | AI crawler access | AI 크롤러 접근 |
+| `json_ld` | brand/site schema | 브랜드/사이트 스키마 |
+| `technical_bundle` | technical health bundle | 기술 상태 패키지 |
+
+Header format:
+
+1. Action label — KO: "기술 상태 개선: <KO label>" / EN: "Technical health fix: <EN label>"
 2. Context: `domain_id`, `target_url` if present.
 3. Sections: comma-joined `sections_required` if non-empty.
 
@@ -121,15 +138,26 @@ Only call complete if every acceptance-gate check passed AND all artifacts were 
 ## Step 6 — User-facing summary
 
 ```
-✔ Technical item complete: <artifact_type>
-  Artifacts:       <paths>
-  Refs loaded:     recipes/<artifact_type>.md + recipes/deploy-checklist.md
-                   + examples/<artifact_type>-example.<ext>  (when present)
-                   + style/voice-overrides.md  (when present, scoped to this domain)
-  Self-validation: <pass summary>
-  Deploy:          see DEPLOY.md in the same directory
-  Next:            /aeko-action-center <domain_id> technical
+✔ Technical fix package ready
+
+What changed
+- <plain-language summary: e.g. "AI search/shopping crawlers can read public product pages" or "brand schema file generated">
+
+Risk
+- No live site changes were deployed by this skill.
+- For robots.txt, search/shopping bot access is separate from training/data crawler access.
+
+Undo
+- Do not deploy these files, or restore the previous robots.txt/schema file if already deployed manually.
+
+Files
+- <paths>
+
+Recommended next step
+- <one command or "Deploy using DEPLOY.md">
 ```
+
+Keep refs loaded and self-validation in a short "Technical details" block after the marketer summary.
 
 ## Error paths
 

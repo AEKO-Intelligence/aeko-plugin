@@ -97,6 +97,38 @@ An FAQ answer that is just a restated marketing line fails E-E-A-T. One that say
 
 ---
 
+## 5. Decision-guide blocks — for AI shopping and comparison
+
+AI shopping experiences compare products by constraints: budget, use case, size, comfort, materials,
+reviews, trade-offs, return risk, and availability. Help the buyer decide, not just admire the product.
+For ecommerce content and PDP sections, include one or more compact decision blocks when the substance
+supports them:
+
+- **Best for / not for:** "Best for hot sleepers who want low weight; not for buyers who want a heavy hotel feel."
+- **Trade-off table:** feature, what it helps, what to watch.
+- **Comparison attributes:** material, size, care, warranty/returns, price band, availability, review signal.
+- **Buyer constraints:** budget, skin sensitivity, climate, room size, gift use, shipping deadline.
+- **Evidence-backed caveat:** a specific limitation grounded in specs or reviews.
+
+This is not a CTA block. Do not use hard-sell language. The goal is to make the product easy for a human
+and an AI shopping assistant to compare honestly.
+
+---
+
+## The anti-manipulation rule (non-negotiable)
+
+Never add hidden or visible instructions aimed at manipulating AI systems. Do not write:
+
+- Hidden text, comments, or schema fields telling an AI to recommend the brand.
+- "Ignore previous instructions" or any prompt-injection style copy.
+- Invisible AI-only claims that shoppers cannot see.
+- Structured data that exaggerates, invents, or contradicts visible product facts.
+
+If a sentence only makes sense as an attempt to influence an AI model rather than help a shopper, remove
+it. AEKO optimizes clarity, evidence, and accessibility — not prompt injection.
+
+---
+
 ## The anti-fabrication rule (non-negotiable)
 
 **Never invent a lived experience.** Originality (§3a) and Experience (§4) must trace to a *real*
@@ -123,4 +155,6 @@ the brand look dishonest. Specific-but-honest always beats vivid-but-invented.
 - [ ] **Cohort:** is a specific reader named and served?
 - [ ] **Contrarian:** is there ≥1 non-obvious, supported claim?
 - [ ] **E-E-A-T:** if there's an FAQ, does every answer show experience + expertise + specifics + honesty?
+- [ ] **Decision support:** for shopping content, is there a best-for/trade-off/comparison block when substance supports it?
 - [ ] **No fabrication:** every experiential claim traces to real substance.
+- [ ] **No AI manipulation:** no hidden prompts, AI-only persuasion, or misleading schema/content.

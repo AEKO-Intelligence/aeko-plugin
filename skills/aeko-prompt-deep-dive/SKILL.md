@@ -15,6 +15,11 @@ allowed-tools: aeko_get_tracked_prompt, aeko_get_brand_kit, aeko_get_domain_info
 
 Walks a user through one tracked prompt's full citation footprint. Output: a clear picture of which pages / brands win this prompt across AI engines, plus one concrete action the user could take.
 
+## Marketer-facing output contract
+
+Explain the prompt as a real customer question. Keep the report focused on: who AI mentions, which pages AI cites,
+what facts AI appears to reuse, and the one best action. Label fact reuse as inferred absorption, not measured fact.
+
 ## Input
 
 - `prompt-id` (required) — `$1`. UUID of a tracked prompt (must have a `UserPrompts` row for the current user).
@@ -90,6 +95,9 @@ For each top source with non-null `crawl`, analyze:
   it lead with the answer (BLUF)? give self-contained Point·Reason·Example blocks (PREP)? carry lived,
   specific detail a generic page lacks (Informational Gain)? show experience in its FAQ (E-E-A-T)? This is
   what makes the takeaway *actionable* — it maps straight to a fix the executor skills apply.
+- **Inferred absorption** — compare `response.full_response`, `citations[].context_snippet`, and
+  `crawl.extracted_text` for overlapping facts, phrasing, numbers, and claims. Label this as inference:
+  "AI appears to use..." Never present it as a measured metric.
 
 Print under each top source:
 
@@ -98,6 +106,7 @@ Print under each top source:
    JSON-LD:    <types present, or "none">
    Citability: <score if known, else "N/A">
    Wins via:   <framework(s) it exploits — e.g. "BLUF + E-E-A-T FAQ">
+   AI appears to use: <inferred facts/phrasing, or "not enough evidence">
    Takeaway:   <one sentence: the framework gap to close on the user's page>
 ```
 

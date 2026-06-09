@@ -19,6 +19,12 @@ A friendly first-run guide. Five phases — Welcome → Skill catalog → Setup 
 
 Use when the user types `/aeko-onboarding`, just installed the plugin, or asks "where do I start with AEKO?"
 
+## Marketer-facing output contract
+
+Assume the user is a non-technical ecommerce marketer. Explain AEKO as three journeys: see where AI finds us,
+fix what blocks AI discovery, and improve products/content AI can cite. Keep setup checks short and translate
+technical failures into exact next actions.
+
 ---
 
 ## Step 1 — Welcome
@@ -52,26 +58,28 @@ Mirror `session_language` for every subsequent prompt and table caption. Code bl
 
 ## Step 2 — Skill catalog
 
-List the 12 skills grouped by purpose so the user can see the surface area at a glance. Render as a markdown table; mirror header labels in `session_language`.
+List the 14 skills grouped by marketer journey so the user can see the surface area at a glance. Render as a markdown table; mirror header labels in `session_language`.
 
 | Group | Slash command | One-liner |
 |---|---|---|
-| **Start here** | `/aeko-action-center` | Router for all pending items (Technical / PDP / Content). |
+| **Start here** | `/aeko-action-center` | Shows pending work as Technical health, Product pages, and Content AI can cite. |
+|  | `/aeko-onboarding` | Guided first-run setup check and skill tour. |
 | **Visibility & research** | `/aeko-visibility-report` | AEO score, mentions, citations, sentiment over a window. |
-|  | `/aeko-prompt-deep-dive` | Per-platform forensics for one tracked prompt. |
+|  | `/aeko-prompt-deep-dive` | Shows why one tracked prompt wins or loses across AI platforms. |
 |  | `/aeko-find-prompts-to-track` | Discover and track prompts your audience actually asks. |
 |  | `/aeko-brand-competitor-analysis` | Brand-level positioning vs. competitors in AI answers. |
 |  | `/aeko-product-competitor-analysis` | Product-level matrix: JSON-LD, FAQ, reviews, gaps. |
-| **Executors (customizable)** | `/aeko-update-pdp` | PDP rewrite + JSON-LD + (shadow-by-default) store write. |
-|  | `/aeko-create-content` | Multi-channel content fanout from citation forensics. |
-|  | `/aeko-fix-technical` | llms.txt, robots.txt, site JSON-LD bundles. |
-| **Maintenance** | `/aeko-refresh-jsonld` | Periodic JSON-LD field refresh (read-patch-write). |
+| **Executors (customizable)** | `/aeko-update-pdp` | Product page improvement with shopper copy, review proof, FAQ, and AI-readable facts. |
+|  | `/aeko-create-content` | Multi-channel content grounded in product facts, reviews, prompts, and Brand Kit. |
+|  | `/aeko-fix-technical` | Technical health package for crawler access, llms.txt, robots.txt, and site schema. |
+| **Publish** | `/aeko-publish-content` | Publish saved content variations only after explicit confirmation. |
+| **Maintenance** | `/aeko-refresh-jsonld` | Refresh review facts AI can read, such as rating and review count. |
 |  | `/aeko-brand-kit` | View and edit your brand kit. |
-|  | `/aeo-audit` | Generic AEO readiness audit (no AEKO account required). |
+|  | `/aeo-audit` | Generic AEO audit; add `shopping` for product-level AI shopping readiness. |
 
 Note for `session_language=ko`: render the One-liner column in Korean; keep slash commands and skill names verbatim.
 
-After the table, say: "These are loaded as Claude skills — invoke any of them with the slash command shown. The three under **Executors (customizable)** also accept brand-specific overrides; we'll cover that in Step 4."
+After the table, say: "Most users should start with `/aeko-action-center` or `/aeko-visibility-report`. Publish is separate on purpose: AEKO drafts first, then asks before anything goes live."
 
 ---
 
@@ -258,22 +266,24 @@ End with the docs link (`https://aeko-intelligence.com`) and an invitation to co
 
 ### 2단계 — 스킬 카탈로그
 
-12개의 스킬을 4개 그룹으로 묶어 표로 보여줍니다.
+14개의 스킬을 마케터 여정 기준으로 묶어 표로 보여줍니다.
 
 | 그룹 | 슬래시 명령 | 한 줄 설명 |
 |---|---|---|
-| **시작점** | `/aeko-action-center` | 모든 대기 항목(기술/PDP/콘텐츠)을 안내하는 라우터. |
+| **시작점** | `/aeko-action-center` | 대기 작업을 기술 상태, 상품 페이지, 인용 가능한 콘텐츠로 나눠 안내. |
+|  | `/aeko-onboarding` | 첫 실행 설정 확인과 스킬 안내. |
 | **가시성 · 리서치** | `/aeko-visibility-report` | 기간별 AEO 점수, 멘션, 인용, 감성 분석. |
-|  | `/aeko-prompt-deep-dive` | 추적 중인 프롬프트 1건의 플랫폼별 포렌식. |
+|  | `/aeko-prompt-deep-dive` | 추적 중인 프롬프트 1건이 AI 플랫폼별로 왜 이기거나 지는지 분석. |
 |  | `/aeko-find-prompts-to-track` | 사용자 오디언스가 실제로 묻는 프롬프트 발굴 + 추적. |
 |  | `/aeko-brand-competitor-analysis` | AI 답변 안에서 브랜드 vs 경쟁사 포지셔닝. |
 |  | `/aeko-product-competitor-analysis` | 제품 단위 매트릭스 (JSON-LD, FAQ, 리뷰, 빈틈). |
-| **실행 (커스터마이즈 가능)** | `/aeko-update-pdp` | PDP 리라이트 + JSON-LD + 스토어 쓰기 (기본 shadow). |
-|  | `/aeko-create-content` | 인용 포렌식 기반 멀티채널 콘텐츠 생성. |
-|  | `/aeko-fix-technical` | llms.txt, robots.txt, 사이트 JSON-LD 번들. |
-| **유지보수** | `/aeko-refresh-jsonld` | JSON-LD 필드 정기 새로고침 (read-patch-write). |
+| **실행 (커스터마이즈 가능)** | `/aeko-update-pdp` | 구매자 문구, 리뷰 근거, FAQ, AI가 읽는 상품 사실로 상품 페이지 개선. |
+|  | `/aeko-create-content` | 상품 사실, 리뷰, 추적 프롬프트, 브랜드 키트 기반 멀티채널 콘텐츠 생성. |
+|  | `/aeko-fix-technical` | 크롤러 접근, llms.txt, robots.txt, 사이트 스키마를 위한 기술 상태 패키지. |
+| **게시** | `/aeko-publish-content` | 저장된 콘텐츠 변형본을 명시 확인 후 게시. |
+| **유지보수** | `/aeko-refresh-jsonld` | 평점과 리뷰 수처럼 AI가 읽는 리뷰 사실 새로고침. |
 |  | `/aeko-brand-kit` | 브랜드 킷 조회/수정. |
-|  | `/aeo-audit` | AEKO 계정 없이도 동작하는 일반 AEO 진단. |
+|  | `/aeo-audit` | 일반 AEO 진단; `shopping`을 붙이면 상품 단위 AI 쇼핑 준비도 진단. |
 
 **실행 (커스터마이즈 가능)** 그룹의 3개 스킬은 `references/recipes/`, `references/examples/`, `references/style/` 하위 파일을 통해 브랜드별로 덮어쓸 수 있습니다. 자세한 내용은 4단계에서 안내합니다.
 

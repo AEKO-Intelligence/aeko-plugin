@@ -21,6 +21,11 @@ Runs after `/aeko-create-content` (or after any other flow that saved publishabl
 
 **Key change from earlier versions of this skill:** the publish source-of-truth moved from local disk files to backend `content_variations` rows. The skill no longer scans `./aeko-artifacts/`, no longer reads `.meta.json`, no longer parses HTML for product IDs. Every payload field comes from the stored row. This means the skill works cross-machine, cross-session, and from any authoring flow that calls `aeko_save_content_variation` — not just `/aeko-create-content`.
 
+## Marketer-facing output contract
+
+This is a publish flow, so be explicit before any publish call: destination, live-vs-draft status, what changes,
+risk, and undo/revision path. Never publish automatically after listing rows; require the user to pick/confirm.
+
 > **Backend prerequisite — three new MCP tools.** This skill requires `aeko_list_content_variations` and `aeko_publish_content_variation`. If either is missing from the current MCP session (handlers rolling out), Step 0 surfaces a friendly bilingual "come back later" message before any user prompts. The companion tool `aeko_save_content_variation` is called by `/aeko-create-content`; this skill never calls it directly.
 
 ## Input
@@ -130,15 +135,19 @@ Print a one-block summary built from the row's `meta_summary` and other list-res
 
 ```
 Publish plan
-  destination:       <"aeko_shop" or "own_store_blog">
-  item:              <item_id>
-  variation:         <variation_id>
-  title:             <variation.title>
-  saved at:          <variation.created_at>
-  has hero image:    <meta_summary.has_hero_image ? "yes" : "no">
-  featured products: <meta_summary.featured_products_count> (aeko_shop upserts missing products, then maps post_products)
-  locale:            <meta_summary.locale or "unknown">
-  current status:    <variation.status>
+  Where it goes:       <"aeko.shop live post" or "own-store blog draft row">
+  What will publish:   <variation.title>
+  Current status:      <variation.status>
+  Hero image:          <yes|no>
+  Product callouts:    <featured_products_count>
+
+Risk
+  <aeko_shop: This can update the live aeko.shop post for this item.>
+  <own_store_blog: This creates/updates an AEKO-owned draft, not the live store.>
+
+Undo / revise
+  Draft: edit the saved variation, then publish again.
+  Already live: regenerate a new variation with /aeko-create-content <item_id>, then publish it to overwrite.
 ```
 
 Ask for confirmation (bilingual per `meta_summary.locale` when available; else default to user's locale):

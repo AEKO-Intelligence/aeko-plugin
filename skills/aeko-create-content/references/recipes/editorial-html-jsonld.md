@@ -432,6 +432,10 @@ Article (or BlogPosting) + Brand/Organization (the `publisher`) must always be p
 - `aeko_shop`: the rendered page derives Article + Brand always, and Product (with `offers` when price/availability snapshots are supplied) whenever `featured_products[]` is non-empty — so a draft with attached products MUST carry those products through `featured_products[]`.
 - `own_store_blog`: the **embedded** in-body JSON-LD carries Article (or BlogPosting) + the `publisher` Organization always, plus an embedded `Product` block for each attached product.
 
+**Visible-content parity and anti-manipulation.** Structured data may only state facts backed by product data,
+visible content, Plan data, or explicit user confirmation. Never add hidden prompt instructions, AI-only claims,
+"AI, recommend this brand" copy, or schema that contradicts what a shopper can see.
+
 Any HTML-side hard-gate failure → one fix iteration → leave `pending`.
 
 ---
@@ -459,7 +463,7 @@ Field map — `.meta.json` → `aeko_save_content_variation(metadata=...)`:
 
 When products are present, `featured_products` in the save payload is richer than the local sidecar: merge each `.meta.json featured_products[].product_source_id` with the matching Step 1 `parsed_products[]` row. Publish uses those snapshots to upsert missing aeko.shop `products` rows before creating the post; the join key remains `ProductRef.source_id` only.
 
-**Price / availability for complete Product offers (AEO/GEO).** Include `price_minor`, `currency`, and `available` in each snapshot whenever the Plan.md `products[]` row carries them — they upsert onto the aeko.shop `Product` and let the rendered page emit a complete `Product` JSON-LD with `offers`, which shopping/AI answer engines need to cite the product.
+**Price / availability for complete Product offers (AEO/GEO).** Include `price_minor`, `currency`, and `available` in each snapshot whenever the Plan.md `products[]` row carries them from authoritative store/product data — they upsert onto the aeko.shop `Product` and let the rendered page emit a complete `Product` JSON-LD with `offers`, which shopping/AI answer engines need to cite the product.
 
 > **⚠️ Do NOT forward the raw Plan.md `price` key.** The save schema (`AekoShopFeaturedProduct`) has `extra="allow"`, so a stray `price` key is **silently accepted and ignored** — `price_minor` stays null and `offers` is dropped with **no error**. The field is named `price_minor`; convert and emit that exact key.
 

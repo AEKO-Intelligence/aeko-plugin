@@ -15,6 +15,11 @@ allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_brand_kit, aeko
 
 Produces a structured AI visibility report for one domain. Output is designed to be pasted into a board / team update without further editing.
 
+## Marketer-facing output contract
+
+Write for a marketing lead or founder. Lead with business meaning, not backend scopes: "Are we being mentioned?",
+"Are we being cited?", "What changed?", and "What should we do next?" Keep `depth=summary` to one page.
+
 ## Inputs
 
 - `domain-id` (optional) — UUID. Missing → `aeko_list_domains` pick-list.
@@ -60,12 +65,17 @@ Sentiment: <avg_sentiment_score>% positive (<WoW trend>)
 - <page_url> — cited <N>× by {platforms} · top prompt: "<prompt text>"
 - ...
 
+## What AI appears to use from our pages
+
+- <page_url> — inferred from overlapping facts/snippets, not a measured metric: <plain-language summary>
+- If there is not enough crawl/response overlap, say "not enough evidence yet" instead of guessing.
+
 ## Infrastructure snapshot
 
-- llms.txt: <yes|no>
-- Robots.txt allows AI crawlers: <yes|no|partial>
+- AI search/shopping crawler access: <yes|no|partial>
+- llms.txt curated index: <yes|no> (optional)
 - JSON-LD coverage: <yes|no>
-(If any is "no" or "partial" → append "run `/aeko-action-center <domain_id> technical`")
+(If crawler access or JSON-LD is "no" or "partial" → append "run `/aeko-action-center <domain_id> technical`")
 
 ## Recommended next step
 
@@ -101,6 +111,10 @@ When a competitor's page outranks yours for a prompt, note *why* in the plugin's
 "the cited winner leads with the answer (BLUF) and shows lived detail (Informational Gain); your page is
 generic." This makes the report's findings map straight to what the executor skills fix — for a single
 prompt, hand off to `/aeko-prompt-deep-dive <prompt_id>`.
+
+Where response and crawl snippets are available, add a clearly labeled "inferred absorption" note:
+"AI appears to reuse these facts from the page..." This is an interpretation from text overlap, not a
+platform-provided metric.
 
 ```
 ## Competitive signal (from mentions[] across responses)

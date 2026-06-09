@@ -14,6 +14,11 @@ allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_brand_kit, aeko
 
 Helps the user discover research prompts worth tracking. Goal: after this skill runs, the user has 5-10 new tracked prompts relevant to their brand, without having to leave Claude and paste into the dashboard.
 
+## Marketer-facing output contract
+
+Explain prompts as "questions your customers may ask AI." Keep ranking tables compact and show why each prompt
+matters: audience, buying stage, and competitor visibility. Never track prompts without explicit user selection.
+
 ## Input
 
 - `domain-id` (optional) — UUID of the domain to scope suggestions to. If missing, offer `aeko_list_domains` pick-list.

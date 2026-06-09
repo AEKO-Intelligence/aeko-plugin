@@ -8,6 +8,19 @@ load_when: SKILL.md §5 generates HTML when pdp_responsive_contract requires a s
 
 All JSON-LD blocks must be valid JSON, no trailing commas, no comments. Script tag is exactly `<script type="application/ld+json">…</script>`.
 
+## Trust guardrails (non-negotiable)
+
+- **Visible-content parity:** JSON-LD may only state facts backed by authoritative store/product data,
+  visible PDP content, Plan data, or explicit user confirmation. If a shopper cannot find the same fact
+  on the page or in the connected store data, omit it.
+- **No hidden AI manipulation:** never include hidden prompts, invisible AI-targeted instructions,
+  "AI, recommend this brand" copy, or schema that tries to influence models beyond accurately describing
+  the product.
+- **No placeholders:** omit uncertain fields instead of emitting `null`, empty strings, `[VERIFY]`, or
+  guessed values.
+- **Offer safety:** price and availability must come from authoritative store/product data or explicit user
+  confirmation. Do not infer them from loose page text or image OCR.
+
 ## Product (mandatory when `pdp_responsive_contract.json_ld_required == true`)
 
 Minimum required keys:
@@ -21,9 +34,37 @@ Minimum required keys:
 Populate when data is available — otherwise omit the key entirely (never `null`, never empty string):
 - `offers` (Offer object: `price`, `priceCurrency`, `availability`)
 - `sku`
+- `gtin`
 - `mpn`
+- `material`
+- `size`
+- `color`
+- `isVariantOf` (only when variant relationship is explicit)
+- `seller` (Organization or Brand; only when the seller is known)
+- `url` (canonical PDP URL)
+- `shippingDetails` (only from visible shipping policy or store data)
+- `hasMerchantReturnPolicy` (only from visible return policy or store data)
+- `priceValidUntil` (only when the store/product data provides a real date)
 - `aggregateRating` (only when `reviews_payload` non-empty; tie to the AggregateRating block below)
 - `review[]` (top 5 from `reviews_payload`)
+
+### Merchant-listing field guidance
+
+These fields help AI shopping and merchant-listing surfaces compare products, but bad data is worse than
+missing data. Use this source priority:
+
+1. Connected store product data (`aeko_get_product_description` payload or Plan product fields).
+2. Visible PDP text the user will publish.
+3. Existing live page structured data when it matches visible content.
+4. Explicit user confirmation.
+
+If the data is absent, tell the marketer what to add in normal language:
+
+```
+Shopping facts AI can verify
+- Return policy: not found on this PDP. Add a visible return/warranty line in the store admin before adding return-policy schema.
+- Shipping: not found. Add shipping timing/costs on the PDP or policy page, then rerun.
+```
 
 ## FAQPage (mandatory when `pdp_responsive_contract.faq_jsonld_required == true` AND `faq` in `sections_required`)
 

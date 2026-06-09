@@ -2,7 +2,7 @@
 
 > 한국어 버전은 아래를 참고하세요 → [한국어](#한국어-버전).
 
-Skills for [AEKO](https://aeko-intelligence.com) — AEO (AI Engine Optimization) workflows for cross-border ecommerce. Guides Claude, Codex, and Gemini CLI through optimizing product pages for ChatGPT/Claude/Gemini/Perplexity citations, drafting persona-targeted content, generating JSON-LD, managing brand kits, and executing action items.
+Skills for [AEKO](https://aeko-intelligence.com) — AEO (AI Engine Optimization) workflows for cross-border ecommerce. Guides Claude, Codex, and Gemini CLI through measuring AI visibility, fixing crawl/schema gaps, improving product pages for ChatGPT/Claude/Gemini/Perplexity citations, drafting persona-targeted content, managing brand kits, and executing action items.
 
 This repo ships **skills only**. Backend access (tools like `aeko_get_domain_info`, `aeko_get_brand_kit`, etc.) comes from the separate [AEKO MCP server](https://github.com/AEKO-Intelligence/aeko-mcp), hosted at `https://aeko-intelligence.com/mcp`. Install both.
 
@@ -67,26 +67,36 @@ Restart Gemini CLI after install. The Gemini extension manifest (`gemini-extensi
 
 See [`skills/`](skills/). Each is a self-contained SKILL.md consumed by Claude, Codex, or Gemini CLI.
 
+**Start here for marketers:**
+
+1. **See where AI finds you** — `/aeko-visibility-report [domain_id]`
+2. **Fix what blocks AI discovery** — `/aeko-action-center [domain_id] technical`
+3. **Improve product pages and content AI can cite** — `/aeko-action-center [domain_id] pdp` or `/aeko-action-center [domain_id] content`
+
+AEKO will describe each run in plain business language: what it checks, why it matters, whether it is read-only or affects store content, and the single best next step.
+
 **Entry points:**
 
-- `/aeko-action-center [domain_id] [category]` — router: lists pending items in three categories (Technical / PDP / Content generation) and prints ready-to-copy executor commands
-- `/aeko-update-pdp <item_id>` — PDP executor. Fetches Plan.md, asks image strategy, WebFetches the live page, generates responsive HTML + JSON-LD, writes to store (shadow-by-default) with audit trail
-- `/aeko-fix-technical <item_id>` — Technical executor. Generates llms.txt / robots.txt patches / site-level JSON-LD with embedded spec rules
-- `/aeko-create-content <item_id>` — Content executor. Pulls tracked-prompt citation forensics to mimic winning source structures; saves local artifacts and auto-saves aeko.shop publish variations, never writes to a connected store
+- `/aeko-onboarding` — guided first-run walkthrough: confirms setup, tours the skills, and points marketers to the right next action
+- `/aeko-action-center [domain_id] [category]` — front door: shows pending work as Technical health / Product pages / Content AI can cite, then prints ready-to-copy next commands
+- `/aeko-update-pdp <item_id>` — Product page improvement. Adds clearer shopper copy, review proof, FAQs, and AI-readable product facts; store writes are shadow-by-default
+- `/aeko-fix-technical <item_id>` — Technical health fix package. Prepares crawler access, llms.txt, robots.txt, or site-schema files with plain risk and undo notes
+- `/aeko-create-content <item_id>` — Content executor. Uses product facts, real review context, tracked prompts, and the Brand Kit to draft framework-driven, citation-ready content; saves local artifacts and auto-saves aeko.shop publish variations, never writes to a connected store
+- `/aeko-publish-content <item_id>` — Publisher. Publishes saved content variations only after explicit confirmation; aeko.shop can go live, own-store blog remains an AEKO-owned draft
 - `/aeko-brand-kit <domain_id>` — view or edit your domain's brand kit (voice, guardrails, must-include / forbidden)
 
 **Research + discovery:**
 
 - `/aeko-find-prompts-to-track [domain_id]` — filter the research library, rank candidates for your brand, track selected prompts
-- `/aeko-prompt-deep-dive <prompt_id> [window]` — citation-forensics on one tracked prompt (which competitors win it, which sources AI cites, what to mirror)
+- `/aeko-prompt-deep-dive <prompt_id> [window]` — breakdown for one tracked prompt: who wins, which sources AI cites, and what content gap to close
 - `/aeko-brand-competitor-analysis [domain_id] <competitor>` — brand-level positioning via WebSearch + Wikipedia/Wikidata + AEKO citation data
 - `/aeko-product-competitor-analysis <product_id> [urls...]` — product-level property-by-property comparison against 3-5 competing PDPs
 
 **Maintenance + reporting:**
 
-- `/aeko-refresh-jsonld <product_id>` — periodic JSON-LD refresh (review counts, ratings) via read-patch-write. Designed for `/schedule`
+- `/aeko-refresh-jsonld <product_id>` — periodic refresh for review facts AI can read, such as rating and review count. Designed for `/schedule`
 - `/aeko-visibility-report [domain_id] [window] [depth]` — on-demand report. `window=7d|14d|30d|90d`, `depth=summary|full`
-- `/aeo-audit <url>` — generic AEO readiness audit for any URL (uses Claude's reasoning; no AEKO data dependency)
+- `/aeo-audit <url> [shopping]` — generic AEO readiness audit for any URL, with optional product-level AI shopping readiness mode (uses Claude's reasoning; no AEKO data dependency)
 
 ## Customizing skills
 
@@ -130,7 +140,7 @@ MIT
 
 # 한국어 버전
 
-[AEKO](https://aeko-intelligence.com) 스킬 모음 — 크로스보더 이커머스를 위한 AEO (AI Engine Optimization) 워크플로. Claude, Codex, Gemini CLI가 ChatGPT/Claude/Gemini/Perplexity 인용을 위해 상품 페이지를 최적화하고, 페르소나별 콘텐츠를 작성하며, JSON-LD를 생성하고, 브랜드 키트를 관리하고, 액션 아이템을 실행하도록 안내합니다.
+[AEKO](https://aeko-intelligence.com) 스킬 모음 — 크로스보더 이커머스를 위한 AEO (AI Engine Optimization) 워크플로. Claude, Codex, Gemini CLI가 AI 가시성을 측정하고, 크롤링/스키마 빈틈을 고치고, ChatGPT/Claude/Gemini/Perplexity 인용을 위해 상품 페이지를 개선하며, 페르소나별 콘텐츠를 작성하고, 브랜드 키트를 관리하고, 액션 아이템을 실행하도록 안내합니다.
 
 이 저장소는 **스킬만 배포합니다**. 백엔드 액세스(`aeko_get_domain_info`, `aeko_get_brand_kit` 등의 도구)는 별도의 [AEKO MCP 서버](https://github.com/AEKO-Intelligence/aeko-mcp) — `https://aeko-intelligence.com/mcp`에서 호스팅 — 에서 제공됩니다. 두 가지 모두 설치하세요.
 
@@ -195,26 +205,36 @@ gemini extensions install https://github.com/AEKO-Intelligence/aeko-plugin
 
 [`skills/`](skills/) 참조. 각 스킬은 Claude, Codex 또는 Gemini CLI가 실행하는 자체 완결형 SKILL.md입니다.
 
+**마케터용 시작 흐름:**
+
+1. **AI가 우리 브랜드를 어디서 찾는지 보기** — `/aeko-visibility-report [domain_id]`
+2. **AI 발견을 막는 요소 고치기** — `/aeko-action-center [domain_id] technical`
+3. **AI가 인용할 수 있는 상품 페이지/콘텐츠 개선하기** — `/aeko-action-center [domain_id] pdp` 또는 `/aeko-action-center [domain_id] content`
+
+AEKO는 매 실행마다 무엇을 확인하는지, 왜 중요한지, 읽기 전용인지/스토어에 영향을 줄 수 있는지, 다음 한 가지 행동이 무엇인지 비기술 언어로 설명합니다.
+
 **진입점:**
 
-- `/aeko-action-center [domain_id] [category]` — 라우터: pending 아이템을 세 카테고리(Technical / PDP / Content generation)로 나열하고 바로 실행 가능한 executor 커맨드를 출력
-- `/aeko-update-pdp <item_id>` — PDP executor. Plan.md를 가져오고, 이미지 전략을 묻고, 라이브 페이지를 WebFetch하고, 반응형 HTML + JSON-LD를 생성하여 스토어에 기록(shadow 기본) — 감사 추적 포함
-- `/aeko-fix-technical <item_id>` — Technical executor. llms.txt / robots.txt 패치 / 사이트 수준 JSON-LD를 임베디드 스펙 규칙과 함께 생성
-- `/aeko-create-content <item_id>` — Content executor. 추적된 프롬프트의 인용 포렌식으로 우승 소스 구조를 모방; 로컬 아티팩트를 저장하고 aeko.shop 게시 변형본을 자동 백엔드 저장, 연결된 스토어에는 절대 기록 안 함
+- `/aeko-onboarding` — 첫 실행 가이드: 설정 상태를 확인하고, 스킬을 안내하며, 마케터가 바로 할 다음 행동을 제안
+- `/aeko-action-center [domain_id] [category]` — 시작 화면: pending 작업을 Technical health / Product pages / Content AI can cite로 보여주고 바로 실행 가능한 다음 명령어를 출력
+- `/aeko-update-pdp <item_id>` — 상품 페이지 개선. 더 명확한 구매자 문구, 리뷰 근거, FAQ, AI가 읽을 수 있는 상품 사실을 추가; 스토어 기록은 shadow가 기본
+- `/aeko-fix-technical <item_id>` — 기술 상태 개선 패키지. 크롤러 접근, llms.txt, robots.txt, 사이트 스키마 파일을 준비하고 위험/되돌리기 안내를 함께 제공
+- `/aeko-create-content <item_id>` — Content executor. 상품 사실, 실제 리뷰 맥락, 추적 프롬프트, 브랜드 키트를 바탕으로 프레임워크 기반의 인용 가능한 콘텐츠를 작성; 로컬 아티팩트를 저장하고 aeko.shop 게시 변형본을 자동 백엔드 저장, 연결된 스토어에는 절대 기록 안 함
+- `/aeko-publish-content <item_id>` — Publisher. 저장된 콘텐츠 변형본을 명시 확인 후 게시; aeko.shop은 라이브 게시 가능, 자사몰 블로그는 AEKO 소유 초안으로 저장
 - `/aeko-brand-kit <domain_id>` — 도메인의 브랜드 키트(보이스, 가드레일, must-include / forbidden) 조회·편집
 
 **리서치 + 디스커버리:**
 
 - `/aeko-find-prompts-to-track [domain_id]` — 리서치 라이브러리 필터링, 브랜드별 후보 랭킹, 선택된 프롬프트 트래킹
-- `/aeko-prompt-deep-dive <prompt_id> [window]` — 추적된 프롬프트 한 개에 대한 인용 포렌식 (어떤 경쟁자가 이기는지, AI가 어떤 소스를 인용하는지, 무엇을 모방할지)
+- `/aeko-prompt-deep-dive <prompt_id> [window]` — 추적된 프롬프트 1건 분석: 누가 이기는지, AI가 어떤 소스를 인용하는지, 어떤 콘텐츠 빈틈을 메울지 확인
 - `/aeko-brand-competitor-analysis [domain_id] <competitor>` — WebSearch + Wikipedia/Wikidata + AEKO 인용 데이터를 통한 브랜드 수준 포지셔닝
 - `/aeko-product-competitor-analysis <product_id> [urls...]` — 3–5개 경쟁 PDP 대비 제품 수준 속성별 비교
 
 **유지보수 + 리포팅:**
 
-- `/aeko-refresh-jsonld <product_id>` — 리뷰 수, 평점 등 JSON-LD 주기 갱신 (read-patch-write). `/schedule`용으로 설계
+- `/aeko-refresh-jsonld <product_id>` — 평점과 리뷰 수처럼 AI가 읽는 리뷰 사실을 주기적으로 새로고침. `/schedule`용으로 설계
 - `/aeko-visibility-report [domain_id] [window] [depth]` — 온디맨드 리포트. `window=7d|14d|30d|90d`, `depth=summary|full`
-- `/aeo-audit <url>` — 모든 URL에 대한 일반 AEO 준비도 감사 (Claude의 추론 사용; AEKO 데이터 의존성 없음)
+- `/aeo-audit <url> [shopping]` — 모든 URL에 대한 일반 AEO 준비도 감사, 선택적으로 상품 단위 AI 쇼핑 준비도 모드 지원 (Claude의 추론 사용; AEKO 데이터 의존성 없음)
 
 ## 스킬 커스터마이징
 

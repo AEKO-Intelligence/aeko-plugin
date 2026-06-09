@@ -1,6 +1,6 @@
 ---
 name: aeko-create-content
-version: 0.14.0
+version: 0.15.0
 description: >
   Multi-channel AEO content executor for Action-tab items with
   `execution_class=local_content_artifact`. Fetches a Plan.md, pulls
@@ -19,6 +19,10 @@ allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_brand_kit_by_i
 ---
 
 # AEKO Create Content
+
+**Changelog v0.15.0** — Added AI-shopping decision-guide blocks, visible-content/schema parity, and
+anti-manipulation guardrails across content + JSON-LD recipes. Updated completion summaries to explain
+source material, publish safety, revision path, and next step in marketer-facing language.
 
 **Changelog v0.14.0** — Re-architected from forensics-mimicry to **framework-driven AEO**. Removed the
 Phase 3A/3B citation-forensics crawl engine (`aeko_crawl_url`, recrawl budgets, `cited_url_allowlist`,
@@ -50,6 +54,12 @@ publish variations → mark complete only after required saves succeed.
 Contract reference: `docs/contracts/action-item-contract.md` §3 (Plan.md), §3.2.1 (ProductRef), §6
 (completion). Pinned to contract minor `v1.5`; tolerant of v1.3/v1.4 Plans where `brand_kit_id` or
 `products[]` is absent.
+
+## Marketer-facing output contract
+
+Frame this as "drafting content AI can cite." Open with channels, source material, read/write safety, and whether
+anything can publish live. Default copy should avoid internal terms like `execution_class` and raw frontmatter.
+Before saving variations, show what will be saved, where it can appear, risk, and how to revise/undo.
 
 ## Input
 
@@ -285,11 +295,33 @@ local-only.
 Lead with the label matching `target_language`.
 
 ### 8.1 Summary block
-Print: channels drafted (bilingual labels), domain, item_id, `resolved_title`, **mode** (Standard /
-+ Competitive context), **substance used** (products: N · context-reviews: N [or "fixture"/"none — attach a
-product for more original content"]), artifacts (one bilingual line + path per file), media refs (N with
-alt / M skipped), citability (passed N/N · failed: list or none). For client-managed channels, append the
-"publish checklist (never auto-published by AEKO)" and `Next: /aeko-action-center <domain_id> content`.
+Print a marketer-facing block first, then technical details:
+
+```
+✔ Content drafts ready
+
+What AEKO created
+- <bilingual channel labels> for <brand/domain>
+
+Source material used
+- Product facts: N
+- Real review/context details: N (or "none — attach product reviews for more original content")
+- Brand Kit: <loaded|missing>
+
+Safety
+- This skill did not publish anything live.
+- Connected store content was not changed.
+
+Revision path
+- Edit local drafts or saved backend variations, then publish only when ready.
+
+Recommended next step
+- <one command: /aeko-publish-content <item_id> when saved variations exist, otherwise /aeko-action-center <domain_id> content>
+```
+
+After that, include artifacts (one bilingual line + path per file), media refs (N with alt / M skipped),
+citability (passed N/N · failed: list or none), and the "publish checklist (never auto-published by AEKO)"
+for client-managed channels.
 
 ## Step 9 — Publish handoff (read-only)
 

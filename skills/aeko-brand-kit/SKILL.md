@@ -19,6 +19,12 @@ Manages the live Brand Kit consumed by Plan.md and guide.md generation. The live
 
 Contract reference: `docs/contracts/action-item-contract.md` (`AekoBrandKit`, `AekoBrandKitUpdate`).
 
+## Marketer-facing output contract
+
+Frame this as "how AEKO keeps generated content on-brand." In `view` mode, read-only status must be obvious.
+In `edit` mode, show Before / After / Risk / Undo before applying changes. Avoid schema/backend language unless
+the user asks for technical detail.
+
 ## Inputs
 
 - `domain-id` (optional) — UUID. If omitted, Step 1 auto-resolves or prompts.

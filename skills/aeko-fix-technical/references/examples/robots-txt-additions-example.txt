@@ -1,9 +1,8 @@
 # Custom robots.txt additions for your brand.
 #
-# These rules are appended AFTER the AEKO AI-crawler allowlist that the skill generates.
-# Do not duplicate AI-crawler rules here — the skill handles GPTBot, ChatGPT-User, ClaudeBot,
-# Claude-User, OAI-SearchBot, Google-Extended, PerplexityBot, PerplexityBot-User,
-# Applebot-Extended, CCBot, Bytespider.
+# These rules are appended AFTER the AEKO AI search/shopping visibility block that the skill generates.
+# Do not duplicate AI-crawler rules here. The skill allows search/shopping bots when appropriate
+# and preserves training/data bot rules unless the merchant explicitly opts in to changing them.
 
 # Example: explicit disallow for a partner-only directory
 # User-agent: *

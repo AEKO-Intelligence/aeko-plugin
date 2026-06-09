@@ -16,6 +16,13 @@ Router for three execution categories: **Technical fixes**, **상품 페이지 �
 
 Contract reference: `docs/contracts/action-item-contract.md`.
 
+## Marketer-facing output contract
+
+This is the front door for non-technical ecommerce marketers. Open with what AEKO found, why it matters
+for AI visibility or shopping discovery, and the safest next command. Do not show `execution_class`,
+contract versions, raw IDs, or backend jargon unless needed for debugging. Group work as:
+**Technical health**, **Product pages**, and **Content AI can cite**.
+
 ## Inputs
 
 - `domain-id` (optional) — UUID of the domain. If missing, ask the user (or call `aeko_list_domains` to offer a pick-list).
@@ -45,19 +52,25 @@ Group the combined item list into three buckets:
 
 | Category | Filter | Executor |
 |---|---|---|
-| **Technical** (기술 수정) | `execution_class == "technical_artifact"` | `/aeko-fix-technical <item_id>` |
-| **PDP update** (상품 페이지 개선) | `execution_class == "store_write_artifact"` | `/aeko-update-pdp <item_id>` |
-| **Content generation** (콘텐츠 생성) | `execution_class == "local_content_artifact"` | `/aeko-create-content <item_id>` |
+| **Technical health** (기술 상태) | `execution_class == "technical_artifact"` | `/aeko-fix-technical <item_id>` |
+| **Product pages** (상품 페이지) | `execution_class == "store_write_artifact"` | `/aeko-update-pdp <item_id>` |
+| **Content AI can cite** (인용 가능한 콘텐츠) | `execution_class == "local_content_artifact"` | `/aeko-create-content <item_id>` |
 
 If `$2` (category arg) is set to `technical` / `pdp` / `content`, filter to only that bucket. `all` or unset → show all three.
 
 ## Step 4 — Print a header
 
 ```
-Domain: <domain_id>
-Technical: N pending (top priority: <critical|high|medium|low>)
-PDP update: M pending (top priority: ...)
-Content: K pending (top priority: ...)
+Domain: <brand_or_domain_name> (<base_url>)
+Technical health: N pending (top priority: <critical|high|medium|low>)
+Product pages: M pending (top priority: ...)
+Content AI can cite: K pending (top priority: ...)
+```
+
+Before item blocks, add one plain-language sentence:
+
+```
+Recommended next step: <one command> — <why this is the safest/highest-impact next move>.
 ```
 
 ## Step 5 — Print ready-to-copy commands
@@ -67,8 +80,9 @@ For each category with ≥1 pending item, group items by priority (critical → 
 **Technical items:**
 
 ````
-# Technical · <artifact_type> · <priority>
+# Technical health · <priority>
 # <title>
+# Fix type: <plain-language label, e.g. "AI crawler access" or "site schema">
 # updated <relative time>
 # preview: <first 120 chars of preview>
 /aeko-fix-technical <item_id>
@@ -77,9 +91,10 @@ For each category with ≥1 pending item, group items by priority (critical → 
 **PDP update items:**
 
 ````
-# PDP · <artifact_type> · <priority>
+# Product page · <priority>
 # <title>
-# write_mode: <write_mode> · updated <relative time>
+# Safety: <preview only | shadow copy | live store update after confirmation>
+# updated <relative time>
 # target: <target_url or product_id>
 # preview: <first 120 chars of preview>
 /aeko-update-pdp <item_id>
@@ -88,9 +103,9 @@ For each category with ≥1 pending item, group items by priority (critical → 
 **Content generation items:**
 
 ````
-# Content · multi-channel · <artifact_type> · <priority>
+# Content AI can cite · multi-channel · <priority>
 # <title>
-# fans out via citation forensics + interactive channel select
+# asks you to choose channels, then drafts each selected channel
 # updated <relative time>
 # preview: <first 120 chars of preview>
 /aeko-create-content <item_id>
@@ -115,4 +130,4 @@ Refuse: tell the user to run each executor one item at a time so they can review
 - Never calls `aeko_get_action_plan` — that belongs to the executor skills.
 - Never calls `aeko_complete_action_item` or any write-back tool.
 - Never executes the item. Always stops at routing.
-- Never displays `execution_class` raw to the user — always translate to the category label (Technical / PDP update / Content generation).
+- Never displays `execution_class` raw to the user — always translate to the category label (Technical health / Product pages / Content AI can cite).
