@@ -26,7 +26,10 @@ Runs after `/aeko-create-content` (or after any other flow that saved publishabl
 This is a publish flow, so be explicit before any publish call: destination, live-vs-draft status, what changes,
 risk, and undo/revision path. Never publish automatically after listing rows; require the user to pick/confirm.
 
-> **Backend prerequisite — three new MCP tools.** This skill requires `aeko_list_content_variations` and `aeko_publish_content_variation`. If either is missing from the current MCP session (handlers rolling out), Step 0 surfaces a friendly bilingual "come back later" message before any user prompts. The companion tool `aeko_save_content_variation` is called by `/aeko-create-content`; this skill never calls it directly.
+Language: mirror the user's chat language for user-facing steps, summaries, questions, confirmations, and risk/undo copy.
+Keep slash commands, IDs, file paths, destination slugs such as `aeko_shop`, schema keys, and tool names in English/ASCII.
+
+> **Backend prerequisite — three new MCP tools.** This skill requires `aeko_list_content_variations` and `aeko_publish_content_variation`. If either is missing from the current MCP session (handlers rolling out), Step 0 surfaces a friendly user-language "come back later" message before any user prompts. The companion tool `aeko_save_content_variation` is called by `/aeko-create-content`; this skill never calls it directly.
 
 ## Input
 
@@ -34,9 +37,9 @@ risk, and undo/revision path. Never publish automatically after listing rows; re
 
 ## Step 0 — Backend availability preflight
 
-The three new MCP tools (`aeko_save_content_variation`, `aeko_list_content_variations`, `aeko_publish_content_variation`) are shipped ahead of the backend handlers in some environments. This skill calls two of them; rather than introspect the tool registry (FastMCP doesn't expose a public registry API to skills), wrap the first MCP call in a try/except — if the tool isn't registered the MCP layer raises `MethodNotFound` (or equivalent), and we catch it to surface a friendly bilingual message instead of a raw stack trace.
+The three new MCP tools (`aeko_save_content_variation`, `aeko_list_content_variations`, `aeko_publish_content_variation`) are shipped ahead of the backend handlers in some environments. This skill calls two of them; rather than introspect the tool registry (FastMCP doesn't expose a public registry API to skills), wrap the first MCP call in a try/except — if the tool isn't registered the MCP layer raises `MethodNotFound` (or equivalent), and we catch it to surface a friendly user-language message instead of a raw stack trace.
 
-The probe is implicit: if Step 1's `aeko_list_content_variations` call raises `MethodNotFound` / "tool not found" / equivalent, stop and print (bilingual; pick by the locale of the most recent variation row when available, else default to the user's locale):
+The probe is implicit: if Step 1's `aeko_list_content_variations` call raises `MethodNotFound` / "tool not found" / equivalent, stop and print in the user's chat language. Use these EN/KO templates when they match; otherwise translate the EN template naturally:
 
 - EN:
   ```
@@ -75,7 +78,7 @@ Three branches on the returned row count:
 
 ### 1.a — Zero rows (no saved variations)
 
-Stop with a bilingual actionable message:
+Stop with a user-language actionable message:
 
 - EN:
   ```
@@ -150,7 +153,7 @@ Undo / revise
   Already live: regenerate a new variation with /aeko-create-content <item_id>, then publish it to overwrite.
 ```
 
-Ask for confirmation (bilingual per `meta_summary.locale` when available; else default to user's locale):
+Ask for confirmation in the user's chat language:
 
 - EN: `Proceed with publish? [y/N]`
 - KO: `게시할까요? [y/N]`
@@ -172,7 +175,7 @@ The backend route reads the variation row server-side and branches on `destinati
 
 If the call fails:
 
-- **`MethodNotFound` / tool unregistered** → emit the Step 0 bilingual "rolling out" message and exit 0.
+- **`MethodNotFound` / tool unregistered** → emit the Step 0 user-language "rolling out" message and exit 0.
 - **4xx** — surface the backend message verbatim. Common cases:
   - `403` Pro+ tier gate failed (enforced by `publisher.enforce_publish_gate`) — common for `aeko_shop`; rare for `own_store_blog` (no tier gate on draft creation).
   - `409` `brand.aeko_shop_disabled = true` (per-brand opt-out) — `aeko_shop` only.
@@ -186,7 +189,7 @@ On any failure, the variation row stays in its current state — tier/disabled/r
 
 ## Step 7 — Report
 
-On success or an already-published stored-result response, print bilingual report (per `meta_summary.locale` when available):
+On success or an already-published stored-result response, print the report in the user's chat language:
 
 ### For `destination == 'aeko_shop'`:
 
@@ -259,7 +262,7 @@ There are two distinct edit paths depending on whether the variation has been pu
 
 ## Error paths
 
-- Tools rolling out (`MethodNotFound` at Step 1 or Step 6) → emit Step 0 bilingual message; exit 0.
+- Tools rolling out (`MethodNotFound` at Step 1 or Step 6) → emit Step 0 user-language message; exit 0.
 - Zero saved variations → emit Step 1.a actionable message; exit 0.
 - User cancels at Step 1.c picker → exit 0 silently.
 - User declines at Step 5 → exit 0 silently.

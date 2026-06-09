@@ -19,6 +19,9 @@ Helps the user discover research prompts worth tracking. Goal: after this skill 
 Explain prompts as "questions your customers may ask AI." Keep ranking tables compact and show why each prompt
 matters: audience, buying stage, and competitor visibility. Never track prompts without explicit user selection.
 
+Language: mirror the user's chat language for user-facing steps, summaries, questions, and confirmations.
+Keep slash commands, IDs, file paths, prompt metadata keys, and tool names in English/ASCII.
+
 ## Input
 
 - `domain-id` (optional) — UUID of the domain to scope suggestions to. If missing, offer `aeko_list_domains` pick-list.
@@ -33,7 +36,8 @@ matters: audience, buying stage, and competitor visibility. Never track prompts 
 
 ## Step 2 — Ask user for filter intent
 
-Prompt in `target_language`:
+Prompt in the user's chat language. Use the matching KO/EN template below when applicable; for other
+languages, translate the EN template naturally while keeping platform/country/query-type tokens unchanged.
 
 **KO:**
 ```

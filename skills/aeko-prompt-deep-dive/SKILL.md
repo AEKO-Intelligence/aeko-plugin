@@ -20,6 +20,9 @@ Walks a user through one tracked prompt's full citation footprint. Output: a cle
 Explain the prompt as a real customer question. Keep the report focused on: who AI mentions, which pages AI cites,
 what facts AI appears to reuse, and the one best action. Label fact reuse as inferred absorption, not measured fact.
 
+Language: mirror the user's chat language for user-facing steps, summaries, questions, and next actions.
+Keep slash commands, IDs, file paths, citation URLs, schema keys, and tool names in English/ASCII.
+
 ## Input
 
 - `prompt-id` (required) — `$1`. UUID of a tracked prompt (must have a `UserPrompts` row for the current user).

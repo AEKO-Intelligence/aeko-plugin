@@ -1,6 +1,6 @@
 ---
 name: aeko-create-content
-version: 0.15.1
+version: 0.15.2
 description: >
   Multi-channel AEO content executor for Action-tab items with
   `execution_class=local_content_artifact`. Fetches a Plan.md, pulls
@@ -19,6 +19,9 @@ allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_brand_kit_by_i
 ---
 
 # AEKO Create Content
+
+**Changelog v0.15.2** — Added the user-language output contract: skill steps, confirmations, risk notes,
+and summaries mirror the user's chat language, while `target_language` controls generated artifacts.
 
 **Changelog v0.15.1** — Restored example-file loading in the parallel drafter contract, added `Refs loaded`
 reporting so marketers can verify customization, and clarified `press_release` / 보도자료 slug handling.
@@ -64,6 +67,10 @@ Frame this as "drafting content AI can cite." Open with channels, source materia
 anything can publish live. Default copy should avoid internal terms like `execution_class` and raw frontmatter.
 Before saving variations, show what will be saved, where it can appear, risk, and how to revise/undo.
 
+Language: mirror the user's chat language for user-facing steps, summaries, questions, and risk/undo copy.
+Keep slash commands, IDs, file paths, channel slugs such as `press_release`, schema keys, JSON-LD terms, and tool names in English/ASCII.
+When a Plan includes `target_language`, use it for generated artifacts; do not let it override the assistant UI language.
+
 ## Input
 
 - `item-id` (required) — `$1`. If missing, stop and point user to `/aeko-action-center <domain_id> content`.
@@ -101,7 +108,7 @@ local_content_artifact` (else stop and route to the right skill). Extract:
 - **`must_include[]`**, **`forbidden[]`**, **`sections_required[]`**, **`prompts_to_rank_on`** (raw prompt
   text or IDs the brand wants to be cited for).
 
-Print a compact bilingual context header (domain, title, persona, product count). Never echo raw frontmatter.
+Print a compact context header in the user's chat language (domain, title, persona, product count). Never echo raw frontmatter.
 
 ## Step 2 — Resolve the brand kit (voice)
 
@@ -114,7 +121,7 @@ Keep `resolved_brand_kit_id` for media presign and the structured-data gate.
 ## Step 2.5 — Mode selection (Standard vs + competitive context)
 
 If `$2` is `deep`/`competitive`, set `mode = competitive` and skip the prompt. Otherwise ask ONE
-bilingual question, defaulting to Standard:
+question in the user's chat language, defaulting to Standard. For Korean/English, this compact prompt is acceptable:
 
 ```
 어떤 방식으로 콘텐츠를 만들까요? / How should I generate this content?
@@ -150,7 +157,7 @@ Build `substance` = `{ products: [...with full_description...], context_reviews:
 
 **No-product fallback** — when `parsed_products[]` is empty: skip the product/review calls entirely. The
 drafters will write from the prompt + brand kit + their own expertise (honest expertise, never faked
-experience — see `references/aeo-frameworks.md` anti-fabrication rule), and Step 8 surfaces a bilingual
+experience — see `references/aeo-frameworks.md` anti-fabrication rule), and Step 8 surfaces a user-language
 note that attaching a product (and its context-reviews) yields more original content.
 
 ## Step 3b — Light signal / competitive context (mode-aware)
@@ -185,8 +192,8 @@ skill never writes to the connected store.
 Issue ONE elicitation form. Pre-check `suggested_channels[]` (from Step 3b) + `aeko_shop` + `own_store_blog`;
 offer addon toggles: `press_release`, `magazine`, `instagram`, `tiktok`, `youtube`, `naver_blog`, `tistory`,
 `reddit`, `other:<ascii_name>` (free-form `<name>` + optional reference URL/description; reject non-ASCII
-`<name>`). Selecting `aeko_shop` is consent to backend-save after drafting. Use the §8.0 bilingual labels.
-**If 0 channels selected → stop** (bilingual notice; do not complete the item).
+`<name>`). Selecting `aeko_shop` is consent to backend-save after drafting. Use the §8.0 localized labels.
+**If 0 channels selected → stop** (user-language notice; do not complete the item).
 
 ### 4-Form-2 Per-channel media + alt-text
 Issue a SECOND form. Per selected channel, collect image slots (editorial: hero + up to 2 inline; social:
@@ -284,20 +291,22 @@ local-only.
   `product_source_id`, never `ProductRef.id`); body-only `body_html`; `slug` = `aeko_shop_publish_slug`.
   For `own_store_blog`, populate BOTH `body_html` (the self-contained, embedded-JSON-LD `.html`) and
   `body_markdown` (the mirror); `metadata = {title, og_description, slug}` (no `featured_products` payload —
-  the embedded JSON-LD already carries Product schema). Collect `variation_id`s. **On any save failure:** do NOT complete; leave `pending`; print bilingual retry
+  the embedded JSON-LD already carries Product schema). Collect `variation_id`s. **On any save failure:** do NOT complete; leave `pending`; print user-language retry
   guidance; stop (skip Steps 8–9). **On all saves succeed:** `aeko_complete_action_item(... write_result=
   {"backend_variations": saved_variations})`.
 
 ## Step 8 — User-facing summary
 
-### 8.0 Channel labels (bilingual — never a bare slug)
+### 8.0 Channel labels (localized — never a bare slug)
 `aeko_shop`=aeko.shop용 HTML / aeko.shop HTML · `naver_blog`=네이버 블로그용 초안 / Naver Blog draft ·
 `tistory`=티스토리용 초안 / Tistory draft · `instagram`=Instagram용 캡션 / Instagram caption ·
 `tiktok`=TikTok용 스크립트 / TikTok script · `youtube`=YouTube용 스크립트 / YouTube script ·
 `magazine`=매거진 기고용 / Magazine pitch · `press_release`=보도자료 초안 / Press release draft ·
 `partner_media`=파트너 미디어용 / Partner media draft · `reddit`=Reddit 포스트 초안 / Reddit post ·
 `own_store_blog`=자사몰 블로그 초안 / Own-store blog draft · `other:<name>`=`<name> 초안` / `<name> draft`.
-Lead with the label matching `target_language`.
+Lead with the label matching the user's chat language. For languages beyond Korean/English, translate the
+human-readable label from the English label while keeping the slug unchanged. If the Plan's `target_language`
+differs, note the artifact language separately in the summary.
 
 ### 8.1 Summary block
 Print a marketer-facing block first, then technical details:
@@ -306,7 +315,7 @@ Print a marketer-facing block first, then technical details:
 ✔ Content drafts ready
 
 What AEKO created
-- <bilingual channel labels> for <brand/domain>
+- <localized channel labels> for <brand/domain>
 
 Source material used
 - Product facts: N
@@ -324,7 +333,7 @@ Recommended next step
 - <one command: /aeko-publish-content <item_id> when saved variations exist, otherwise /aeko-action-center <domain_id> content>
 ```
 
-After that, include artifacts (one bilingual line + path per file), media refs (N with alt / M skipped),
+After that, include artifacts (one user-language line + path per file), media refs (N with alt / M skipped),
 `Refs loaded` (recipe + example paths per channel, so users can verify customization was picked up),
 citability (passed N/N · failed: list or none), and the "publish checklist (never auto-published by AEKO)"
 for client-managed channels.
@@ -385,7 +394,7 @@ phonetic-gibberish 404 bug). For an already-English title, reusing the §A.3 slu
 - A drafter subagent errors/skips → record the channel as failed, continue with the rest.
 - Citability hard-gate fails after the fix iteration → leave item `pending`; surface failed channels + dimensions.
 - aeko.shop media upload fails → drafter omits that image, produces a valid text-only post, warns loudly; never a placeholder.
-- Backend save fails → do NOT complete; item stays `pending`; bilingual retry guidance; skip Steps 8–9.
+- Backend save fails → do NOT complete; item stays `pending`; user-language retry guidance; skip Steps 8–9.
 - 0 channels selected at Form-1 → stop without writing or completing.
 
 ## What this skill never does

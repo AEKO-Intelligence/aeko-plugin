@@ -21,6 +21,9 @@ Frame this as "why AI may mention this competitor instead of us." Start with pub
 gap, and one practical next move. Keep source caveats clear; never imply AEKO has measured a signal when it is
 inferred from WebSearch/WebFetch.
 
+Language: mirror the user's chat language for user-facing steps, summaries, questions, and next actions.
+Keep slash commands, IDs, file paths, channel slugs, schema keys, and tool names in English/ASCII.
+
 ## Inputs
 
 - `domain-id` (optional) — UUID. Missing → `aeko_list_domains` pick-list.

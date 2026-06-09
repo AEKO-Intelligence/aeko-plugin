@@ -20,7 +20,7 @@ The coordinator hands you a JSON brief:
   "channel": "naver_blog",                 // your channel slug
   "domain_id": "...", "item_id": "...",    // for artifact paths
   "resolved_title": "...",                  // drives the slug (§5.5)
-  "target_language": "ko",                  // ko | en
+  "target_language": "ko",                  // BCP-47-ish content language, e.g. ko | en | ja | zh | es
   "brand_voice_summary": "...",             // tone_of_voice + brand_voice_summary from the brand kit
   "target_cohort": "...",                    // sharpen per aeo-frameworks §3b
   "must_include": [...], "forbidden": [...], // hard content constraints

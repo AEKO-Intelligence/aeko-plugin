@@ -21,6 +21,9 @@ Explain what was checked, why it matters for AI visibility or AI shopping, and w
 Use plain labels such as "AI can read the page", "Product facts AI can verify", and "Review proof" before any
 technical field names. End with one recommended next step.
 
+Language: mirror the user's chat language for user-facing steps, summaries, questions, and next actions.
+Keep file paths, channel slugs, schema keys, JSON-LD terms, and tool names in English/ASCII.
+
 ## Step 1: Fetch the page content
 
 Parse `$2` as `mode`. Default is `general`; if `$2 == "shopping"`, run the normal audit plus the

@@ -23,6 +23,9 @@ for AI visibility or shopping discovery, and the safest next command. Do not sho
 contract versions, raw IDs, or backend jargon unless needed for debugging. Group work as:
 **Technical health**, **Product pages**, and **Content AI can cite**.
 
+Language: mirror the user's chat language for user-facing steps, summaries, questions, and next actions.
+Keep slash commands, IDs, file paths, channel slugs, schema keys, and tool names in English/ASCII.
+
 ## Inputs
 
 - `domain-id` (optional) — UUID of the domain. If missing, ask the user (or call `aeko_list_domains` to offer a pick-list).

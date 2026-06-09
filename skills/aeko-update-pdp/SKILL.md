@@ -23,6 +23,10 @@ Frame this as "improving a product page so AI shopping/search tools can understa
 will change, why it matters, and whether the run is preview/shadow/live. Before any store write, show Before /
 After / Risk / Undo. Do not show raw Plan frontmatter, `execution_class`, or schema internals unless debugging.
 
+Language: mirror the user's chat language for user-facing steps, summaries, questions, and risk/undo copy.
+Keep slash commands, IDs, file paths, channel slugs, schema keys, JSON-LD terms, and tool names in English/ASCII.
+When a Plan includes `target_language`, use it for generated PDP content; do not let it override the assistant UI language.
+
 ## Input
 
 - `item-id` (required) — `$1`. If missing, stop and point user to `/aeko-action-center <domain_id> pdp`.
@@ -40,11 +44,11 @@ Call `aeko_get_action_plan(item_id)`. Parse YAML frontmatter + prose body.
 - `write_target` consistency: must pair with `write_mode` per contract §3 — `shadow_product ↔ shadow`, `append_below_existing ↔ live`, `preview_only ↔ local`. Mismatch → stop.
 - `tier_required` gate via the resolved Brand Kit metadata (`aeko_get_brand_kit_by_id` when `brand_kit_id` is present, otherwise `aeko_get_brand_kit`).
 
-Print header in `target_language`:
+Print the header in the user's chat language:
 1. Action label — KO: "상품 페이지 개선" / EN: "Product page improvement"
 2. Context: domain, product title (resolve via `target_url` inspection), channels.
 3. Persona: `persona_label` if present.
-4. Safety: KO/EN readout of `write_mode` as one of:
+4. Safety: user-language readout of `write_mode` as one of:
    - `shadow_product` → "Draft/shadow copy first — safest"
    - `append_below_existing` → "Can affect live store description"
    - `preview_only` → "Read-only preview file"
@@ -62,7 +66,8 @@ If `frontmatter.requires_brand_kit == true`:
 
 ## Step 3 — Image strategy (ask user)
 
-Ask in `target_language`:
+Ask in the user's chat language. Use the matching KO/EN template below when applicable; for other
+languages, translate the EN template naturally while keeping `write_mode` and option numbers unchanged.
 
 **KO:**
 ```
@@ -177,7 +182,7 @@ Keep the draft HTML in memory at this point — do NOT write it to disk yet. Dis
 
 If `pending_verifications` is empty after Step 5, skip this step.
 
-Otherwise, `Read references/prompts/verification-prompts.md` for the full KO/EN prompt templates, reply-handling rules, and batch-shortcut behavior. Apply per `target_language`.
+Otherwise, `Read references/prompts/verification-prompts.md` for the full prompt templates, reply-handling rules, and batch-shortcut behavior. Apply per the user's chat language; keep `frontmatter.target_language` only for the generated PDP content.
 
 After collecting all answers, apply substitutions in-memory. Re-validate `must_include` (every required string still present) and `forbidden` (no banned strings introduced). If a substitution drops a `must_include` string, surface the conflict and re-ask only that item.
 

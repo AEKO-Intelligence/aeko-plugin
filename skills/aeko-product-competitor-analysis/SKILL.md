@@ -21,6 +21,9 @@ Frame this as "how shoppers and AI assistants compare this product." Lead with p
 price band, material, claims, reviews, return/shipping clarity, and AI-readable product facts. End with one
 recommended PDP/content action.
 
+Language: mirror the user's chat language for user-facing steps, summaries, questions, and next actions.
+Keep slash commands, IDs, file paths, channel slugs, schema keys, and tool names in English/ASCII.
+
 ## Inputs
 
 - `product-id` (required) — `$1`. AEKO `external_product_id` from a connected Cafe24 / Shopify integration, OR a direct product URL (skill will parse and confirm).

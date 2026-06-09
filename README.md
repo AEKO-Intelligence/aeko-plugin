@@ -80,6 +80,15 @@ and points you to the right next action. Most marketers then choose one of these
 2. **I want AEKO to tell me what to fix next** — run `/aeko-action-center [domain_id]`.
 3. **I want my drafts to sound like our brand** — use `/aeko-onboarding` step 4, or follow [CUSTOMIZATION.md](CUSTOMIZATION.md).
 
+## Language Support
+
+AEKO mirrors the language you use in chat for user-facing steps, questions, summaries, risk notes, and next actions.
+English and Korean have curated first-run copy; other languages are supported conversationally by Claude, Codex, or Gemini.
+
+Stable handles stay in English/ASCII so workflows do not break: slash commands, file paths, channel slugs such as
+`press_release`, schema keys, JSON-LD terms, and tool names. Generated content can use a different language from the
+assistant UI when the plan or user asks for it.
+
 ## Available Skills
 
 See [`skills/`](skills/). Each is a self-contained SKILL.md consumed by Claude, Codex, or Gemini CLI.
@@ -235,6 +244,14 @@ gemini extensions install https://github.com/AEKO-Intelligence/aeko-plugin
 1. **AI가 우리 브랜드를 어디서 찾는지 보기** — `/aeko-visibility-report [domain_id]`
 2. **AEKO가 다음 수정 작업을 추천하게 하기** — `/aeko-action-center [domain_id]`
 3. **초안이 우리 브랜드처럼 들리게 만들기** — `/aeko-onboarding` 4단계 또는 [CUSTOMIZATION.md](CUSTOMIZATION.md)
+
+## 언어 지원
+
+AEKO는 사용자가 채팅에서 쓰는 언어에 맞춰 단계, 질문, 요약, 위험 안내, 다음 행동을 설명합니다.
+영어와 한국어는 첫 실행 문구가 별도로 준비되어 있고, 다른 언어도 Claude/Codex/Gemini가 대화형으로 지원합니다.
+
+단, 워크플로가 깨지지 않도록 슬래시 명령어, 파일 경로, `press_release` 같은 채널 slug, schema key,
+JSON-LD 용어, 도구 이름은 영어/ASCII 그대로 유지합니다. 생성되는 콘텐츠 언어는 UI 언어와 별도로 지정할 수 있습니다.
 
 ## 사용 가능한 스킬
 

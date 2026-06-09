@@ -21,6 +21,9 @@ Explain this as "refreshing review facts AI can read" rather than "editing JSON-
 show Before / After / Risk / Undo before completion. This skill does not refresh price or availability unless a
 future backend supplies authoritative current offer fields.
 
+Language: mirror the user's chat language for user-facing steps, summaries, questions, and risk/undo copy.
+Keep slash commands, IDs, file paths, schema keys, JSON-LD terms, and tool names in English/ASCII.
+
 ## Inputs
 
 - `product-id` (required) — `$1`. External product id (Cafe24 product_no / Shopify product id).

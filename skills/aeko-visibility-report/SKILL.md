@@ -20,6 +20,9 @@ Produces a structured AI visibility report for one domain. Output is designed to
 Write for a marketing lead or founder. Lead with business meaning, not backend scopes: "Are we being mentioned?",
 "Are we being cited?", "What changed?", and "What should we do next?" Keep `depth=summary` to one page.
 
+Language: mirror the user's chat language for user-facing steps, summaries, questions, and next actions.
+Keep slash commands, IDs, file paths, channel slugs, schema keys, and tool names in English/ASCII.
+
 ## Inputs
 
 - `domain-id` (optional) — UUID. Missing → `aeko_list_domains` pick-list.

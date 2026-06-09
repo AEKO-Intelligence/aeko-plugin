@@ -15,7 +15,7 @@ allowed-tools: aeko_list_domains, aeko_get_brand_kit, Read, Write, Edit, Glob, B
 
 > 한국어 버전은 이 문서 하단의 [한국어 가이드](#한국어-가이드) 섹션을 참고하세요.
 
-A friendly first-run guide. Five phases — Welcome → Skill catalog → Setup check → Customize → Wrap-up. The skill detects whether the user replies in English or Korean and mirrors that language from Phase 2 onward. It never publishes, never edits the AEKO source repo, never executes other skills on the user's behalf.
+A friendly first-run guide. Five phases — Welcome → Skill catalog → Setup check → Customize → Wrap-up. The skill detects the user's preferred chat language and mirrors that language from Phase 2 onward. English and Korean have curated copy; other languages are supported conversationally. It never publishes, never edits the AEKO source repo, never executes other skills on the user's behalf.
 
 Use when the user types `/aeko-onboarding`, just installed the plugin, or asks "where do I start with AEKO?"
 
@@ -25,11 +25,13 @@ Assume the user is a non-technical ecommerce marketer. Explain AEKO as three jou
 fix what blocks AI discovery, and improve products/content AI can cite. Keep setup checks short and translate
 technical failures into exact next actions.
 
+Language: mirror the user's chat language for all user-facing steps, questions, summaries, risk notes, and next actions. Keep slash commands, IDs, file paths, channel slugs, schema keys, frontmatter terms, and tool names in English/ASCII. Treat generated content language separately from the conversation language.
+
 ---
 
 ## Step 1 — Welcome
 
-Greet bilingually so a Korean user can switch to KO immediately. Keep it short — six lines maximum.
+Greet with a short English/Korean starter so a Korean user can switch to KO immediately. Keep it short — six lines maximum.
 
 ```
 Welcome to AEKO. I'll walk you through five quick steps:
@@ -44,13 +46,14 @@ AEKO에 오신 것을 환영합니다. 다섯 단계로 안내드리겠습니다
   3. 실행 스킬을 브랜드에 맞게 커스터마이즈
   4. 요약 및 다음 단계 안내
 
-Reply in English or Korean — I'll match your language for the rest of this run.
+Reply in your preferred language — English, Korean, or another language. I'll match that language for the rest of this run.
 ```
 
-After the user's first substantive reply, set `session_language ∈ {en, ko}`:
+After the user's first substantive reply, set `session_language` to the detected chat language:
 - Reply contains any Hangul → `ko`.
-- Pure English / mixed code-switching with no Hangul → `en`.
-- If the user replies only `/aeko-onboarding` again with no prose → default `ko` (most AEKO users are Korean) and proceed.
+- Clear English / mixed code-switching with no Hangul → `en`.
+- Other clear language signals → use the obvious language name/code (for example `ja`, `zh`, `es`, `fr`) and translate natural-language guidance into that language.
+- If the user replies only `/aeko-onboarding` again with no prose, keep the next message short and ask them to reply once in their preferred language. Do not assume Korean or English.
 
 Mirror `session_language` for every subsequent prompt and table caption. Code blocks, slash commands, frontmatter terms, and tool names stay verbatim regardless of language.
 
@@ -77,7 +80,7 @@ List the 14 skills grouped by marketer journey so the user can see the surface a
 |  | `/aeko-brand-kit` | View and edit your brand kit. |
 |  | `/aeo-audit` | Generic AEO audit; add `shopping` for product-level AI shopping readiness. |
 
-Note for `session_language=ko`: render the One-liner column in Korean; keep slash commands and skill names verbatim.
+Note: for `session_language=ko`, render the One-liner column in Korean; for `session_language=en`, render it in English; for other languages, translate the human-readable group labels and one-liners naturally. Keep slash commands and skill names verbatim.
 
 After the table, say: "Most users should start with `/aeko-action-center` or `/aeko-visibility-report`. Publish is separate on purpose: AEKO drafts first, then asks before anything goes live."
 
@@ -261,11 +264,11 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 
 ## 한국어 가이드
 
-> 위 영문 가이드의 한국어 미러입니다. 동작은 동일하며, 사용자가 한국어로 답변하면 자동으로 이 톤으로 전환됩니다.
+> 위 영문 가이드의 한국어 미러입니다. 동작은 동일하며, 사용자가 한국어로 답변하면 자동으로 이 톤으로 전환됩니다. 다른 언어 사용자는 해당 언어로 대화형 안내를 제공합니다.
 
 ### 1단계 — 환영 인사
 
-영문 환영 인사와 동시에 출력합니다. 사용자의 첫 답변 언어를 감지해 `session_language`를 설정한 뒤, 이후 단계는 해당 언어로 진행합니다.
+영문/한국어 환영 인사를 동시에 출력합니다. 사용자의 첫 실질 답변 언어를 감지해 `session_language`를 설정한 뒤, 이후 단계는 해당 언어로 진행합니다. 언어 신호가 없으면 선호 언어로 한 번 답해 달라고 짧게 묻고, 한국어/영어 중 하나로 임의 추정하지 않습니다.
 
 ### 2단계 — 스킬 카탈로그
 

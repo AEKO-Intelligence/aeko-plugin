@@ -23,6 +23,10 @@ not deploy changes or touch the live store. For robots.txt, explain "AI search/s
 pages" separately from "training crawlers may collect content." End with Before / After / Risk / Undo and one
 recommended next step.
 
+Language: mirror the user's chat language for user-facing steps, summaries, questions, and risk/undo copy.
+Keep slash commands, IDs, file paths, channel slugs, schema keys, JSON-LD terms, and tool names in English/ASCII.
+When a Plan includes `target_language`, treat it as the artifact/content language, not necessarily the assistant UI language.
+
 ## Input
 
 - `item-id` (required) — `$1`. If missing, stop and point user to `/aeko-action-center <domain_id> technical`.
@@ -44,10 +48,10 @@ Dispatch is driven by `frontmatter`. Prose is narrative guidance only.
 - `execution_class == "technical_artifact"` — else stop.
 - `artifact_type ∈ {llms_txt, robots_txt_patch, json_ld, technical_bundle}` — else stop.
 - `status ∈ {pending, ready}` — else stop with appropriate message.
-- `tier_required` gate: compare against the resolved Brand Kit metadata (`aeko_get_brand_kit_by_id` when `brand_kit_id` is present, otherwise `aeko_get_brand_kit`); block if caller tier is below (bilingual tier-gate copy in §Copy).
+- `tier_required` gate: compare against the resolved Brand Kit metadata (`aeko_get_brand_kit_by_id` when `brand_kit_id` is present, otherwise `aeko_get_brand_kit`); block if caller tier is below (user-language tier-gate copy in §Copy).
 
-Print a plain-language header in `target_language` (default English if unsupported), then the prose body verbatim. Translate
-`artifact_type` before showing it:
+Print a plain-language header in the user's chat language, then the prose body verbatim. Translate
+`artifact_type` before showing it; for languages beyond Korean/English, use a natural plain-language label:
 
 | `artifact_type` | EN label | KO label |
 |---|---|---|
@@ -58,13 +62,13 @@ Print a plain-language header in `target_language` (default English if unsupport
 
 Header format:
 
-1. Action label — KO: "기술 상태 개선: <KO label>" / EN: "Technical health fix: <EN label>"
+1. Action label — mirror the user's chat language; KO: "기술 상태 개선: <KO label>" / EN: "Technical health fix: <EN label>"
 2. Context: `domain_id`, `target_url` if present.
 3. Sections: comma-joined `sections_required` if non-empty.
 
 Never echo the raw frontmatter to the user.
 
-### Copy templates (target_language)
+### Copy templates (user's chat language)
 
 - **Brand Kit missing** — KO: "이 기술 수정을 실행하려면 <domain>의 브랜드 키트가 필요합니다. `/aeko-brand-kit`을 먼저 실행해 주세요." / EN: "This technical fix needs a Brand Kit for <domain>. Run `/aeko-brand-kit` first."
 - **Tier gate** — same template as `/aeko-update-pdp`.

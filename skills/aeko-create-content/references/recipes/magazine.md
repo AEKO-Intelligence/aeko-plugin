@@ -1,6 +1,6 @@
 ---
 channel: magazine
-purpose: Vogue-style editorial recipe (KO/EN per target_language)
+purpose: Vogue-style editorial recipe — follows target_language with KO/EN guidance and native-register fallback
 load_when: SKILL.md §5.1 selects channel=magazine
 ---
 

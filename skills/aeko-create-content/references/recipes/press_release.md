@@ -1,26 +1,28 @@
 ---
 channel: press_release
-purpose: Press release recipe — language-aware (Korean 합니다체 OR English AP-style), for both KO- and EN-market brands
+purpose: Press release recipe — language-aware, with first-class KO/EN guidance and native-register fallback for other markets
 load_when: SKILL.md selects channel=press_release
 ---
 
-# `press_release` — press release recipe (KO + EN)
+# `press_release` — press release recipe
 
 > Substance + quality/voice frameworks live in `../aeo-frameworks.md`. This recipe defines press-release
 > format conventions only. Republished by a third-party outlet that controls final markup — emit clean
 > TEXT (markdown) only; no HTML, no structured data.
 
-**Language-aware.** Write in the brief's `target_language`. Both Korean and English markets are
-first-class — do not assume KO. Pick the register block below by language; the *structure* (lead with
-5W1H, one quote, boilerplate, contact) is shared.
+**Language-aware.** Write in the brief's `target_language`. Korean and English have explicit register
+blocks below, but other market languages are supported: use that market's standard formal press-release
+register. Do not assume KO. The *structure* (lead with 5W1H, one quote, boilerplate, contact) is shared.
 
 - **Korean (`ko`):** **합니다체** (formal) throughout — required even if brand voice elsewhere is 요체; the
   format wins. Headline ≤40자; 부제 한 줄; 리드는 첫 2문장에 5W1H; 본문 3–4단락; 문의처 line at the bottom.
 - **English (`en`):** formal **AP-style**. Headline in title case (≤ ~12 words); optional dateline
   (`CITY, Country — Mon DD, YYYY —`); lead paragraph carries the 5W1H; 3–4 body paragraphs; "Media
   Contact" block at the bottom.
+- **Other languages:** use a formal newswire style native to that market, keeping the same constraints:
+  concise headline, lead with 5W1H, 3–4 body paragraphs, one named quote, boilerplate, and contact block.
 
-Shared across both languages:
+Shared across languages:
 - **One quote** from a named spokesperson (CEO or product lead).
 - **Boilerplate** — one "About <Brand>" paragraph derived from `brand_kit.brand_voice_summary`. Never
   hard-code "AEKO"; this drafts for the user's domain/brand.
@@ -31,7 +33,8 @@ Shared across both languages:
 
 ## Acceptance gates
 
-- 5W1H present in the lead; register matches `target_language` (합니다체 for KO / AP-style for EN);
+- 5W1H present in the lead; register matches `target_language` (합니다체 for KO / AP-style for EN /
+  native formal press-release style for other languages);
   ≥1 named quote; "About <Brand>" boilerplate present; contact/문의처 line present.
 
 ## Media

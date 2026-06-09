@@ -50,7 +50,7 @@ Some Cafe24 plans auto-inject a restrictive `robots.txt` that blocks non-standar
    - Required per contract §4.2. If missing or malformed → stop with: "site_base_url not set on this item; backend must populate the site origin."
    - Derive `{site_base_url}/robots.txt`.
 2. **Fetch current robots.txt** via `WebFetch`. On 404 or empty → treat as empty baseline (legitimate case).
-3. **On fetch failure** (timeout, non-200, non-404) → ask user in `target_language`: "Couldn't read <url>. Paste your current robots.txt, or confirm the site has none."
+3. **On fetch failure** (timeout, non-200, non-404) → ask the user in their chat language: "Couldn't read <url>. Paste your current robots.txt, or confirm the site has none."
 4. **Parse** the current file into rule groups (User-agent + Allow/Disallow blocks).
 5. **Compute a patch** that:
    - Adds `User-agent: <crawler>\nAllow: /` blocks for each visibility/search bot missing from the current file when doing so does not override an explicit merchant block.

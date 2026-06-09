@@ -25,6 +25,9 @@ Frame this as "how AEKO keeps generated content on-brand." In `view` mode, read-
 In `edit` mode, show Before / After / Risk / Undo before applying changes. Avoid schema/backend language unless
 the user asks for technical detail.
 
+Language: mirror the user's chat language for user-facing steps, summaries, questions, and risk/undo copy.
+Keep slash commands, IDs, file paths, channel slugs, schema keys, and tool names in English/ASCII.
+
 ## Inputs
 
 - `domain-id` (optional) — UUID. If omitted, Step 1 auto-resolves or prompts.

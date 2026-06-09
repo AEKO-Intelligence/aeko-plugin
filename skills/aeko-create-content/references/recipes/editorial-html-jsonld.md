@@ -118,7 +118,7 @@ Field-by-field constraints (mirror `PostUpsert`):
 
 | Field | Required | Type | Constraints |
 |---|---|---|---|
-| `locale` | yes | str | 2..12 chars. `ko`, `en`, `en-US`, `ko-KR` all valid. Normalize "Korean"/"한국어"→`ko`, "English"/"영어"→`en`; unrecognized → fall back to `ko` and emit a one-line warning. |
+| `locale` | yes | str | 2..12 chars. `ko`, `en`, `en-US`, `ko-KR`, `ja`, `zh`, `es` all valid. Normalize common language names (`Korean`/`한국어`→`ko`, `English`/`영어`→`en`, `Japanese`→`ja`, `Chinese`→`zh`, etc.). If the value is a plausible BCP-47 language tag, use it; otherwise fall back to `en` and emit a one-line warning. |
 | `title` | yes | str | 1..300 chars. |
 | `slug` | **required (`aeko_shop`)** | str | A **meaningful English** slug (translate, don't transliterate) — see SKILL.md §5.5.6. Must match `^[a-z0-9]+(?:-[a-z0-9]+)*$` (lowercase ASCII, hyphen-separated; ≤220); for a **non-ASCII (Korean) title** it must NOT equal the §5.5.3 romanized filename slug (for an already-English title that equality is fine). Becomes the post URL slug (backend appends `-2`/`-3` on collision). Enforced by the SKILL §6.3 hard gate — omitting it (or reusing a romanized filename slug) fails the draft. The backend itself allows null and would otherwise transliterate the title to phonetic ASCII; the gate prevents that. **Never Korean/non-ASCII** — the backend rejects it (422). |
 | `og_description` | **yes** (recipe requirement, even though `PostUpsert` allows null) | str | ≤500 chars. Absent → the rendered page's `speakable` JSON-LD does not emit (`structured-data.ts:67-73`), so always include. |
@@ -147,7 +147,7 @@ No other top-level fields are allowed. **Field-growth path:** when the backend a
 5. **Verify reachability:** `curl -fsSI "<public_url>"` (fallback `curl -fsS -r 0-0 "<public_url>"`). Continue only on 2xx.
 6. **Embed the returned `public_url` VERBATIM** (do not rewrite the host): `<figure><img src="<public_url>" alt="<alt>" width="<w>" height="<h>" loading="lazy"></figure>`. Also record it into `.meta.json` `media[]` with matching `alt_text`.
 
-On upload failure: **warn loudly (bilingual EN/KO)**, omit that image, and produce a valid text-only/partial post — **NEVER a placeholder**. Do not delete the staged file (speeds retry). `hero_image_url` in `.meta.json` may be a product image on the brand CDN (rendered by `next/image`), an uploaded `public_url`, or `null`.
+On upload failure: **warn loudly in the user's chat language**, omit that image, and produce a valid text-only/partial post — **NEVER a placeholder**. Do not delete the staged file (speeds retry). `hero_image_url` in `.meta.json` may be a product image on the brand CDN (rendered by `next/image`), an uploaded `public_url`, or `null`.
 
 ---
 
