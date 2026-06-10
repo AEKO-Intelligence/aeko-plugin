@@ -7,6 +7,19 @@ The plugin follows [Semantic Versioning](https://semver.org/). All four host man
 (`.claude-plugin/`, `.codex-plugin/`, `gemini-extension.json`) are kept in version sync so that
 version-keyed host caches refresh on update.
 
+## [0.15.4] — 2026-06
+
+### Fixed
+- **`/aeko-create-content` no longer stalls on thin citation signal.** When a brand is new (zero
+  citations, prompts still in an AEKO re-query cycle, or an un-indexed domain / own-content 404), the
+  skill previously could improvise an extra "how should I proceed?" elicitation form that failed to
+  complete. Thin signal is now explicitly the normal early state, not a decision point: with brand kit
+  + product substance present, the skill proceeds straight to channel selection. The only two user
+  prompts are mode selection (Step 2.5) and channel/media (Step 4); inventing extra forms is barred.
+- **Korean terminology:** user-facing copy now uses **소스 분석** (source analysis) instead of **포렌식**
+  (forensics), which read as crime-lab jargon to marketers. Applied to `/aeko-create-content` and
+  `/aeko-prompt-deep-dive`. "Forensics" remains an internal label in the skill docs only.
+
 ## [0.15.3] — 2026-06
 
 ### Changed
@@ -102,6 +115,7 @@ schema trick.
 - Publish-pipeline skill fixes: correct publish edit-path, loud product/image warnings, brand-kit
   terminology.
 
+[0.15.4]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.3]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.2]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.1]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main

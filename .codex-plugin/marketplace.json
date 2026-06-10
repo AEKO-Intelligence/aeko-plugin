@@ -9,7 +9,7 @@
     {
       "name": "aeko-plugin",
       "description": "AEKO skills for Codex — onboarding, visibility, PDP, content, schema, brand kit, action center, and user-language guidance.",
-      "version": "0.15.3",
+      "version": "0.15.4",
       "source": "./"
     }
   ]

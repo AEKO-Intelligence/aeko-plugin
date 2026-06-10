@@ -20,6 +20,9 @@ Walks a user through one tracked prompt's full citation footprint. Output: a cle
 Explain the prompt as a real customer question. Keep the report focused on: who AI mentions, which pages AI cites,
 what facts AI appears to reuse, and the one best action. Label fact reuse as inferred absorption, not measured fact.
 
+**Plain words, not jargon.** Never surface "forensics" in user-facing copy — call it **source analysis**
+(Korean: **소스 분석**, never 포렌식). "Forensics" elsewhere in this doc is an internal label only.
+
 Language: mirror the user's chat language for user-facing steps, summaries, questions, and next actions.
 Keep slash commands, IDs, file paths, citation URLs, schema keys, and tool names in English/ASCII.
 
