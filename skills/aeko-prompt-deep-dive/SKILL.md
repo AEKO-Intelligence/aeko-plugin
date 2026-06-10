@@ -1,11 +1,11 @@
 ---
 name: aeko-prompt-deep-dive
 description: >
-  Citation-forensics deep-dive on one tracked prompt. Pulls per-platform
+  Citation source-analysis deep-dive on one tracked prompt. Pulls per-platform
   responses, citation arrays, and crawled source metadata, then helps the
   user understand which competitors win the prompt, which sources AI
   engines cite, and what those sources do that could be mirrored. This
-  skill operationalizes AEKO's unique "citation forensics" value-prop —
+  skill operationalizes AEKO's unique cited-source analysis value-prop —
   vanilla Claude cannot do it.
 argument-hint: "<prompt-id> [window]"
 allowed-tools: aeko_get_tracked_prompt, aeko_get_brand_kit, aeko_get_domain_info, WebFetch
@@ -20,8 +20,9 @@ Walks a user through one tracked prompt's full citation footprint. Output: a cle
 Explain the prompt as a real customer question. Keep the report focused on: who AI mentions, which pages AI cites,
 what facts AI appears to reuse, and the one best action. Label fact reuse as inferred absorption, not measured fact.
 
-**Plain words, not jargon.** Never surface "forensics" in user-facing copy — call it **source analysis**
-(Korean: **소스 분석**, never 포렌식). "Forensics" elsewhere in this doc is an internal label only.
+**Plain words, not jargon.** Never surface "forensics" / 포렌식 in user-facing copy. In English say
+**source analysis**; in Korean say **AI 답변 참고 출처** (the sources AI references in its answers).
+"Forensics" elsewhere in this doc is an internal label only.
 
 Language: mirror the user's chat language for user-facing steps, summaries, questions, and next actions.
 Keep slash commands, IDs, file paths, citation URLs, schema keys, and tool names in English/ASCII.
@@ -33,7 +34,7 @@ Keep slash commands, IDs, file paths, citation URLs, schema keys, and tool names
 
 If `prompt-id` is missing, tell user to get one from `/aeko-find-prompts-to-track` or `/aeko-action-center`.
 
-## Step 1 — Fetch the forensics payload
+## Step 1 — Fetch the source-analysis payload
 
 Call `aeko_get_tracked_prompt(prompt_id, window=<from $2 or "latest">)`.
 

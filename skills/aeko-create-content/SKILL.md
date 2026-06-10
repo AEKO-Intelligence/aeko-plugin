@@ -1,6 +1,5 @@
 ---
 name: aeko-create-content
-version: 0.15.2
 description: >
   Multi-channel AEO content executor for Action-tab items with
   `execution_class=local_content_artifact`. Fetches a Plan.md, pulls
@@ -67,9 +66,9 @@ Frame this as "drafting content AI can cite." Open with channels, source materia
 anything can publish live. Default copy should avoid internal terms like `execution_class` and raw frontmatter.
 Before saving variations, show what will be saved, where it can appear, risk, and how to revise/undo.
 
-**Plain words, not jargon.** Never surface "forensics" in user-facing copy — call it **source analysis**
-(Korean: **소스 분석**, never 포렌식, which reads as crime-lab jargon to marketers). "Forensics" elsewhere in
-this doc is an internal label only.
+**Plain words, not jargon.** Never surface "forensics" / 포렌식 in user-facing copy (it reads as crime-lab
+jargon to marketers). In English say **source analysis**; in Korean say **AI 답변 참고 출처** (the sources AI
+references in its answers). "Forensics" elsewhere in this doc is an internal label only.
 
 **Only two user prompts exist in this skill:** the Step 2.5 mode question and the Step 4 channel/media forms.
 Do **not** invent extra decision forms — most importantly, do not add a "how should I proceed?" gate when the
@@ -179,8 +178,11 @@ prompts resolve, continue (the prompt text itself still gives topic/intent) — 
 
 **Thin signal is expected — never a fork.** Zero citations, prompts still in an AEKO re-query cycle, or an
 un-indexed domain (own-content 404) are normal for a new brand. Do not stop, and do not ask the user how to
-proceed — state it in one plain line ("소스 분석 신호가 아직 약합니다 — 브랜드 키트와 상품 정보로 작성합니다" /
-"source analysis is still thin — drafting from brand kit + product info") and continue to Step 4. If
+proceed — state it in one plain line and continue to Step 4. **Name only the sources that actually loaded**
+(don't claim "상품 정보" if the product fetch failed): build the list dynamically from {불러온 상품 정보, 리뷰,
+프롬프트, 브랜드 키트} that are present this run. Example when product + brand kit loaded: "AI 답변 참고 출처는
+아직 적지만, 브랜드 키트와 불러온 상품 정보로 작성합니다" / "few cited sources yet — drafting from the brand kit
+and loaded product info." If only the prompt + brand kit loaded, say exactly that instead. If
 `mode = competitive` but the signal is thin (no cited snippets to distill), silently degrade to Standard with
 that one-line note — competitive context adds nothing without citations.
 

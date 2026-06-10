@@ -53,7 +53,7 @@ This is the AEKO-grounded layer — skip this step and you're just a WebSearch w
 
 1. `aeko_get_visibility_summary(domain_id, scope="cited_sources")` — surfaces pages from the user's domain AI engines cite.
 2. For each of the user's top 5-10 tracked prompts (derive from `brand_kit.brand_keywords[]` + `aeko_search_research_prompts(scope=..., country=...)` if no tracked set yet):
-   - Call `aeko_get_tracked_prompt(prompt_id, window="30d")` for forensics.
+   - Call `aeko_get_tracked_prompt(prompt_id, window="30d")` for cited-source analysis.
    - Count how often the competitor's brand name appears in `responses[].mentions`.
    - Count how often the competitor's root domain appears in `responses[].citations[].domain`.
 3. Build a comparison matrix:
@@ -128,7 +128,7 @@ User-facing summary:
 ## Error paths
 
 - Competitor name ambiguous + WebSearch returns multiple candidates → ask user to pick or paste the root URL directly.
-- All cross-reference calls fail → still produce the Step 2 / Step 4 public-signals portion; note AEKO forensics missing.
+- All cross-reference calls fail → still produce the Step 2 / Step 4 public-signals portion; note AEKO cited-source data missing.
 - No tracked prompts + research-prompt fallback returns empty → note the user's domain doesn't have any tracked-prompt coverage yet; suggest `/aeko-find-prompts-to-track` as a prerequisite.
 
 ## What this skill never does

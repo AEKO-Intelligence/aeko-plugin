@@ -7,6 +7,21 @@ The plugin follows [Semantic Versioning](https://semver.org/). All four host man
 (`.claude-plugin/`, `.codex-plugin/`, `gemini-extension.json`) are kept in version sync so that
 version-keyed host caches refresh on update.
 
+## [0.15.5] — 2026-06
+
+### Fixed
+- **Removed the stale per-skill `version:` frontmatter field** from `/aeko-create-content` — it was the
+  only skill carrying one, nothing in the loader consumes it, and it had silently drifted twice.
+  Manifests are now the single source of version truth.
+- **"Forensics" purged from active instruction surfaces** (action-center fan-out hint,
+  prompt-deep-dive description + step header, both competitor skills) — replaced with "source analysis"
+  so the jargon can't leak into user phrasing. Korean user-facing term standardized to **AI 답변 참고 출처**
+  (the sources AI references in its answers), replacing the earlier 소스 분석.
+- **Thin-signal note now lists only the sources that actually loaded** in `/aeko-create-content` —
+  prevents claiming "product info" when the product fetch failed and only prompt + brand kit are present.
+- Fixed a stale `보도자료` slug in the action-center addon list → `press_release` (channels stay
+  ASCII/language-neutral).
+
 ## [0.15.4] — 2026-06
 
 ### Fixed
@@ -115,6 +130,7 @@ schema trick.
 - Publish-pipeline skill fixes: correct publish edit-path, loud product/image warnings, brand-kit
   terminology.
 
+[0.15.5]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.4]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.3]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.2]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main

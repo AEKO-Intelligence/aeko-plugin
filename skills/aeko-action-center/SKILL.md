@@ -114,7 +114,7 @@ For each category with ≥1 pending item, group items by priority (critical → 
 /aeko-create-content <item_id>
 ````
 
-The `multi-channel` tag and the fan-out hint are required — they signal that running the executor opens an interactive channel-selection flow (auto-detected channels from forensics + optional addons: `보도자료` / `magazine` / `instagram` / `tiktok` / `youtube` / `other:<name>`) and is not a one-shot generator. Do not omit either line.
+The `multi-channel` tag and the fan-out hint are required — they signal that running the executor opens an interactive channel-selection flow (auto-detected channels from cited-source analysis + optional addons: `press_release` / `magazine` / `instagram` / `tiktok` / `youtube` / `other:<name>`) and is not a one-shot generator. Do not omit either line.
 
 After printing, ask which one the user wants to tackle. They copy the command block and run it themselves.
 
