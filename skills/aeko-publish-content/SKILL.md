@@ -178,7 +178,7 @@ If the call fails:
 - **`MethodNotFound` / tool unregistered** → emit the Step 0 user-language "rolling out" message and exit 0.
 - **4xx** — surface the backend message verbatim. Common cases:
   - `403` Pro+ tier gate failed (enforced by `publisher.enforce_publish_gate`) — common for `aeko_shop`; rare for `own_store_blog` (no tier gate on draft creation).
-  - `409` `brand.aeko_shop_disabled = true` (per-brand opt-out) — `aeko_shop` only.
+  - `409` business gate — `aeko_shop` only. Either `brand.aeko_shop_disabled = true` (per-brand opt-out) or an aeko.shop-side gate passed through with its detail (e.g. `brand is not on an active publishing tier` from the shop's entitlement check). The variation stays `saved`; retriable after the gate is remediated (entitlements are granted automatically during publish for Pro/Enterprise accounts, so a re-run usually clears the entitlement case).
   - `429` Rate-limited (>10 aeko.shop publishes / hour per brand).
   - `502` Upstream aeko-shop error — re-run after the upstream recovers. Idempotent: re-running on the same `variation_id` is safe.
   - `422` Adapter validation (e.g., `body_html` or `meta.og_description` missing for `aeko_shop` — this should be caught at save time, but if it slipped through, the variation needs to be re-saved with the missing field).
