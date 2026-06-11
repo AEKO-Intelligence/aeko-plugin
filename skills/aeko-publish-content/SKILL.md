@@ -178,7 +178,7 @@ If the call fails:
 - **`MethodNotFound` / tool unregistered** → emit the Step 0 user-language "rolling out" message and exit 0.
 - **4xx** — surface the backend message verbatim. Common cases:
   - `403` Pro+ tier gate failed (enforced by `publisher.enforce_publish_gate`) — common for `aeko_shop`; rare for `own_store_blog` (no tier gate on draft creation).
-  - `409` business gate — `aeko_shop` only. Either `brand.aeko_shop_disabled = true` (per-brand opt-out) or an aeko.shop-side gate passed through with its detail (e.g. `brand is not on an active publishing tier` from the shop's entitlement check). The variation stays `saved`; retriable after the gate is remediated (entitlements are granted automatically during publish for Pro/Enterprise accounts, so a re-run usually clears the entitlement case).
+  - `409` business gate — `aeko_shop` only. Either `brand.aeko_shop_disabled = true` (per-brand opt-out) or an aeko.shop-side gate passed through with its detail. The variation stays `saved`. **Important:** for Pro/Enterprise accounts the publish entitlement is granted automatically *inside the same publish request*, so if the user still sees `brand is not on an active publishing tier`, the automatic grant was blocked (the brand's entitlement is owned by aeko.shop billing — e.g. it was claimed via self-verify). Do NOT advise re-running for this case — it will fail identically; tell the user to contact support. The `aeko_shop_disabled` case also has no self-serve toggle today — contact support as well. Surface the backend detail verbatim (with a Korean gloss when the chat is in Korean).
   - `429` Rate-limited (>10 aeko.shop publishes / hour per brand).
   - `502` Upstream aeko-shop error — re-run after the upstream recovers. Idempotent: re-running on the same `variation_id` is safe.
   - `422` Adapter validation (e.g., `body_html` or `meta.og_description` missing for `aeko_shop` — this should be caught at save time, but if it slipped through, the variation needs to be re-saved with the missing field).
@@ -217,10 +217,7 @@ aeko.shop에 게시 완료:      <aeko_shop_url>
                             연결된 상품을 직접 인용할 수 있습니다.
 ```
 
-**Then append a single soft "claim your brand" nudge** (one line, after the report block — publishing does NOT require claiming; this is optional and never blocks). The aeko.shop brand was auto-created/owned for you on publish; finishing connect-brand verifies your site and unlocks the on-site shop agent. Do not gate or repeat — just offer it once:
-
-- EN: `Tip: your aeko.shop brand is live. If you own this site, you can finish connecting it to unlock the shop agent → https://aeko.shop/connect-brand (optional).`
-- KO: `팁: aeko.shop 브랜드가 게시되었습니다. 이 사이트의 소유자라면 사이트를 연결해 숍 에이전트를 활성화할 수 있습니다 → https://aeko.shop/connect-brand (선택).`
+**Do NOT nudge users to https://aeko.shop/connect-brand for now.** The only working claim path there is self-verify, which hands the brand's publish entitlement to aeko.shop billing (quota 0) — and the app-side automatic grant never overwrites billing-owned entitlements, so completing it would permanently 409-block this skill's publishing for the brand. Reinstate the soft "claim your brand" nudge only after the app-domains connect flow (account-lookup) ships or entitlement source precedence is decided. (Suspended 2026-06-11; original nudge copy lives in git history.)
 
 ### For `destination == 'own_store_blog'`:
 
