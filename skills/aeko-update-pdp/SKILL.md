@@ -42,7 +42,7 @@ Call `aeko_get_action_plan(item_id)`. Parse YAML frontmatter + prose body.
 - `execution_class == "store_write_artifact"` — else redirect: `technical_artifact` → `/aeko-fix-technical`, `local_content_artifact` → `/aeko-create-content`.
 - `status ∈ {pending, ready}` — else stop with appropriate message.
 - `write_target` consistency: must pair with `write_mode` per contract §3 — `shadow_product ↔ shadow`, `append_below_existing ↔ live`, `preview_only ↔ local`. Mismatch → stop.
-- `tier_required` gate via the resolved Brand Kit metadata (`aeko_get_brand_kit_by_id` when `brand_kit_id` is present, otherwise `aeko_get_brand_kit`).
+- `tier_required` gate: the artifact's required tier is `frontmatter.tier_required` — **independent of the Brand Kit** (optional now). When a kit resolves, its `metadata.account_tier` is a convenient early cross-check (block with the §Copy tier-gate template if below). When no kit resolves (the common case), do NOT skip the gate — the backend enforces `tier_required` on the actual store-write and returns 403; surface it with the §Copy tier-gate template. The source of truth is the backend, never the kit.
 
 Print the header in the user's chat language:
 1. Action label — KO: "상품 페이지 개선" / EN: "Product page improvement"

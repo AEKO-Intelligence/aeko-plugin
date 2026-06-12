@@ -130,8 +130,9 @@ are empty and the kit is `draft`/`generating`, warn but continue.
 
 **No kit is fine — never stop.** If no kit resolves, set `resolved_brand_kit_id = null` and write in a
 neutral, product-led voice grounded in the product/OCR substance (Step 3); note it in one line in the
-user's chat language ("브랜드 키트 없이 상품 정보 기반의 중립적인 톤으로 작성합니다" / "No Brand Kit — neutral,
-product-led voice"). Publishing works without a kit: media presign falls back to the item/domain
+user's chat language — KO: "브랜드 키트가 없어 상품 정보 기반의 중립적인 톤으로 작성합니다. `/aeko-brand-kit`으로
+추가하면 브랜드 톤이 반영됩니다." / EN: "No Brand Kit — writing in a neutral, product-led voice. Add one with
+`/aeko-brand-kit` for on-brand tone." Publishing works without a kit: media presign falls back to the item/domain
 identity (pass `item_id` to `aeko_request_media_upload`), and the backend publishes under the verified
 domain. Keep `resolved_brand_kit_id` (or `null`) for media presign and the structured-data gate.
 
@@ -179,6 +180,12 @@ empty or thin (< ~200 chars) AND a page or image URL exists (`p.outbound_url` / 
    numbers, and pricing. Keep units and figures exact — never round, drop, or paraphrase a number away.
 4. Merge the extracted text into `substance.products[p].ocr_text`. If extraction fails, set
    `substance.products[p].ocr_failed = true` and surface it in Step 8.
+
+**Budget the work** — image OCR is slow/token-heavy: cap total OCR images at **~20 per run across ALL
+products** (not the ~6/product cap alone). When products exceed the budget, prioritize those with
+featured / tracked-prompt status and note in Step 8 that the rest were skipped for image extraction.
+Emit a one-line note when extraction runs — KO: "이미지에서 임상·수치 데이터를 추출하고 있어요 — 잠시 걸릴 수
+있습니다." / EN: "Extracting clinical/numeric data from images — this may take a moment."
 
 This is **extraction, not invention** (see the anti-fabrication rule in `references/aeo-frameworks.md`):
 image-sourced claims must trace to what the image shows, never to category-typical guesses.
@@ -231,6 +238,13 @@ aeko.shop is AEKO's canonical destination. Prepend `aeko_shop` to the pre-checke
 `brand_kit.aeko_shop_disabled === true` (missing/malformed → include it; emit a one-line "assuming
 enabled" note). Append `own_store_blog` to the offered set. Both are backend-saved draft targets; this
 skill never writes to the connected store.
+
+**Tier heads-up (set expectations before drafting).** Drafting + saving works on any plan, but
+**publishing to aeko.shop requires Pro or Enterprise** — `own_store_blog` drafts have no tier gate. When
+`aeko_shop` is in the offered set, include a one-line localized note so a Starter user isn't surprised at
+publish time: KO "aeko.shop 게시는 Pro 이상 플랜에서 가능합니다 — 초안 저장은 모든 플랜에서 됩니다." / EN
+"Publishing to aeko.shop needs Pro or higher; draft-saving works on any plan." (A Brand Kit is **not**
+required either way.)
 
 ### 4-Form-1 Channel selection
 Issue ONE elicitation form. Pre-check `suggested_channels[]` (from Step 3b) + `aeko_shop` + `own_store_blog`;
@@ -364,7 +378,8 @@ What AEKO created
 Source material used
 - Product facts: N
 - Real review/context details: N (or "none — attach product reviews for more original content")
-- Brand Kit: <loaded|missing>
+- Image-extracted substance: N products (clinical/numeric data pulled from images), or "none"
+- Brand voice: <brand kit | none (neutral product-led voice)>
 
 Safety
 - This skill did not publish anything live.

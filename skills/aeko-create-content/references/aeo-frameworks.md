@@ -97,10 +97,11 @@ An FAQ answer that is just a restated marketing line fails E-E-A-T. One that say
 
 ### 4.5 Balanced positioning — name the trade-offs (default, not optional)
 
-Write realistically. Every product piece should name **2–3 genuine trade-offs, limitations, or
-"not-for" cases**, grounded in specs or reviews — not just advantages. This is a primary AEO/E-E-A-T
-citation signal, **not** a weakness: AI engines (and shoppers) trust and cite content that acknowledges
-constraints far more than advantages-only copy, which reads as marketing and gets skipped.
+Write realistically. Where they genuinely exist, name the product's **trade-offs, limitations, or
+"not-for" cases** (aim for ~2–3), grounded in specs or reviews — not just advantages. This is a primary
+AEO/E-E-A-T citation signal, **not** a weakness: AI engines (and shoppers) trust and cite content that
+acknowledges constraints far more than advantages-only copy, which reads as marketing and gets skipped.
+The goal is honesty, not a quota — never manufacture a flaw to look balanced.
 
 - Pair claims with honest caveats: "고보습이지만 지성·여드름성 피부엔 다소 무거울 수 있다" beats
   "모두에게 완벽한 보습." Frame the downside with who/when it matters.
@@ -173,8 +174,10 @@ the brand look dishonest. Specific-but-honest always beats vivid-but-invented.
       expertise-grounded and flagged — never fabricated)?
 - [ ] **Cohort:** is a specific reader named and served?
 - [ ] **Contrarian:** is there ≥1 non-obvious, supported claim?
-- [ ] **Balanced:** are ≥2–3 real trade-offs / limitations / "not-for" cases named (grounded in
-      specs/reviews), rather than advantages-only? (If a dimension truly has none, say so — never invent one.)
+- [ ] **Balanced & honest:** does it read realistically — the limitations/trade-offs that ARE present are
+      named (traceable to specs/reviews), not buried under advantages-only copy? Count is aspirational
+      (~2–3 where they genuinely exist); **never invent a downside to hit a number** — "no significant
+      downside in X" is a valid, honest answer.
 - [ ] **E-E-A-T:** if there's an FAQ, does every answer show experience + expertise + specifics + honesty?
 - [ ] **Decision support:** for shopping content, is there a best-for/trade-off/comparison block when substance supports it?
 - [ ] **No fabrication:** every experiential claim traces to real substance.

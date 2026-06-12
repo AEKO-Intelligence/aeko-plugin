@@ -48,7 +48,7 @@ Dispatch is driven by `frontmatter`. Prose is narrative guidance only.
 - `execution_class == "technical_artifact"` — else stop.
 - `artifact_type ∈ {llms_txt, robots_txt_patch, json_ld, technical_bundle}` — else stop.
 - `status ∈ {pending, ready}` — else stop with appropriate message.
-- `tier_required` gate: compare against the resolved Brand Kit metadata (`aeko_get_brand_kit_by_id` when `brand_kit_id` is present, otherwise `aeko_get_brand_kit`); block if caller tier is below (user-language tier-gate copy in §Copy).
+- `tier_required` gate: the artifact's required tier is `frontmatter.tier_required` — **independent of the Brand Kit** (optional now). When a kit resolves, its `metadata.account_tier` is a convenient early cross-check; block if below (user-language tier-gate copy in §Copy). When no kit resolves, do NOT skip the gate — the backend enforces `tier_required` on the actual write and returns 403; surface it with the §Copy tier-gate copy. The source of truth is the backend, never the kit.
 
 Print a plain-language header in the user's chat language, then the prose body verbatim. Translate
 `artifact_type` before showing it; for languages beyond Korean/English, use a natural plain-language label:
@@ -70,7 +70,7 @@ Never echo the raw frontmatter to the user.
 
 ### Copy templates (user's chat language)
 
-- **No Brand Kit (non-blocking note)** — KO: "브랜드 키트 없이 진행합니다 (기술 수정은 톤에 거의 의존하지 않습니다). 필요하면 `/aeko-brand-kit`으로 추가하세요." / EN: "Proceeding without a Brand Kit (technical fixes barely depend on brand tone). Add one anytime with `/aeko-brand-kit`."
+- **No Brand Kit (non-blocking note)** — KO: "브랜드 키트 없이 진행합니다. 기술 수정은 브랜드 톤의 영향이 거의 없어 그대로 작업해도 괜찮습니다. 필요하면 `/aeko-brand-kit`으로 추가할 수 있어요." / EN: "Proceeding without a Brand Kit — technical fixes are barely affected by brand tone, so this works as-is. Add one anytime with `/aeko-brand-kit`."
 - **Tier gate** — same template as `/aeko-update-pdp`.
 - **Minor-version advisory** — KO: "이 가이드는 계약 v<plan_minor> 기준입니다. 현재 스킬은 v1.2 — `/plugin update aeko`." / EN: "This plan uses contract v<plan_minor>; this skill is on v1.2 — run `/plugin update aeko`."
 
