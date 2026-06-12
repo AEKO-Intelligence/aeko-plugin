@@ -120,13 +120,20 @@ local_content_artifact` (else stop and route to the right skill). Extract:
 
 Print a compact context header in the user's chat language (domain, title, persona, product count). Never echo raw frontmatter.
 
-## Step 2 — Resolve the brand kit (voice)
+## Step 2 — Resolve the brand kit (voice — optional)
 
-Resolve in order: `aeko_get_brand_kit_by_id(brand_kit_id)` → `aeko_get_brand_kit(domain_id)` →
-`aeko_list_brand_kits(domain_id)`. Capture `tone_of_voice`, `brand_voice_summary`, `target_audience`,
-`must_include`, `forbidden`, `aeko_shop_disabled`, and richness fields (`logo_url`, `primary_url`,
-`tagline`). If the voice fields are empty and the kit is `draft`/`generating`, warn but continue.
-Keep `resolved_brand_kit_id` for media presign and the structured-data gate.
+The brand kit is **optional**. Resolve in order: `aeko_get_brand_kit_by_id(brand_kit_id)` →
+`aeko_get_brand_kit(domain_id)` → `aeko_list_brand_kits(domain_id)`. When one resolves, capture
+`tone_of_voice`, `brand_voice_summary`, `target_audience`, `must_include`, `forbidden`,
+`aeko_shop_disabled`, and richness fields (`logo_url`, `primary_url`, `tagline`). If the voice fields
+are empty and the kit is `draft`/`generating`, warn but continue.
+
+**No kit is fine — never stop.** If no kit resolves, set `resolved_brand_kit_id = null` and write in a
+neutral, product-led voice grounded in the product/OCR substance (Step 3); note it in one line in the
+user's chat language ("브랜드 키트 없이 상품 정보 기반의 중립적인 톤으로 작성합니다" / "No Brand Kit — neutral,
+product-led voice"). Publishing works without a kit: media presign falls back to the item/domain
+identity (pass `item_id` to `aeko_request_media_upload`), and the backend publishes under the verified
+domain. Keep `resolved_brand_kit_id` (or `null`) for media presign and the structured-data gate.
 
 ## Step 2.5 — Mode selection (Standard vs + competitive context)
 
@@ -158,6 +165,23 @@ This is the substance backbone. When `parsed_products[]` is non-empty (the usual
 - `aeko_get_product_context_reviews(p.source_id)` → lived-experience reviews keyed by context/persona.
 
 Build `substance` = `{ products: [...with full_description...], context_reviews: [...] }`.
+
+**Image-only / image-heavy pages — ALWAYS pull the substance from the images.** Many PDPs bake the real
+substance into images (clinical/test results, lab data, ingredient amounts, certifications, before/after
+numbers) with little HTML text. After the product fetch, for each product `p` where `full_description` is
+empty or thin (< ~200 chars) AND a page or image URL exists (`p.outbound_url` / `p.image_url`):
+
+1. `WebFetch(p.outbound_url)` to load the page; collect its product image URLs (plus `p.image_url`).
+2. For each image (cap ~6 per product; skip decorative/thumbnail), fetch the binary (`WebFetch`, or
+   `Bash(curl -o …)` when the content-type isn't handled) and open it with native `Read` for Claude vision.
+3. **Extract and preserve the high-citability substance verbatim**, prioritizing: clinical/test results,
+   lab/efficacy data, percentages, ingredient names + amounts/concentrations, certifications, before/after
+   numbers, and pricing. Keep units and figures exact — never round, drop, or paraphrase a number away.
+4. Merge the extracted text into `substance.products[p].ocr_text`. If extraction fails, set
+   `substance.products[p].ocr_failed = true` and surface it in Step 8.
+
+This is **extraction, not invention** (see the anti-fabrication rule in `references/aeo-frameworks.md`):
+image-sourced claims must trace to what the image shows, never to category-typical guesses.
 
 **Degrade gracefully:**
 - `aeko_get_product_context_reviews` missing/empty → continue; product copy still carries substance.

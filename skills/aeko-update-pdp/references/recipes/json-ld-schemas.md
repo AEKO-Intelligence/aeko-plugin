@@ -73,8 +73,11 @@ Shopping facts AI can verify
 - **Answers must show E-E-A-T**, not restated marketing. Each `acceptedAnswer` carries Experience +
   Expertise + specifics + an honest trade-off, grounded in a real `context_reviews` entry (SKILL.md §4.5),
   an on-page review, or a product spec. "약 2% 수축, 건조기 사용 시 더 큼 → 자연건조 권장" beats "관리가
-  쉬워요." Never fabricate experience (SKILL.md §4.5 anti-fabrication rule). See the canonical
-  `skills/aeko-create-content/references/aeo-frameworks.md` (E-E-A-T section).
+  쉬워요." The example works *because* it names a real limitation + a workaround: honest limitations are
+  an AEO **strength** (more citable), not a weakness — at least one FAQ answer should carry a genuine
+  trade-off/"not-for" caveat. Never fabricate one (SKILL.md §4.5 anti-fabrication rule); if a dimension
+  truly has no downside, say so. See the canonical
+  `skills/aeko-create-content/references/aeo-frameworks.md` (§4.5 Balanced positioning).
 
 ### FAQ source priority (use the first that yields ≥ 3 product-relevant questions)
 

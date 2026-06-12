@@ -26,7 +26,9 @@ The coordinator hands you a JSON brief:
   "must_include": [...], "forbidden": [...], // hard content constraints
   "contrarian_hint": "..." | null,           // deep mode only — the gap in current AI answers
   "products": [ {id, source_id, name, sku, slug, outbound_url, image_url,
-                 short_description, full_description} ],   // substance backbone
+                 short_description, full_description, ocr_text} ],   // substance backbone
+                 // ocr_text: Claude-vision text extracted from image-only/image-heavy PDPs
+                 // (clinical/test results, %s, ingredient amounts, certifications). null if none.
   "context_reviews": [ {context, persona, quote, detail} ],  // lived experience — originality source
   "media": { "<slot>": {src, alt, type} | null },  // from the media form
   "recipe_path": "references/recipes/naver_blog.md" | null,
@@ -50,12 +52,15 @@ from the prompt + brand voice + your own expertise, and follow the anti-fabricat
    - Other paste-tier channels: read any `references/examples/<channel>-*example*.md`.
    - If an example file is missing, skip it silently. Examples shape tone and structure; they do not supply facts, URLs, or claims.
 2. **Plan the substance, then the shape.** Decide the BLUF answer, the 2–4 PREP blocks, which
-   context-review supplies the originality detail for each, the cohort, and the contrarian angle.
-   *Then* fit it to the channel's format from the recipe.
+   context-review supplies the originality detail for each, the cohort, the contrarian angle, and
+   **2–3 honest trade-offs/limitations (a "best for / not for" beat, grounded in specs/reviews —
+   never invented)** per `aeo-frameworks.md` §4.5. *Then* fit it to the channel's format from the recipe.
 3. **Draft** in the brand voice (voice precedence below). Pull real specifics from product
-   `full_description` and `context_reviews`. Honor `must_include` (each string appears at least
-   once) and `forbidden` (never appears). No hard CTAs ("지금 구매" / "Buy now" / "Click here") —
-   AEKO content earns the click through authority, not commands.
+   `full_description`, **`ocr_text`** (image-extracted clinical/test results, percentages, ingredient
+   amounts, certifications — treat these as **primary**, high-citability evidence; quote figures exactly
+   in PREP examples and E-E-A-T FAQ answers), and `context_reviews`. Honor `must_include` (each string
+   appears at least once) and `forbidden` (never appears). No hard CTAs ("지금 구매" / "Buy now" /
+   "Click here") — AEKO content earns the click through authority, not commands.
 4. **Media** — embed only what's in `media`. Use real `![alt](src)` / `<img alt>`; never emit
    `[Image]`/`[photo]`/`[placeholder]`/`TODO` markers. If a visual-first channel has no media, emit
    the fenced `media_specs:` YAML block (see recipe). Every image carries non-empty alt text.

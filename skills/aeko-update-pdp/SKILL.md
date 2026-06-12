@@ -55,14 +55,25 @@ Print the header in the user's chat language:
 
 Print prose body verbatim. Never echo raw frontmatter.
 
-## Step 2 — Stale brand-kit check
+## Step 2 — Brand-kit resolution (optional)
 
-If `frontmatter.requires_brand_kit == true`:
+A Brand Kit is **optional**. When one is present it sets the voice; when absent,
+write in a neutral, product-led voice grounded in the product facts and the OCR
+substance from Step 4 (clinical/test results, numbers, ingredients). **Never stop
+for a missing kit.**
+
+If `frontmatter.requires_brand_kit == true` (a kit was explicitly attached to this plan):
 - Resolve the Brand Kit in this order:
   1. If `frontmatter.brand_kit_id` is present and non-empty, call `aeko_get_brand_kit_by_id(frontmatter.brand_kit_id)`.
   2. Else fall back to `aeko_get_brand_kit(frontmatter.domain_id)` for older Plan.md files.
-  3. If both miss, call `aeko_list_brand_kits(domain_id=frontmatter.domain_id)` for diagnostics, then stop with the Brand-Kit-missing message and include any draft/generating/failed kit state shown by the list response.
+  3. If both miss, call `aeko_list_brand_kits(domain_id=frontmatter.domain_id)` once for diagnostics, then **continue without a kit** — emit the one-line no-kit note below. Do NOT stop.
 - Snapshot-version drift: ask user whether to abort or proceed with snapshot.
+
+If `frontmatter.requires_brand_kit == false` (no kit attached — the common case now): skip kit resolution and write in the neutral product-led voice.
+
+**No-kit note** (print once, in the user's chat language):
+- KO: "브랜드 키트가 없어 상품 정보 기반의 중립적인 톤으로 작성합니다. `/aeko-brand-kit`으로 추가하면 브랜드 톤이 반영됩니다."
+- EN: "No Brand Kit — writing in a neutral, product-led voice. Add one with `/aeko-brand-kit` for on-brand tone."
 
 ## Step 3 — Image strategy (ask user)
 
@@ -114,7 +125,7 @@ If `image_strategy != rebuild_with_local`:
    - Skip `<img>` with `width < 400` or `height < 400` (likely decorative).
    - Skip URLs matching thumbnail patterns (`/thumb/`, `_50x50`, `_100x100`, `-small`, `-thumb`).
    - Cap at 12 images per item. Log `skipped_decorative`, `skipped_thumbnail`, `skipped_overflow` counts.
-3. For each remaining image index, fetch the binary via WebFetch (or direct URL save via `Bash(curl -o ...)` if the image content-type isn't handled) and save to `./aeko-artifacts/<domain_id>/<item_id>/img/<idx>.<ext>`. Open each with native `Read` for Claude vision to OCR Korean + English text. Preserve paragraph order.
+3. For each remaining image index, fetch the binary via WebFetch (or direct URL save via `Bash(curl -o ...)` if the image content-type isn't handled) and save to `./aeko-artifacts/<domain_id>/<item_id>/img/<idx>.<ext>`. Open each with native `Read` for Claude vision to OCR Korean + English text. Preserve paragraph order. **Prioritize and preserve verbatim the high-citability substance** baked into images — clinical/test results, lab/efficacy data, percentages, ingredient names + amounts/concentrations, certifications, before/after numbers, and pricing. Keep units and figures exact; never round, drop, or paraphrase a number away.
 4. **Review detection pass:** scan OCR text + raw HTML for review-shaped blocks (customer quotes, star ratings, "리뷰 N개", structured review widgets). Build `reviews_payload = [{author, rating, text, date_if_present}]` capped at top-10 recent/high-rated. Null if nothing review-shaped.
 5. If every image OCR failed → stop. Do NOT hallucinate copy.
 

@@ -7,6 +7,31 @@ The plugin follows [Semantic Versioning](https://semver.org/). All four host man
 (`.claude-plugin/`, `.codex-plugin/`, `gemini-extension.json`) are kept in version sync so that
 version-keyed host caches refresh on update.
 
+## [0.16.0] — 2026-06
+
+### Changed
+- **Brand Kit is now OPTIONAL for publishing.** `/aeko-update-pdp` and `/aeko-fix-technical` no longer
+  stop when a Brand Kit is missing — they proceed in a neutral, product-led voice with a one-line note;
+  `/aeko-create-content` makes "no kit is fine" explicit. Publishing (aeko_shop + own_store_blog) and
+  media upload work without a kit — the verified domain is the publish identity. Pairs with the AEKO
+  backend gate removal and the `aeko-mcp` media-presign change (pass `item_id` to
+  `aeko_request_media_upload` when there's no kit).
+- **Balanced, realistic tone is now a default writing principle.** `references/aeo-frameworks.md` adds
+  §4.5 "Balanced positioning" (name 2–3 genuine trade-offs/limitations grounded in specs/reviews) plus a
+  self-check item; `drafter-instructions.md` makes it an active drafting beat; the PDP FAQ recipe frames
+  honest limitations as an AEO citation strength. Fabricated downsides remain forbidden.
+
+### Added
+- **Image-only product pages now yield their substance.** `/aeko-create-content` detects image-only/thin
+  PDPs and extracts the high-citability evidence via Claude vision — clinical/test results, lab data,
+  percentages, ingredient amounts, certifications, before/after numbers — and passes it to drafters as
+  `ocr_text`. `/aeko-update-pdp` OCR now preserves these figures verbatim. Extraction only, never
+  invention (the anti-fabrication rule now explicitly covers image-sourced claims).
+
+### Fixed
+- **Reconciled the manifest version drift** flagged in `AGENTS.md` (Claude manifests were at 0.15.7,
+  Codex and Gemini at 0.15.5): all five version fields are realigned to 0.16.0.
+
 ## [0.15.5] — 2026-06
 
 ### Fixed

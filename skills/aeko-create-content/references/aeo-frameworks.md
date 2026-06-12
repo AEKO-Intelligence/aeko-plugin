@@ -95,6 +95,19 @@ When the content includes an FAQ (or any Q&A block), each answer must demonstrat
 An FAQ answer that is just a restated marketing line fails E-E-A-T. One that says "세탁 후 수축은
 약 2% 발생했고, 건조기 사용 시 더 컸습니다" passes — it shows experience, specificity, and honesty.
 
+### 4.5 Balanced positioning — name the trade-offs (default, not optional)
+
+Write realistically. Every product piece should name **2–3 genuine trade-offs, limitations, or
+"not-for" cases**, grounded in specs or reviews — not just advantages. This is a primary AEO/E-E-A-T
+citation signal, **not** a weakness: AI engines (and shoppers) trust and cite content that acknowledges
+constraints far more than advantages-only copy, which reads as marketing and gets skipped.
+
+- Pair claims with honest caveats: "고보습이지만 지성·여드름성 피부엔 다소 무거울 수 있다" beats
+  "모두에게 완벽한 보습." Frame the downside with who/when it matters.
+- Use a "best for / not for" line or a trade-off table (§5) whenever the substance supports it.
+- **Never fabricate a flaw.** If a dimension genuinely has no downside, say so plainly rather than
+  inventing one — balance must trace to real specs/reviews (see the anti-fabrication rule).
+
 ---
 
 ## 5. Decision-guide blocks — for AI shopping and comparison
@@ -140,6 +153,12 @@ context-review or product fact you were given. AI 경험할 수 없다 — and n
   Specific Cohort and Contrarian View for differentiation. Then note in your self-check that the
   originality dimension is expertise-based, not experience-based — the coordinator surfaces a
   "attach a product / reviews for more original content" hint.
+- If product evidence lives **only in images** (clinical tests, lab/efficacy results, ingredient
+  labels, certifications) → **extract it via vision** (the executor supplies it as `ocr_text` / the
+  PDP OCR payload) and render the real figures with units intact. NEVER infer a number from what the
+  category "typically" contains — a claim like "95% 유효성분" must trace to the visible label or test
+  certificate, not to memory. Numeric, data-backed claims are among the highest-citability content
+  you can write, so surface them — but only the ones the source actually shows.
 
 Fabricated experience is worse than generic content: it's a trust violation that, if cited, makes
 the brand look dishonest. Specific-but-honest always beats vivid-but-invented.
@@ -154,6 +173,8 @@ the brand look dishonest. Specific-but-honest always beats vivid-but-invented.
       expertise-grounded and flagged — never fabricated)?
 - [ ] **Cohort:** is a specific reader named and served?
 - [ ] **Contrarian:** is there ≥1 non-obvious, supported claim?
+- [ ] **Balanced:** are ≥2–3 real trade-offs / limitations / "not-for" cases named (grounded in
+      specs/reviews), rather than advantages-only? (If a dimension truly has none, say so — never invent one.)
 - [ ] **E-E-A-T:** if there's an FAQ, does every answer show experience + expertise + specifics + honesty?
 - [ ] **Decision support:** for shopping content, is there a best-for/trade-off/comparison block when substance supports it?
 - [ ] **No fabrication:** every experiential claim traces to real substance.

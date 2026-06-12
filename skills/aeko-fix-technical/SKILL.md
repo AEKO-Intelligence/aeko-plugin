@@ -70,19 +70,24 @@ Never echo the raw frontmatter to the user.
 
 ### Copy templates (user's chat language)
 
-- **Brand Kit missing** — KO: "이 기술 수정을 실행하려면 <domain>의 브랜드 키트가 필요합니다. `/aeko-brand-kit`을 먼저 실행해 주세요." / EN: "This technical fix needs a Brand Kit for <domain>. Run `/aeko-brand-kit` first."
+- **No Brand Kit (non-blocking note)** — KO: "브랜드 키트 없이 진행합니다 (기술 수정은 톤에 거의 의존하지 않습니다). 필요하면 `/aeko-brand-kit`으로 추가하세요." / EN: "Proceeding without a Brand Kit (technical fixes barely depend on brand tone). Add one anytime with `/aeko-brand-kit`."
 - **Tier gate** — same template as `/aeko-update-pdp`.
 - **Minor-version advisory** — KO: "이 가이드는 계약 v<plan_minor> 기준입니다. 현재 스킬은 v1.2 — `/plugin update aeko`." / EN: "This plan uses contract v<plan_minor>; this skill is on v1.2 — run `/plugin update aeko`."
 
-## Step 2 — Stale brand-kit check (if used)
+## Step 2 — Brand-kit resolution (optional)
 
-If `frontmatter.requires_brand_kit == true`:
+A Brand Kit is **optional** and barely matters for technical artifacts (llms.txt,
+robots, JSON-LD). **Never stop for a missing kit.**
+
+If `frontmatter.requires_brand_kit == true` (a kit was explicitly attached):
 
 - Resolve the Brand Kit in this order:
   1. If `frontmatter.brand_kit_id` is present and non-empty, call `aeko_get_brand_kit_by_id(frontmatter.brand_kit_id)` for the exact selected kit.
   2. Else fall back to `aeko_get_brand_kit(frontmatter.domain_id)` for older Plan.md files.
-  3. If both miss, call `aeko_list_brand_kits(domain_id=frontmatter.domain_id)` for diagnostics, then stop with Brand-Kit-missing message and include any draft/generating/failed kit state shown by the list response.
+  3. If both miss, call `aeko_list_brand_kits(domain_id=frontmatter.domain_id)` once for diagnostics, then **continue without a kit** — emit the "No Brand Kit (non-blocking note)" template above. Do NOT stop.
 - If `frontmatter.brand_kit_snapshot_version` is present and live version is newer → ask user whether to abort or proceed with snapshot. Default to asking.
+
+If `frontmatter.requires_brand_kit == false` (no kit attached — the common case now): skip kit resolution entirely.
 
 ## Step 3 — Dispatch by artifact_type
 
