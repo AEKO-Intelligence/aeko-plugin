@@ -48,7 +48,7 @@ Dispatch is driven by `frontmatter`. Prose is narrative guidance only.
 - `execution_class == "technical_artifact"` — else stop.
 - `artifact_type ∈ {llms_txt, robots_txt_patch, json_ld, technical_bundle}` — else stop.
 - `status ∈ {pending, ready}` — else stop with appropriate message.
-- `tier_required` gate: the artifact's required tier is `frontmatter.tier_required` — **independent of the Brand Kit** (optional now). When a kit resolves, its `metadata.account_tier` is a convenient early cross-check; block if below (user-language tier-gate copy in §Copy). When no kit resolves, do NOT skip the gate — the backend enforces `tier_required` on the actual write and returns 403; surface it with the §Copy tier-gate copy. The source of truth is the backend, never the kit.
+- `tier_required` gate: compare `frontmatter.tier_required` (the artifact's required tier) against `frontmatter.account_tier` (the caller's current tier, stamped at fetch) — **no Brand Kit lookup**. Block if the caller is below (user-language tier-gate copy in §Copy). The backend also enforces this on the actual write (403); if `account_tier` is absent (older backend), skip the pre-check and rely on the backend 403. Never gate on the Brand Kit.
 
 Print a plain-language header in the user's chat language, then the prose body verbatim. Translate
 `artifact_type` before showing it; for languages beyond Korean/English, use a natural plain-language label:

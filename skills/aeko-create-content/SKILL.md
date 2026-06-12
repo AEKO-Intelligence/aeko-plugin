@@ -109,7 +109,8 @@ Call `aeko_get_action_plan(item_id)`. Parse the frontmatter + prose. Validate `e
 local_content_artifact` (else stop and route to the right skill). Extract:
 
 - **`resolved_title`** — frontmatter `title` → Plan `# H1` → `item_id` (chain; first non-empty wins).
-- **`domain_id`**, **`brand_kit_id`** (if present), **`persona_label`** (if present).
+- **`domain_id`**, **`brand_kit_id`** (if present), **`persona_label`** (if present), **`account_tier`**
+  (if present — the caller's current tier; drives the tier heads-up in §4.0).
 - **`parsed_products[]`** — optional. Backend `build_plan_md()` hydrates this from the user's selected
   store products; each entry should carry `id`, `source_id`, `name`, `slug`, `sku`, `outbound_url`,
   `image_url`, `short_description`. **Drop with a loud warning** any entry missing `id`/`source_id`/`name`/
@@ -239,12 +240,17 @@ aeko.shop is AEKO's canonical destination. Prepend `aeko_shop` to the pre-checke
 enabled" note). Append `own_store_blog` to the offered set. Both are backend-saved draft targets; this
 skill never writes to the connected store.
 
-**Tier heads-up (set expectations before drafting).** Drafting + saving works on any plan, but
-**publishing to aeko.shop requires Pro or Enterprise** — `own_store_blog` drafts have no tier gate. When
-`aeko_shop` is in the offered set, include a one-line localized note so a Starter user isn't surprised at
-publish time: KO "aeko.shop 게시는 Pro 이상 플랜에서 가능합니다 — 초안 저장은 모든 플랜에서 됩니다." / EN
-"Publishing to aeko.shop needs Pro or higher; draft-saving works on any plan." (A Brand Kit is **not**
-required either way.)
+**Tier heads-up (set expectations before drafting).** Read `frontmatter.account_tier` (the caller's
+current tier, stamped at fetch). Drafting + saving works on any plan; **publishing to aeko.shop requires
+Pro or Enterprise**; `own_store_blog` drafts have no tier gate.
+- If `account_tier` is `starter` (below Pro): keep `aeko_shop` in the offered set but **de-emphasize it**
+  and lead with `own_store_blog` as the publishable target. Include a localized note so the user isn't
+  surprised at publish — KO: "aeko.shop 게시는 Pro 이상 플랜에서 가능합니다. 지금은 초안 저장과 자체 스토어 블로그
+  게시가 가능하고, 업그레이드하면 aeko.shop에도 게시할 수 있어요." / EN: "Publishing to aeko.shop needs Pro or
+  higher — for now you can save drafts and publish to your own-store blog; upgrade to publish to aeko.shop."
+- If `account_tier` is `pro`/`enterprise` or absent: proceed normally (a one-line "own_store_blog has no
+  tier gate" mention is enough).
+(A Brand Kit is **not** required either way.)
 
 ### 4-Form-1 Channel selection
 Issue ONE elicitation form. Pre-check `suggested_channels[]` (from Step 3b) + `aeko_shop` + `own_store_blog`;

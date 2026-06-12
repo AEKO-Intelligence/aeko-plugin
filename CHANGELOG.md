@@ -9,6 +9,11 @@ version-keyed host caches refresh on update.
 
 ## [0.16.0] — 2026-06
 
+> **Deploy order — ship together / backend first.** No-kit *media upload* depends on the AEKO backend
+> presign-route change and the `aeko-mcp` `aeko_request_media_upload` change (item_id/domain_id identity).
+> Deploy **backend → aeko-mcp → this plugin**. If the plugin lands first, kit-less runs degrade gracefully
+> (hero + product images only, no AEKO-hosted body images) per the editorial recipe — they don't hard-fail.
+
 ### Changed
 - **Brand Kit is now OPTIONAL for publishing.** `/aeko-update-pdp` and `/aeko-fix-technical` no longer
   stop when a Brand Kit is missing — they proceed in a neutral, product-led voice with a one-line note;
