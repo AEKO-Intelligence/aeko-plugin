@@ -6,7 +6,7 @@ load_when: SKILL.md §5b runs (pending_verifications non-empty)
 
 # Step 5b — verification prompt templates
 
-When `pending_verifications` is non-empty after Step 5, pause and ask the user in their chat language. Show a numbered list of every pending field with: which `<section>` it appears in, why it's needed (one short phrase), and any candidate value derived from prose / brand-kit / OCR (if none, say "확인 안 됨" / "not found" or a natural equivalent in the user's language).
+When `pending_verifications` is non-empty after Step 5, pause and ask the user in their chat language. Show a numbered list of every pending field with: which `<section>` it appears in, why it's needed (one short phrase), and any candidate value derived from prose / OCR (if none, say "확인 안 됨" / "not found" or a natural equivalent in the user's language).
 Use the KO/EN templates below when they match the user's language. For other languages, translate the EN
 template naturally while keeping reply keywords `omit` and `leave` available as stable shortcuts.
 

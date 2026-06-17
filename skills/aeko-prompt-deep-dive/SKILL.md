@@ -8,7 +8,7 @@ description: >
   skill operationalizes AEKO's unique cited-source analysis value-prop —
   vanilla Claude cannot do it.
 argument-hint: "<prompt-id> [window]"
-allowed-tools: aeko_get_tracked_prompt, aeko_get_brand_kit, aeko_get_domain_info, WebFetch
+allowed-tools: aeko_get_tracked_prompt, aeko_get_domain_info, WebFetch
 ---
 
 # AEKO Prompt Deep-Dive
@@ -67,7 +67,7 @@ Then a per-platform summary table:
 | Gemini   | ...  | 1        | 0         | —         | No            |
 ```
 
-"Brand present" checks whether the user's brand appears in `mentions` (compare against brand kit `brand_name` + `brand_keywords[]`). If yes, show position if derivable from context_snippet.
+"Brand present" checks whether the user's brand appears in `mentions` (compare against the domain's `brand_name` + `brand_keywords[]` from `aeko_get_domain_info`). If yes, show position if derivable from context_snippet.
 
 ## Step 3 — Rank cited sources
 
@@ -121,7 +121,7 @@ If `crawl` is null (source never crawled) and the URL is public, do a light `Web
 
 ## Step 5 — Competitor callout
 
-From the aggregated `mentions` field across responses, build a frequency table of brand names. Flag the user's own brand (brand kit lookup) + the top 3-5 competitors by total mention count:
+From the aggregated `mentions` field across responses, build a frequency table of brand names. Flag the user's own brand (from `aeko_get_domain_info` brand_name/brand_keywords) + the top 3-5 competitors by total mention count:
 
 ```
 ## Who's winning this prompt

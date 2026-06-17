@@ -9,7 +9,7 @@ load_when: SKILL.md §5.1 selects channel=tistory
 > Substance + quality/voice frameworks live in `../aeo-frameworks.md`. This recipe defines Tistory-specific conventions only. Paste-into-platform: Tistory renders the post; emit clean TEXT (markdown), no HTML/JSON-LD.
 
 - **KO default; EN allowed.** Tistory surfaces via Google (all languages) + Daum/Kakao (KO only). `target_language` defaults to `ko`; if `en`, note at §5.3 that EN loses the Daum/Kakao referral path (a generic blog usually beats Tistory for EN-only).
-- **Brand voice on the owned subdomain** (`<brand>.tistory.com`). Default 합니다체 (expertise register), 해요체 if the brand kit specifies warmer. Tistory sits between magazine and Naver Blog — anecdote serves an explanatory point, never the whole arc. Do not fake 1인칭 or third-party-reviewer voice. No "한국 브랜드" framing.
+- **Brand voice on the owned subdomain** (`<brand>.tistory.com`). Default 합니다체 (expertise register); 해요체 is fine for a warmer brand. Tistory sits between magazine and Naver Blog — anecdote serves an explanatory point, never the whole arc. Do not fake 1인칭 or third-party-reviewer voice. No "한국 브랜드" framing.
 - **Single `# ` H1** — keyword in first 25자, ≤45자. **메타 한 줄** italic paragraph under H1, ≤120자.
 - **Answer-first H2s (AEO core).** Each `## H2` opens with a 2–3 sentence declarative answer ("X is Y") to the question its heading implies — never bury the answer past sentence 3, and don't open with a question/anecdote/TOC pointer. Body 3–6 H2 sections.
 - **Body 1,500–3,000자**, Hangul char count. Paragraphs ≤300자 (§6.2). ≥1 list or table block. Images 3–8장 at section boundaries, each with `*alt: ...*` below.

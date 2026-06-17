@@ -2,7 +2,7 @@
 
 > 한국어 버전은 아래를 참고하세요 → [한국어](#한국어-버전).
 
-The AEKO plugin ships generic best-practice recipes. Your brand isn't generic. This guide shows how to add **brand-specific exemplars, recipe preferences, and voice overrides** so the three executor skills — `/aeko-create-content`, `/aeko-update-pdp`, `/aeko-fix-technical` — work in *your* voice and structural conventions, without forking the plugin for normal customization.
+The AEKO plugin ships generic best-practice recipes. Your brand isn't generic. This guide shows how to add **brand-specific exemplars and recipe preferences** so the three executor skills — `/aeko-create-content`, `/aeko-update-pdp`, `/aeko-fix-technical` — work in *your* voice and structural conventions, without forking the plugin for normal customization.
 
 The pattern works because of [Anthropic's progressive-disclosure model for skills](https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/best-practices) (sometimes called Skills 2.0): SKILL.md tells Claude *when* to load a reference file, and reference files contain the heavy detail. For supported example and override patterns, you add files to `references/` and Claude picks them up automatically when the relevant channel runs.
 
@@ -92,13 +92,12 @@ That third rule is the one most people miss. **Dropping a file into `references/
 For `aeko-create-content`, that mapping lives in §5.0 of [SKILL.md](skills/aeko-create-content/SKILL.md). When Instagram is selected for drafting, SKILL.md instructs Claude to:
 1. Always read `references/recipes/instagram.md` (the structural recipe — required parts, acceptance gates).
 2. Read `references/examples/instagram-post-example.md` *if it exists* (the brand-specific exemplar — silent skip if absent).
-3. Read `references/style/voice-overrides.md` *if it exists* and a scoped block applies.
 
 The **precedence rule** when these conflict:
 
-> voice-overrides > example file > recipe defaults > brand kit `tone_of_voice`
+> example file > recipe defaults
 
-So your example file overrides the generic recipe's defaults, but the recipe's hard acceptance gates (like "5–12 hashtags" for Instagram) still apply. If you want to override an acceptance gate too — e.g., your brand uses 3 hashtags, not 5 — that's what `voice-overrides.md` is for (§5).
+So your example file overrides the generic recipe's defaults, but the recipe's hard acceptance gates (like "5–12 hashtags" for Instagram) still apply.
 
 ## 4. Advanced — adding a custom channel recipe
 
@@ -206,44 +205,7 @@ Technical-artifact customization covers four files:
 - robots.txt: must parse as valid robots.txt syntax. AEKO separates AI search/shopping visibility bots from training/data crawlers. Examples can add partner/path rules, but cannot override that crawler policy.
 - JSON-LD: valid JSON, no trailing commas, no comments, `<script type="application/ld+json">` exactly.
 
-### 6b. Per-domain technical voice
-
-`skills/aeko-fix-technical/references/style/voice-overrides.md` handles things like:
-- Korean-only section headings in llms.txt
-- Brand-specific JSON-LD `description` length conventions
-- Domain-specific deploy gotchas ("this domain hosts on Vercel, not Cafe24")
-
-Same `## domain: <id>` block format as the other skills.
-
-## 7. Advanced — voice overrides (universal pattern)
-
-`references/style/voice-overrides.md` is for rules that don't fit the brand kit — usually because they're **per-channel** or **per-domain** exceptions. Same pattern across all three executor skills (each skill has its own `voice-overrides.md`; the file isn't shared).
-
-Format (H2 blocks scope the rule):
-
-```markdown
-## domain: <your-domain-id>, channel: instagram
-
-- Always English hashtags only (no Korean hashtags)
-- Hook always opens as a question
-- Forbidden: "출시", "런칭" — we say "공개" instead
-
-## channel: press_release
-
-<!-- Korean users see this as 보도자료 in the channel picker; the internal slug is press_release. -->
-
-- Boilerplate last line always includes English company name in parens
-- Quote attribution: title + name (not name + title)
-```
-
-The skill reads this at §5.3 voice-discipline time and applies any block scoped to the current `frontmatter.domain_id` and the current channel. Unscoped blocks (e.g., a top-level `## glossary`) apply globally.
-
-When to use this vs. the brand kit:
-- **Brand kit** is for sentence-level register: *how should this brand sound?*
-- **voice-overrides** is for channel/domain-specific exceptions: *for this brand on this channel, override X.*
-- If you run multiple brands from one AEKO install, voice-overrides is essential — the brand kit only handles one voice at a time.
-
-## 8. Contributing back
+## 7. Contributing back
 
 If your example or recipe is brand-agnostic and PII-stripped, open a PR to [`AEKO-Intelligence/aeko-plugin`](https://github.com/AEKO-Intelligence/aeko-plugin) and other AEKO users will benefit. We curate exemplars that demonstrate **clear structural patterns** (e.g., "Korean lifestyle 1인칭 review with sensory hook") rather than brand-specific voice.
 
@@ -255,9 +217,9 @@ Criteria for acceptance:
 
 Custom recipes (Option B above) are also welcome as PRs. Channels we'd like to add to the built-in set: LinkedIn, Threads, X long-post, Substack, Korean cafe blogs (네이버 카페).
 
-## 9. Layout reference
+## 8. Layout reference
 
-All three executor skills share the same `references/{recipes,examples,style}/` layout:
+All three executor skills share the same `references/{recipes,examples}/` layout:
 
 ```
 skills/aeko-create-content/
@@ -272,16 +234,14 @@ skills/aeko-create-content/
     │   ├── tistory.md
     │   ├── youtube.md
     │   └── editorial-html-jsonld.md
-    ├── examples/                               ← YOUR CUSTOMIZATION GOES HERE
-    │   ├── README.md
-    │   ├── blog-example.md                     ← edit me
-    │   ├── instagram-post-example.md           ← edit me
-    │   ├── in-store-content-example.md        ← edit me
-    │   ├── press-release-example.md           ← edit me
-    │   ├── context-reviews-fixture.md          ← fallback/eval fixture
-    │   └── aeko_shop-fixture.*                 ← reference only
-    └── style/
-        └── voice-overrides.md                  ← edit for multi-brand / per-channel rules
+    └── examples/                               ← YOUR CUSTOMIZATION GOES HERE
+        ├── README.md
+        ├── blog-example.md                     ← edit me
+        ├── instagram-post-example.md           ← edit me
+        ├── in-store-content-example.md        ← edit me
+        ├── press-release-example.md           ← edit me
+        ├── context-reviews-fixture.md          ← fallback/eval fixture
+        └── aeko_shop-fixture.*                 ← reference only
 
 skills/aeko-update-pdp/
 ├── SKILL.md
@@ -292,12 +252,10 @@ skills/aeko-update-pdp/
     │   └── json-ld-schemas.md
     ├── prompts/
     │   └── verification-prompts.md             ← Step 5b prompt templates
-    ├── examples/                               ← YOUR CUSTOMIZATION
-    │   ├── README.md
-    │   ├── pdp-html-example.html               ← edit me
-    │   └── json-ld-preferences.json            ← edit me
-    └── style/
-        └── voice-overrides.md                  ← edit for per-domain rules
+    └── examples/                               ← YOUR CUSTOMIZATION
+        ├── README.md
+        ├── pdp-html-example.html               ← edit me
+        └── json-ld-preferences.json            ← edit me
 
 skills/aeko-fix-technical/
 ├── SKILL.md
@@ -307,23 +265,21 @@ skills/aeko-fix-technical/
     │   ├── robots-txt-patch.md
     │   ├── json-ld.md
     │   └── deploy-checklist.md
-    ├── examples/                               ← YOUR CUSTOMIZATION
-    │   ├── README.md
-    │   ├── llms-txt-example.txt                ← edit me
-    │   ├── robots-txt-additions-example.txt    ← edit me
-    │   ├── json-ld-example.json                ← edit me
-    │   └── deploy-notes-example.md             ← edit me
-    └── style/
-        └── voice-overrides.md                  ← edit for per-domain technical conventions
+    └── examples/                               ← YOUR CUSTOMIZATION
+        ├── README.md
+        ├── llms-txt-example.txt                ← edit me
+        ├── robots-txt-additions-example.txt    ← edit me
+        ├── json-ld-example.json                ← edit me
+        └── deploy-notes-example.md             ← edit me
 ```
 
-Other AEKO skills (research, reporting, brand-kit) don't currently use `references/` — they're under Anthropic's 1,500-word target and don't have the kind of customizable structural detail that benefits from extraction.
+Other AEKO skills (research, reporting) don't currently use `references/` — they're under Anthropic's 1,500-word target and don't have the kind of customizable structural detail that benefits from extraction.
 
 ---
 
 # 한국어 버전
 
-AEKO 플러그인은 일반적인 레시피로 시작하지만, 당신의 브랜드는 일반적이지 않습니다. 이 가이드는 세 개의 executor 스킬 — `/aeko-create-content`, `/aeko-update-pdp`, `/aeko-fix-technical` — 가 *당신의 목소리와 구조 컨벤션*으로 작동하도록 **브랜드 전용 예시, 레시피 선호도, 보이스 오버라이드**를 추가하는 방법을 설명합니다. 일반적인 커스터마이징은 플러그인을 포크하지 않아도 됩니다.
+AEKO 플러그인은 일반적인 레시피로 시작하지만, 당신의 브랜드는 일반적이지 않습니다. 이 가이드는 세 개의 executor 스킬 — `/aeko-create-content`, `/aeko-update-pdp`, `/aeko-fix-technical` — 가 *당신의 목소리와 구조 컨벤션*으로 작동하도록 **브랜드 전용 예시와 레시피 선호도**를 추가하는 방법을 설명합니다. 일반적인 커스터마이징은 플러그인을 포크하지 않아도 됩니다.
 
 이 패턴은 [Anthropic의 점진적 공개(progressive disclosure) 모델](https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/best-practices) — 일명 Skills 2.0 — 에 기반합니다. SKILL.md가 Claude에게 *언제* 어떤 참조 파일을 읽어야 하는지 지시하고, 무거운 디테일은 참조 파일에 둡니다. 지원되는 예시/오버라이드 패턴의 경우 사용자가 `references/`에 파일을 추가하면 해당 채널 실행 시 Claude가 자동으로 가져옵니다.
 
@@ -412,13 +368,12 @@ Anthropic의 스킬 시스템은 콘텐츠를 3단계로 로드합니다:
 `aeko-create-content`의 경우 그 매핑이 [SKILL.md](skills/aeko-create-content/SKILL.md) §5.0에 있습니다. Instagram이 작성 대상으로 선택되면 SKILL.md는 Claude에게:
 1. 항상 `references/recipes/instagram.md`를 읽음 (구조 레시피 — 필수 구성 요소, 수용 게이트).
 2. `references/examples/instagram-post-example.md`가 있으면 읽음 (브랜드 전용 예시 — 없으면 조용히 스킵).
-3. `references/style/voice-overrides.md`가 있고 범위가 일치하는 블록이 있으면 읽음.
 
 이들이 충돌할 때의 **우선순위 규칙**:
 
-> voice-overrides > 예시 파일 > 레시피 기본값 > 브랜드 키트의 `tone_of_voice`
+> 예시 파일 > 레시피 기본값
 
-즉, 예시 파일이 일반 레시피의 기본값을 덮어씁니다. 단, 레시피의 하드 수용 게이트(예: Instagram의 "해시태그 5–12개")는 여전히 적용됩니다. 수용 게이트도 덮어쓰고 싶다면 — 예: 우리 브랜드는 해시태그 3개 — 그게 `voice-overrides.md`의 역할입니다(§5).
+즉, 예시 파일이 일반 레시피의 기본값을 덮어씁니다. 단, 레시피의 하드 수용 게이트(예: Instagram의 "해시태그 5–12개")는 여전히 적용됩니다.
 
 ## 4. 고급 — 커스텀 채널 레시피 추가
 
@@ -526,44 +481,7 @@ Refs loaded:   recipes/{pdp-scaffold,responsive-html-contract,json-ld-schemas}.m
 - robots.txt: 유효한 robots.txt 문법으로 파싱되어야 함. AEKO는 AI 검색/쇼핑 가시성 봇과 training/data 크롤러를 분리합니다. 예시는 파트너/경로 규칙을 추가할 수 있지만 이 크롤러 정책을 덮어쓸 수 없습니다.
 - JSON-LD: 유효한 JSON, trailing comma 금지, 주석 금지, `<script type="application/ld+json">` 정확히 그대로.
 
-### 6b. 도메인별 기술 보이스
-
-`skills/aeko-fix-technical/references/style/voice-overrides.md`로 다음을 다룹니다:
-- llms.txt에서 한국어만 쓴 섹션 헤딩
-- 브랜드별 JSON-LD `description` 길이 컨벤션
-- 도메인별 배포 함정 ("이 도메인은 Cafe24가 아니라 Vercel에 호스팅")
-
-다른 스킬과 동일한 `## domain: <id>` 블록 형식.
-
-## 7. 고급 — 보이스 오버라이드 (공통 패턴)
-
-`references/style/voice-overrides.md`는 브랜드 키트에 들어가지 않는 규칙을 위한 곳입니다 — 보통 **채널별** 또는 **도메인별** 예외이기 때문입니다. 세 executor 스킬 모두 동일한 패턴 (각 스킬이 자체 `voice-overrides.md`를 가짐 — 파일은 공유되지 않음).
-
-형식 (H2 블록이 규칙의 범위를 정의):
-
-```markdown
-## domain: <your-domain-id>, channel: instagram
-
-- 항상 영어 hashtag만 사용 (한글 hashtag 금지)
-- Hook은 항상 질문형으로 시작
-- Forbidden: "출시", "런칭" — 우리는 "공개"라고 말함
-
-## channel: press_release
-
-<!-- 한국어 UI에서는 보도자료로 보이지만 내부 channel slug는 press_release입니다. -->
-
-- Boilerplate 마지막 줄에 항상 영문 사명을 병기
-- Quote 표기: 직책 + 이름 (이름 + 직책 X)
-```
-
-스킬은 §5.3 보이스 디시플린 단계에서 이 파일을 읽고, 현재 `frontmatter.domain_id`와 채널에 범위가 맞는 블록만 적용합니다. 범위 없는 블록(예: 최상위 `## glossary`)은 전역 적용됩니다.
-
-브랜드 키트 vs voice-overrides 사용 기준:
-- **브랜드 키트**: 문장 수준 레지스터 — *이 브랜드는 어떻게 말해야 하나?*
-- **voice-overrides**: 채널/도메인별 예외 — *이 브랜드, 이 채널에서는 X를 덮어써라.*
-- 한 AEKO 설치에서 여러 브랜드를 운영한다면 voice-overrides가 필수입니다 — 브랜드 키트는 한 번에 하나의 보이스만 다룹니다.
-
-## 8. 기여하기
+## 7. 기여하기
 
 당신의 예시나 레시피가 브랜드에 종속되지 않고 PII가 제거되었다면 [`AEKO-Intelligence/aeko-plugin`](https://github.com/AEKO-Intelligence/aeko-plugin)에 PR을 열어주세요. 다른 AEKO 사용자에게도 도움이 됩니다. 우리는 특정 브랜드 보이스가 아니라 **명확한 구조 패턴**(예: "감각적 후크가 있는 한국 라이프스타일 1인칭 리뷰")을 보여주는 예시를 큐레이션합니다.
 
@@ -575,9 +493,9 @@ Refs loaded:   recipes/{pdp-scaffold,responsive-html-contract,json-ld-schemas}.m
 
 커스텀 레시피(위 옵션 B) PR도 환영합니다. 빌트인에 추가하고 싶은 채널: LinkedIn, Threads, X 롱포스트, Substack, 네이버 카페.
 
-## 9. 레이아웃 참조
+## 8. 레이아웃 참조
 
-세 executor 스킬 모두 동일한 `references/{recipes,examples,style}/` 레이아웃:
+세 executor 스킬 모두 동일한 `references/{recipes,examples}/` 레이아웃:
 
 ```
 skills/aeko-create-content/
@@ -592,16 +510,14 @@ skills/aeko-create-content/
     │   ├── tistory.md
     │   ├── youtube.md
     │   └── editorial-html-jsonld.md
-    ├── examples/                               ← 커스터마이징은 여기서
-    │   ├── README.md
-    │   ├── blog-example.md                     ← 편집 대상
-    │   ├── instagram-post-example.md           ← 편집 대상
-    │   ├── in-store-content-example.md        ← 편집 대상
-    │   ├── press-release-example.md           ← 편집 대상
-    │   ├── context-reviews-fixture.md          ← fallback/eval fixture
-    │   └── aeko_shop-fixture.*                 ← 참고용
-    └── style/
-        └── voice-overrides.md                  ← 멀티브랜드 / 채널별 규칙 시 편집
+    └── examples/                               ← 커스터마이징은 여기서
+        ├── README.md
+        ├── blog-example.md                     ← 편집 대상
+        ├── instagram-post-example.md           ← 편집 대상
+        ├── in-store-content-example.md        ← 편집 대상
+        ├── press-release-example.md           ← 편집 대상
+        ├── context-reviews-fixture.md          ← fallback/eval fixture
+        └── aeko_shop-fixture.*                 ← 참고용
 
 skills/aeko-update-pdp/
 ├── SKILL.md
@@ -612,12 +528,10 @@ skills/aeko-update-pdp/
     │   └── json-ld-schemas.md
     ├── prompts/
     │   └── verification-prompts.md             ← Step 5b 프롬프트 템플릿
-    ├── examples/                               ← 커스터마이징은 여기서
-    │   ├── README.md
-    │   ├── pdp-html-example.html               ← 편집 대상
-    │   └── json-ld-preferences.json            ← 편집 대상
-    └── style/
-        └── voice-overrides.md                  ← 도메인별 규칙 시 편집
+    └── examples/                               ← 커스터마이징은 여기서
+        ├── README.md
+        ├── pdp-html-example.html               ← 편집 대상
+        └── json-ld-preferences.json            ← 편집 대상
 
 skills/aeko-fix-technical/
 ├── SKILL.md
@@ -627,14 +541,12 @@ skills/aeko-fix-technical/
     │   ├── robots-txt-patch.md
     │   ├── json-ld.md
     │   └── deploy-checklist.md
-    ├── examples/                               ← 커스터마이징은 여기서
-    │   ├── README.md
-    │   ├── llms-txt-example.txt                ← 편집 대상
-    │   ├── robots-txt-additions-example.txt    ← 편집 대상
-    │   ├── json-ld-example.json                ← 편집 대상
-    │   └── deploy-notes-example.md             ← 편집 대상
-    └── style/
-        └── voice-overrides.md                  ← 도메인별 기술 컨벤션 시 편집
+    └── examples/                               ← 커스터마이징은 여기서
+        ├── README.md
+        ├── llms-txt-example.txt                ← 편집 대상
+        ├── robots-txt-additions-example.txt    ← 편집 대상
+        ├── json-ld-example.json                ← 편집 대상
+        └── deploy-notes-example.md             ← 편집 대상
 ```
 
-리서치, 리포팅, 브랜드 키트 등 다른 AEKO 스킬은 현재 `references/`를 사용하지 않습니다 — Anthropic의 1,500단어 목표 미만이며 추출이 도움 되는 종류의 커스터마이즈 가능한 구조 디테일이 없습니다.
+리서치, 리포팅 등 다른 AEKO 스킬은 현재 `references/`를 사용하지 않습니다 — Anthropic의 1,500단어 목표 미만이며 추출이 도움 되는 종류의 커스터마이즈 가능한 구조 디테일이 없습니다.

@@ -85,7 +85,7 @@ Verbatim from `aeko-shop-backend/app/sanitizer.py`. The sanitizer raises `HTTPEx
 
 `data-variant` value enum: `info | warn | product` — the sanitizer rejects any other value when `role="callout"`. Only `product` has a wired frontend consumer; `info` and `warn` are reserved and not required by this recipe.
 
-**Allowed `<a href>` protocols:** `http`, `https`, `mailto`. Only link to **real URLs you were given in the brief** (`products[].outbound_url`, brand kit links, user-supplied media). **Never invent URLs.**
+**Allowed `<a href>` protocols:** `http`, `https`, `mailto`. Only link to **real URLs you were given in the brief** (`products[].outbound_url`, user-supplied media). **Never invent URLs.**
 
 **Allowed `<img src>` origins:** must match `settings.allowed_image_origins ∪ {settings.media_public_base_url}` — the AEKO media CDN (today `https://aekoshop-htgrg9fha0bbfmed.z02.azurefd.net`, plus the `aekoshopmedia.blob.core.windows.net` blob origin). **Always embed the `public_url` returned by `aeko_request_media_upload` verbatim** — that is the configured origin. Any other origin (the brand's own non-AEKO domain, a hand-written `cdn.aeko.shop`) returns 400. `cdn.aeko.shop` is **not** a serving origin.
 
@@ -142,8 +142,8 @@ No other top-level fields are allowed. **Field-growth path:** when the backend a
    - `content_sha256` = SHA-256 hex (lowercase, 64 chars).
    - `content_md5` = base64-encoded **raw** MD5 digest (24 chars incl. padding — **NOT hex**; the backend Pydantic field is `min_length=24, max_length=24`).
    - `byte_length` = file size in bytes.
-3. **Request the presign (Brand Kit optional):** call `aeko_request_media_upload(source_content_id=<item_id>, filename=<basename only>, content_type=<image/(jpeg|png|webp|gif)>, content_sha256=<hex>, content_md5=<base64>, byte_length=<n>, …identity)` — for `…identity` pass `brand_kit_id=<resolved_brand_kit_id from brief>` when the brief resolved a kit, **otherwise pass `item_id=<item_id>`** (kit-less: the backend uploads under the verified-domain identity). Returns `{upload_url, public_url, blob_key, expires_at}`.
-   - **Graceful degrade (kit-less, older hosted MCP/backend):** kit-less media presign needs the updated MCP tool + backend presign route. If the `item_id` presign call errors (tool rejects `item_id` / "requires brand_kit_id"), **don't fail the run** — omit AEKO-hosted **body** images and produce a valid post with the hero + product-card images (brand-CDN `image_url`, no presign), warning the user once that inline body-image upload returns once the backend + MCP update ships. (Kit-present uploads are unaffected.)
+3. **Request the presign:** call `aeko_request_media_upload(source_content_id=<item_id>, item_id=<item_id>, filename=<basename only>, content_type=<image/(jpeg|png|webp|gif)>, content_sha256=<hex>, content_md5=<base64>, byte_length=<n>)` — the presign keys on the item/domain identity; the backend uploads under the verified-domain identity. Returns `{upload_url, public_url, blob_key, expires_at}`.
+   - **Graceful degrade (older hosted MCP/backend):** if the `item_id` presign call errors (tool rejects `item_id`), **don't fail the run** — omit AEKO-hosted **body** images and produce a valid post with the hero + product-card images (brand-CDN `image_url`, no presign), warning the user once that inline body-image upload returns once the backend + MCP update ships.
 4. **PUT the bytes:** `curl -X PUT --data-binary @<staged_path> -H "x-ms-blob-type: BlockBlob" -H "Content-Type: <type>" -H "Content-MD5: <base64>" "<upload_url>"`. Every header is required; `Content-MD5` MUST equal the base64 from step 2; verify HTTP 2xx.
 5. **Verify reachability:** `curl -fsSI "<public_url>"` (fallback `curl -fsS -r 0-0 "<public_url>"`). Continue only on 2xx.
 6. **Embed the returned `public_url` VERBATIM** (do not rewrite the host): `<figure><img src="<public_url>" alt="<alt>" width="<w>" height="<h>" loading="lazy"></figure>`. Also record it into `.meta.json` `media[]` with matching `alt_text`.
@@ -243,11 +243,11 @@ When emitting both Article and Product, either place them in separate `<script>`
   "headline": "<headline (≤110 chars per Schema.org guidance)>",
   "datePublished": "<ISO 8601>",
   "dateModified": "<ISO 8601, if known>",
-  "author": { "@type": "Person|Organization", "name": "<from brand kit, else 'Editorial'>" },
+  "author": { "@type": "Person|Organization", "name": "<brand/domain name, else 'Editorial'>" },
   "publisher": {
     "@type": "Organization",
-    "name": "<brand_kit.brand_name>",
-    "logo": { "@type": "ImageObject", "url": "<brand_kit.logo_url if present>" }
+    "name": "<brand/domain name>",
+    "logo": { "@type": "ImageObject", "url": "<brand logo URL if known>" }
   },
   "image": "<hero/figure image URL if available>",
   "inLanguage": "<frontmatter.target_language>"
@@ -381,7 +381,7 @@ The `own_store_blog` metadata schema (`OwnStoreBlogMetadata`) is looser than `ae
 - A `Product` JSON-LD block is present for **every** attached product (set of products in `Product` blocks == set rendered as callouts). **Hard gate when products are attached.**
 - Every `<img>` carries `alt`, `width`, `height`, `loading`, and `style="max-width:100%;height:auto"`. **Hard gate.**
 - No placeholder markers remain (no `[image: …pending]`, no `<…>` template tokens). **Hard gate.**
-- Only real URLs are referenced (product `outbound_url` / `image_url` on the brand CDN, brand kit links, user-supplied media). No invented URLs; no AEKO media CDN presign (that's aeko_shop-only). **Hard gate.**
+- Only real URLs are referenced (product `outbound_url` / `image_url` on the brand CDN, user-supplied media). No invented URLs; no AEKO media CDN presign (that's aeko_shop-only). **Hard gate.**
 
 ---
 
@@ -411,7 +411,7 @@ The `own_store_blog` metadata schema (`OwnStoreBlogMetadata`) is looser than `ae
 
 ### Common to both owned-web channels
 
-Both the `.md` AND `.html` artifacts must exist. The `.html` parses with `lxml` / `html.parser`. No placeholder markers remain (no `[image: …pending]`, no `<…>` template tokens). Only real URLs are referenced (product `outbound_url` / `image_url`, brand kit links, user-supplied media) — never invented URLs.
+Both the `.md` AND `.html` artifacts must exist. The `.html` parses with `lxml` / `html.parser`. No placeholder markers remain (no `[image: …pending]`, no `<…>` template tokens). Only real URLs are referenced (product `outbound_url` / `image_url`, user-supplied media) — never invented URLs.
 
 ### `aeko_shop`-only gates
 

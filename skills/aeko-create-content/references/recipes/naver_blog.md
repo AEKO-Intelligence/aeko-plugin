@@ -9,7 +9,7 @@ load_when: SKILL.md §5.1 selects channel=naver_blog
 > Substance + quality/voice frameworks live in `../aeo-frameworks.md`. This recipe defines Naver-specific conventions only. Paste-into-platform: Naver renders the post; emit clean TEXT (markdown), no HTML/JSON-LD.
 
 - **KO-only.** Naver ranks via C-Rank / D.I.A.+ (KO-only); EN gets near-zero discovery. `target_language` must be `ko` — warn at §5.3 if `en`. Global sellers not entering KO: skip this channel.
-- **Brand voice on the owned account** (`blog.naver.com/<brand>`). Default 해요체 unless the brand kit says otherwise. Never fake a 1인칭 personal-reviewer voice — C-Rank penalizes it (opt-in only when prepping for a third-party influencer's blog). 저희 fine; 저 only with a named editor persona. Drop "한국 브랜드" framing (`[[feedback_aeko_brand_mark_and_scope]]`).
+- **Brand voice on the owned account** (`blog.naver.com/<brand>`). Default 해요체. Never fake a 1인칭 personal-reviewer voice — C-Rank penalizes it (opt-in only when prepping for a third-party influencer's blog). 저희 fine; 저 only with a named editor persona. Drop "한국 브랜드" framing (`[[feedback_aeko_brand_mark_and_scope]]`).
 - **Concrete-scene open** — first paragraph names a specific time/place/product/measurement. No thesis opener ("이번 글에서는…"), no "안녕하세요" greeting — D.I.A.+ rewards auditable, scene-anchored claims and numeric specifics.
 - **Body 1,500–3,000자 (target ≥2,000자)**, Hangul char count. `## H2` every 2–4 paragraphs.
 - **Images 6–13장** interleaved, each with an alt line below in italic (`*alt: ...*`) — Naver search can't read text-in-image.

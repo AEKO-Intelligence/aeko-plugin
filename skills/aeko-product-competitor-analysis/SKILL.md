@@ -8,7 +8,7 @@ description: >
   relative to the user's product. Replaces the retired aeko_ai backend
   product-analysis service.
 argument-hint: "<product-id> [competitor-urls...]"
-allowed-tools: aeko_get_domain_info, aeko_get_brand_kit, aeko_get_product_description, aeko_list_store_integrations, aeko_search_research_prompts, aeko_get_tracked_prompt, WebSearch, WebFetch, Write
+allowed-tools: aeko_get_domain_info, aeko_get_product_description, aeko_list_store_integrations, aeko_search_research_prompts, aeko_get_tracked_prompt, WebSearch, WebFetch, Write
 ---
 
 # AEKO Product Competitor Analysis
@@ -40,7 +40,7 @@ Keep slash commands, IDs, file paths, channel slugs, schema keys, and tool names
 
 If `competitor-urls` missing:
 
-1. Build a search query from the user's product title + brand kit `target_audience` / country. Example: `"차렵이불" 한정수량 알러지케어 site:*.co.kr -site:slound.co.kr`.
+1. Build a search query from the user's product title + the domain's market/country (from `aeko_get_domain_info`). Example: `"차렵이불" 한정수량 알러지케어 site:*.co.kr -site:slound.co.kr`.
 2. `WebSearch(query, num_results=10)`. Filter to distinct roots (drop duplicates, skip marketplaces if possible).
 3. Optionally augment: pull top-cited competing domains from `aeko_get_tracked_prompt` cited-source analysis on the user's product-related prompts (if any). These are domains AI engines actually cite — higher value than raw search.
 4. Pick top 3-5 competitor URLs. Confirm with the user before proceeding ("Here are the candidates I found — use these, or paste your own?").

@@ -4,11 +4,11 @@ description: >
   Welcome flow for new AEKO plugin users. Tours available skills,
   verifies plugin version + MCP connectivity, and helps customize
   the three executor skills (`aeko-create-content`, `aeko-update-pdp`,
-  `aeko-fix-technical`) with brand-specific recipes, examples, and
-  voice overrides in the user's local plugin install. Read-only:
+  `aeko-fix-technical`) with brand-specific recipes and examples in the
+  user's local plugin install. Read-only:
   never publishes, never writes back to the AEKO repo.
 argument-hint: none
-allowed-tools: aeko_list_domains, aeko_get_brand_kit, Read, Write, Edit, Glob, Bash, WebFetch
+allowed-tools: aeko_list_domains, Read, Write, Edit, Glob, Bash, WebFetch
 ---
 
 # AEKO Onboarding
@@ -61,7 +61,7 @@ Mirror `session_language` for every subsequent prompt and table caption. Code bl
 
 ## Step 2 — Skill catalog
 
-List the 14 skills grouped by marketer journey so the user can see the surface area at a glance. Render as a markdown table; mirror header labels in `session_language`.
+List the 13 skills grouped by marketer journey so the user can see the surface area at a glance. Render as a markdown table; mirror header labels in `session_language`.
 
 | Group | Slash command | One-liner |
 |---|---|---|
@@ -73,11 +73,10 @@ List the 14 skills grouped by marketer journey so the user can see the surface a
 |  | `/aeko-brand-competitor-analysis` | Brand-level positioning vs. competitors in AI answers. |
 |  | `/aeko-product-competitor-analysis` | Product-level matrix: JSON-LD, FAQ, reviews, gaps. |
 | **Executors (customizable)** | `/aeko-update-pdp` | Product page improvement with shopper copy, review proof, FAQ, and AI-readable facts. |
-|  | `/aeko-create-content` | Multi-channel content grounded in product facts, reviews, prompts, and Brand Kit. |
+|  | `/aeko-create-content` | Multi-channel content grounded in product facts, reviews, and prompts. |
 |  | `/aeko-fix-technical` | Technical health package for crawler access, llms.txt, robots.txt, and site schema. |
 | **Publish** | `/aeko-publish-content` | Publish saved content variations only after explicit confirmation. |
 | **Maintenance** | `/aeko-refresh-jsonld` | Refresh review facts AI can read, such as rating and review count. |
-|  | `/aeko-brand-kit` | View and edit your brand kit. |
 |  | `/aeo-audit` | Generic AEO audit; add `shopping` for product-level AI shopping readiness. |
 
 Note: for `session_language=ko`, render the One-liner column in Korean; for `session_language=en`, render it in English; for other languages, translate the human-readable group labels and one-liners naturally. Keep slash commands and skill names verbatim.
@@ -116,11 +115,7 @@ Call `aeko_list_domains`.
 - **401 / authentication error**: tell the user the AEKO connector isn't authenticated. Instruct: "Open Claude → Settings → Connectors → AEKO → re-authenticate at `https://aeko-intelligence.com/mcp`, then re-run `/aeko-onboarding`." Stop here; do NOT proceed to Phase 4 until reachable.
 - **Other failures** (5xx, network): report verbatim. Offer to continue to Phase 4 in a degraded mode (the customization step uses local file edits, no MCP needed) but warn that visibility / executor skills will fail until the connector is reachable again.
 
-### 3.3 Optional brand probe
-
-Only if §3.2 succeeded: call `aeko_get_brand_kit` once. If it returns a populated kit with `brand_name`, greet by name in Phase 4 ("Let's tailor your skills, <brand_name>."). If it returns empty / 404, skip silently — a brand-kit-less account is normal for fresh installs.
-
-### 3.4 Print the status block
+### 3.3 Print the status block
 
 Render in `session_language`:
 
@@ -129,7 +124,6 @@ Setup check
   Plugin version:     <version from plugin.json> (installed at <path>)
   Skills installed:   <count from skills directory>
   MCP connector:      connected · 2 domain(s) on file
-  Brand kit:          loaded (brand_name: "<...>")    ← optional line
 ```
 
 If a probe failed, say so explicitly. Never invent a version string for the MCP server (no version endpoint exists) — only state "connected" or the failure mode.
@@ -138,9 +132,9 @@ If a probe failed, say so explicitly. Never invent a version string for the MCP 
 
 ## Step 4 — Customize the executor skills
 
-Three executor skills accept overrides under `references/{recipes,examples,style}/`:
+Three executor skills accept overrides under `references/{recipes,examples}/`:
 
-- `aeko-create-content` — channel recipes, brand exemplars, voice overrides
+- `aeko-create-content` — channel recipes, brand exemplars
 - `aeko-update-pdp` — PDP HTML structure, JSON-LD field preferences, verification prompts
 - `aeko-fix-technical` — llms.txt format, robots.txt additions, JSON-LD shape
 
@@ -153,11 +147,10 @@ For each skill the user picks, run the same 4-substep loop.
 
 ### 4.1 List what's already there
 
-Glob `<plugin_root>/skills/<skill_name>/references/{recipes,examples,style}/*` and print the file tree. Tell the user what each subfolder is for:
+Glob `<plugin_root>/skills/<skill_name>/references/{recipes,examples}/*` and print the file tree. Tell the user what each subfolder is for:
 
 - `recipes/` — channel- or platform-specific structure rules (`instagram.md`, `naver_blog.md`, …). The executor loads the matching one when that channel runs.
 - `examples/` — reference artifacts the executor mimics (your past hits, brand-specific exemplars).
-- `style/` — voice overrides scoped by `domain_id` and/or `channel`. Highest-priority voice signal.
 
 ### 4.2 Ask what to add or change
 
@@ -165,10 +158,9 @@ Common entry points (offer as a numbered pick-list):
 
 1. Add a new recipe (e.g. "I want a recipe for `<channel>` because my brand posts there often").
 2. Add an example based on something the user has already published.
-3. Override voice for a specific domain.
-4. Edit an existing file.
+3. Edit an existing file.
 
-If the user picks (1) or (2), proceed to §4.3. If (3) or (4), Read the existing file, draft an Edit, confirm with the user, then Write.
+If the user picks (1) or (2), proceed to §4.3. If (3), Read the existing file, draft an Edit, confirm with the user, then Write.
 
 ### 4.3 Source the example — three tiers in priority order
 
@@ -222,7 +214,7 @@ Onboarding complete.
   Plugin:        <version from plugin.json> · <count from skills directory> skills installed
   MCP:           connected · 2 domain(s)
   Customized:    aeko-create-content/references/examples/instagram-2026-summer.md
-                 aeko-create-content/references/style/voice-overrides.md (edited)
+                 aeko-create-content/references/recipes/linkedin.md (added)
   Suggested next step: /aeko-action-center <domain_id>
 ```
 
@@ -242,7 +234,6 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 - Never edits the AEKO source repository (`github.com/AEKO-Intelligence/aeko-plugin`). All Writes target the user's **local plugin install**.
 - Never executes `/aeko-update-pdp`, `/aeko-create-content`, `/aeko-fix-technical`, or any other executor on the user's behalf. Onboarding stops at the suggested-next-step line.
 - Never publishes content — even when the `/chrome` bridge is connected. Compose forms and publish buttons are out of scope; AEKO-owned publishing lives in `/aeko-publish-content`.
-- Never mutates the brand kit. `aeko_get_brand_kit` is read-only for this skill; edits route to `/aeko-brand-kit`.
 - Never fabricates an MCP version string. There is no version endpoint on `https://aeko-intelligence.com/mcp` — report only "connected" / "not connected" / specific failure mode.
 - Never roams authenticated sites silently. Every domain navigated via the `/chrome` bridge gets one explicit user confirmation.
 
@@ -272,7 +263,7 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 
 ### 2단계 — 스킬 카탈로그
 
-14개의 스킬을 마케터 여정 기준으로 묶어 표로 보여줍니다.
+13개의 스킬을 마케터 여정 기준으로 묶어 표로 보여줍니다.
 
 | 그룹 | 슬래시 명령 | 한 줄 설명 |
 |---|---|---|
@@ -284,14 +275,13 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 |  | `/aeko-brand-competitor-analysis` | AI 답변 안에서 브랜드 vs 경쟁사 포지셔닝. |
 |  | `/aeko-product-competitor-analysis` | 제품 단위 매트릭스 (JSON-LD, FAQ, 리뷰, 빈틈). |
 | **실행 (커스터마이즈 가능)** | `/aeko-update-pdp` | 구매자 문구, 리뷰 근거, FAQ, AI가 읽는 상품 사실로 상품 페이지 개선. |
-|  | `/aeko-create-content` | 상품 사실, 리뷰, 추적 프롬프트, 브랜드 키트 기반 멀티채널 콘텐츠 생성. |
+|  | `/aeko-create-content` | 상품 사실, 리뷰, 추적 프롬프트 기반 멀티채널 콘텐츠 생성. |
 |  | `/aeko-fix-technical` | 크롤러 접근, llms.txt, robots.txt, 사이트 스키마를 위한 기술 상태 패키지. |
 | **게시** | `/aeko-publish-content` | 저장된 콘텐츠 변형본을 명시 확인 후 게시. |
 | **유지보수** | `/aeko-refresh-jsonld` | 평점과 리뷰 수처럼 AI가 읽는 리뷰 사실 새로고침. |
-|  | `/aeko-brand-kit` | 브랜드 킷 조회/수정. |
 |  | `/aeo-audit` | 일반 AEO 진단; `shopping`을 붙이면 상품 단위 AI 쇼핑 준비도 진단. |
 
-**실행 (커스터마이즈 가능)** 그룹의 3개 스킬은 `references/recipes/`, `references/examples/`, `references/style/` 하위 파일을 통해 브랜드별로 덮어쓸 수 있습니다. 자세한 내용은 4단계에서 안내합니다.
+**실행 (커스터마이즈 가능)** 그룹의 3개 스킬은 `references/recipes/`, `references/examples/` 하위 파일을 통해 브랜드별로 덮어쓸 수 있습니다. 자세한 내용은 4단계에서 안내합니다.
 
 ### 3단계 — 설치 상태 점검
 
@@ -300,7 +290,6 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
    - 200 응답 → "connected"으로 표시하고 도메인 수를 보고합니다.
    - 401 → AEKO 커넥터 재인증 안내 후 4단계 진행을 중단합니다.
    - 5xx / 네트워크 에러 → 에러 그대로 표시하고, 4단계는 파일 편집만으로도 가능하므로 degraded 모드로 진행할지 사용자에게 묻습니다.
-3. **브랜드 킷 조회 (선택).** §3.2가 성공한 경우에만 `aeko_get_brand_kit`을 호출해 `brand_name`이 있으면 4단계 인사에 사용합니다.
 
 상태 블록을 한국어 라벨로 출력합니다 — MCP 서버 버전은 엔드포인트가 없으므로 절대 임의의 버전 문자열을 만들지 않습니다.
 
@@ -308,8 +297,8 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 
 세 실행 스킬(`aeko-create-content`, `aeko-update-pdp`, `aeko-fix-technical`)에 대해 동일한 4단계 루프를 돕니다. 나중에 직접 파일을 수정하고 싶다면 같은 내용이 `CUSTOMIZATION.md`에 정리되어 있다고 안내합니다.
 
-1. **현재 파일 트리 보여주기** — `references/recipes`, `references/examples`, `references/style`을 Glob으로 나열하고 각 폴더의 역할을 설명합니다.
-2. **무엇을 추가/수정할지 묻기** — 새 레시피 추가, 예시 추가, 음성 톤 오버라이드, 기존 파일 편집 중 선택.
+1. **현재 파일 트리 보여주기** — `references/recipes`, `references/examples`를 Glob으로 나열하고 각 폴더의 역할을 설명합니다.
+2. **무엇을 추가/수정할지 묻기** — 새 레시피 추가, 예시 추가, 기존 파일 편집 중 선택.
 3. **예시 출처 — 우선순위 3계층:**
    - **A — `/chrome` 브릿지 사용**: Claude for Chrome이 연결되어 있고 사용자가 동의하면, 사용자의 인증된 세션으로 단일 도메인 1개에 한정해 최근 게시물 1–3개를 읽어와 `references/examples/<채널>-<slug>-example.md`로 저장합니다. **도메인 1개당 사용자 명시 동의 필수.** 절대 게시·작성 폼 클릭 없이 읽기 전용으로만 동작합니다.
    - **B — 공개 URL 붙여넣기**: 사용자가 URL을 주면 `WebFetch`로 가져옵니다. 네이버 블로그·티스토리는 잘 됩니다. 인스타그램·틱톡 비디오 페이지는 페이로드가 빈약하면 C로 폴백.
@@ -327,7 +316,6 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 - AEKO 소스 저장소 수정 — 모든 Write는 사용자의 로컬 설치 경로에만.
 - 다른 실행 스킬을 사용자 대신 실행 — 5단계 마무리 안내까지만.
 - 콘텐츠 게시 — `/chrome` 브릿지가 연결되어 있어도 작성 폼 클릭·게시는 본 스킬 범위 밖. AEKO 자체 채널(aeko.shop / Tistory / Naver Blog) 게시는 `/aeko-publish-content`.
-- 브랜드 킷 수정 — 조회만 합니다. 수정은 `/aeko-brand-kit`.
 - MCP 서버 버전 문자열 추측 — 엔드포인트가 없으니 만들지 않습니다.
 - `/chrome` 브릿지에서 사용자 동의 없이 다른 도메인으로 이동 — 도메인당 1회 동의 원칙.
 

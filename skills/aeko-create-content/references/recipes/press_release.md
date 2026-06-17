@@ -24,8 +24,8 @@ register. Do not assume KO. The *structure* (lead with 5W1H, one quote, boilerpl
 
 Shared across languages:
 - **One quote** from a named spokesperson (CEO or product lead).
-- **Boilerplate** — one "About <Brand>" paragraph derived from `brand_kit.brand_voice_summary`. Never
-  hard-code "AEKO"; this drafts for the user's domain/brand.
+- **Boilerplate** — one "About <Brand>" paragraph in the neutral product-led voice, grounded in the
+  product facts and domain. Never hard-code "AEKO"; this drafts for the user's domain/brand.
 - **Embargo line** at the top if the user supplies one (KO: `엠바고:` / EN: `EMBARGO until …`).
 - Link only to real URLs from the brief; never invent URLs. No hard-CTA / "Buy now" voice
   (`[[feedback_aeko_pdp_is_aeo_content_not_cta]]`). Keep the brand mark in Latin script and drop

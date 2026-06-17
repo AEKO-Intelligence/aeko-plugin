@@ -9,7 +9,7 @@ When `/aeko-create-content` drafts a channel, the **substance** (what to say) co
 1. Apply the AEO quality frameworks from `../aeo-frameworks.md` (the quality core — always).
 2. Read the channel recipe from `../recipes/<channel>.md` (format conventions — length, required parts, acceptance gates).
 3. **If a matching example file exists in this folder, mimic its tone and structure** where they refine the recipe. Recipe acceptance gates still apply.
-4. Apply brand-kit voice (`tone_of_voice`) for sentence-level register.
+4. Absent an example file, write in a neutral, product-led voice grounded in the product substance.
 
 So example files steer *feel*; the frameworks + substance drive *what gets said*. The recipe defines what *must* be present (acceptance gates); the example defines what *should* feel familiar.
 
@@ -37,13 +37,13 @@ If you want to annotate *why* a section works ("our hooks always lead with a sen
 오늘 아침 침구를 갈아끼울 때, 손끝에 느껴지는 온도가 달랐어요. ...
 ```
 
-The skill reads these notes too — they steer it more reliably than abstract style guidance in the brand kit.
+The skill reads these notes too — they steer it more reliably than abstract style guidance.
 
 ## What NOT to put here
 
 - **No PII** — strip names, addresses, order numbers, internal SKUs. The skill reads these files into Claude's context.
 - **No competitor content you don't have rights to** — examples should be your own work. The skill never copies verbatim from examples (style is mimicked, not text), but the file itself sits in your install.
-- **No URLs you want cited** — example URLs are loaded as *style reference only* and are NOT carried into the artifact body. The drafter only links to real URLs from the brief (product `outbound_url`, brand kit, user-supplied media) — it never invents URLs.
+- **No URLs you want cited** — example URLs are loaded as *style reference only* and are NOT carried into the artifact body. The drafter only links to real URLs from the brief (product `outbound_url`, user-supplied media) — it never invents URLs.
 - **Image placeholders are fine** — example files can contain `[Image]` markers as part of demonstrating your post format. The artifact's hard-gate scanner only checks the generated artifact body, not your example file.
 
 ## Verifying it worked

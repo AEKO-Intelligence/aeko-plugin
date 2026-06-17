@@ -83,7 +83,7 @@ Shopping facts AI can verify
 
 1. Prose body — explicit FAQ guidance from the Plan.
 2. `frontmatter.prompts_to_rank_on` — use verbatim, in order, capped at 5.
-3. Product-specific signals only — derive from OCR copy, brand-kit voice, and `frontmatter.must_include`. Keep questions tightly scoped to *this* product.
+3. Product-specific signals only — derive from OCR copy and `frontmatter.must_include`. Keep questions tightly scoped to *this* product.
 
 ### FAQ source — never use these
 

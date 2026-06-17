@@ -7,7 +7,7 @@ description: >
   the AEKO pipeline re-queries them on cadence. Closes the find → pick →
   track loop without leaving Claude.
 argument-hint: "[domain-id]"
-allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_brand_kit, aeko_search_research_prompts, aeko_track_prompt, aeko_get_tracked_prompts, WebFetch
+allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_search_research_prompts, aeko_track_prompt, aeko_get_tracked_prompts, WebFetch
 ---
 
 # AEKO Find Prompts To Track
@@ -30,8 +30,8 @@ Keep slash commands, IDs, file paths, prompt metadata keys, and tool names in En
 
 1. If `$1` is set → use it.
 2. Else → `aeko_list_domains`. If one domain: auto-pick. If multiple: show list and ask.
-3. Call `aeko_get_domain_info(domain_id)` and `aeko_get_brand_kit(domain_id)`. Use these to seed sensible default filters:
-   - `country` = first entry in domain's `selected_markets` if available, else from `target_country` on the brand kit, else ask.
+3. Call `aeko_get_domain_info(domain_id)`. Use it to seed sensible default filters:
+   - `country` = first entry in domain's `selected_markets` if available, else ask.
    - `scope` = domain's `industry` / `vertical` / `scope` field if set.
 
 ## Step 2 — Ask user for filter intent
@@ -76,8 +76,8 @@ If zero results → widen: drop the most restrictive filter (typically `persona_
 ## Step 4 — Score + rank candidates
 
 For each returned prompt, assemble a relevance score using these signals:
-- **Keyword overlap** between brand kit `brand_keywords[]` + `must_include[]` and the prompt's text or `keywords[]`. High overlap → high score.
-- **Persona match** — prompt's `persona` vs brand kit `target_audience`.
+- **Keyword overlap** between the domain's `brand_keywords[]` (from `aeko_get_domain_info`) + the user's Step 2 keyword filter and the prompt's text or `keywords[]`. High overlap → high score.
+- **Persona match** — prompt's `persona` vs the user's Step 2 persona filter (if supplied).
 - **Latest-response signals** (from the search payload's `latest_response`):
   - High `mention_count` across competitors → the prompt is a battleground worth contesting.
   - Presence of this brand in the mention breakdown → already getting mentioned; may not need tracking (user's call).
@@ -105,7 +105,7 @@ Parse response into a list of row indices → prompt payloads.
 
 ## Step 6 — Pre-flight package limits
 
-Call `aeko_get_tracked_prompts` to see the user's current tracked count. Compare against known package limits (derived from brand kit `metadata.account_tier` or, if unknown, just proceed and let the backend 403 — tell the user that's the fallback).
+Call `aeko_get_tracked_prompts` to see the user's current tracked count. If the package cap isn't known, just proceed and let the backend 403 — tell the user that's the fallback.
 
 If the user's selection would exceed their package cap → warn, show how many they can track, ask them to narrow.
 

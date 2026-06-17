@@ -7,7 +7,7 @@ description: >
   Claude's reasoning — no prepare-* backend wrappers. Writes artifacts
   locally, surfaces a deploy checklist, marks the item complete.
 argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_brand_kit_by_id, aeko_list_brand_kits, aeko_get_domain_info, aeko_complete_action_item, Read, Write, WebFetch, WebSearch, Bash
+allowed-tools: aeko_get_action_plan, aeko_get_domain_info, aeko_complete_action_item, Read, Write, WebFetch, WebSearch, Bash
 ---
 
 # AEKO Fix Technical
@@ -48,7 +48,7 @@ Dispatch is driven by `frontmatter`. Prose is narrative guidance only.
 - `execution_class == "technical_artifact"` — else stop.
 - `artifact_type ∈ {llms_txt, robots_txt_patch, json_ld, technical_bundle}` — else stop.
 - `status ∈ {pending, ready}` — else stop with appropriate message.
-- `tier_required` gate: compare `frontmatter.tier_required` (the artifact's required tier) against `frontmatter.account_tier` (the caller's current tier, stamped at fetch) — **no Brand Kit lookup**. Block if the caller is below (user-language tier-gate copy in §Copy). The backend also enforces this on the actual write (403); if `account_tier` is absent (older backend), skip the pre-check and rely on the backend 403. Never gate on the Brand Kit.
+- `tier_required` gate: compare `frontmatter.tier_required` (the artifact's required tier) against `frontmatter.account_tier` (the caller's current tier, stamped at fetch). Block if the caller is below (user-language tier-gate copy in §Copy). The backend also enforces this on the actual write (403); if `account_tier` is absent (older backend), skip the pre-check and rely on the backend 403.
 
 Print a plain-language header in the user's chat language, then the prose body verbatim. Translate
 `artifact_type` before showing it; for languages beyond Korean/English, use a natural plain-language label:
@@ -70,28 +70,17 @@ Never echo the raw frontmatter to the user.
 
 ### Copy templates (user's chat language)
 
-- **No Brand Kit (non-blocking note)** — KO: "브랜드 키트 없이 진행합니다. 기술 수정은 브랜드 톤의 영향이 거의 없어 그대로 작업해도 괜찮습니다. 필요하면 `/aeko-brand-kit`으로 추가할 수 있어요." / EN: "Proceeding without a Brand Kit — technical fixes are barely affected by brand tone, so this works as-is. Add one anytime with `/aeko-brand-kit`."
 - **Tier gate** — same template as `/aeko-update-pdp`.
 - **Minor-version advisory** — KO: "이 가이드는 계약 v<plan_minor> 기준입니다. 현재 스킬은 v1.2 — `/plugin update aeko`." / EN: "This plan uses contract v<plan_minor>; this skill is on v1.2 — run `/plugin update aeko`."
 
-## Step 2 — Brand-kit resolution (optional)
+## Step 2 — Domain context
 
-A Brand Kit is **optional** and barely matters for technical artifacts (llms.txt,
-robots, JSON-LD). **Never stop for a missing kit.**
-
-If `frontmatter.requires_brand_kit == true` (a kit was explicitly attached):
-
-- Resolve the Brand Kit in this order:
-  1. If `frontmatter.brand_kit_id` is present and non-empty, call `aeko_get_brand_kit_by_id(frontmatter.brand_kit_id)` for the exact selected kit.
-  2. Else fall back to `aeko_get_brand_kit(frontmatter.domain_id)` for older Plan.md files.
-  3. If both miss, call `aeko_list_brand_kits(domain_id=frontmatter.domain_id)` once for diagnostics, then **continue without a kit** — emit the "No Brand Kit (non-blocking note)" template above. Do NOT stop.
-- If `frontmatter.brand_kit_snapshot_version` is present and live version is newer → ask user whether to abort or proceed with snapshot. Default to asking.
-
-If `frontmatter.requires_brand_kit == false` (no kit attached — the common case now): skip kit resolution entirely.
+Technical artifacts (llms.txt, robots, JSON-LD) are barely affected by brand voice. There is no
+voice-config step. Pull what's needed from `aeko_get_domain_info(domain_id)` and the Plan prose.
 
 ## Step 3 — Dispatch by artifact_type
 
-Each branch uses **embedded spec rules** loaded from `references/recipes/` instead of backend prepare-tools. Read the live brand kit (if requested) and domain info via `aeko_get_domain_info(domain_id)` for context.
+Each branch uses **embedded spec rules** loaded from `references/recipes/` instead of backend prepare-tools. Read domain info via `aeko_get_domain_info(domain_id)` for context.
 
 ### 3.0 Load references (per-artifact, on-demand)
 
@@ -110,9 +99,8 @@ Always load `references/recipes/deploy-checklist.md` before Step 4 — it's the 
 
 **Conditional loads** (silent skip if absent):
 - `references/examples/<artifact_type>-*example*.{txt,json,md}` — brand-specific exemplar; mimic its conventions on top of recipe rules.
-- `references/style/voice-overrides.md` — domain-scoped overrides (Korean section headings, glossary, deploy notes); filter to blocks where `domain: <frontmatter.domain_id>` matches.
 
-**Precedence:** `voice-overrides` > `examples/*` > `recipes/*`. Recipe spec rules (llms.txt H1 line, robots.txt syntax, JSON-LD JSON validity) cannot be relaxed by examples — the skill fails the run if violated.
+**Precedence:** `examples/*` > `recipes/*`. Recipe spec rules (llms.txt H1 line, robots.txt syntax, JSON-LD JSON validity) cannot be relaxed by examples — the skill fails the run if violated.
 
 ### 3a–3d. Apply
 
@@ -173,7 +161,6 @@ Keep refs loaded and self-validation in a short "Technical details" block after 
 - Plan endpoint unavailable → stop; suggest retry.
 - Plan.md parse error → stop; surface exact parse failure + first 20 lines of response.
 - Contract mismatch → stop; exact mismatch surfaced.
-- Stale brand kit + user declines → stop; leave `pending`.
 - Self-validation fails → do NOT call complete; write artifact anyway and tell user what to fix.
 - `robots_txt_patch` with missing `site_base_url` → stop; backend data problem.
 

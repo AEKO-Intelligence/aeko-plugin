@@ -8,7 +8,7 @@ description: >
   marks complete with full audit trail. Splits the PDP branch out of the
   retired `/aeko-run-action`.
 argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_brand_kit_by_id, aeko_list_brand_kits, aeko_get_product_description, aeko_get_product_context_reviews, aeko_list_store_integrations, aeko_update_product_description, aeko_update_product_tags, aeko_update_product_meta, aeko_revert_store_write, aeko_list_store_writes, aeko_complete_action_item, Read, Write, WebFetch, Bash
+allowed-tools: aeko_get_action_plan, aeko_get_product_description, aeko_get_product_context_reviews, aeko_list_store_integrations, aeko_update_product_description, aeko_update_product_tags, aeko_update_product_meta, aeko_revert_store_write, aeko_list_store_writes, aeko_complete_action_item, Read, Write, WebFetch, Bash
 ---
 
 # AEKO Update PDP
@@ -42,7 +42,7 @@ Call `aeko_get_action_plan(item_id)`. Parse YAML frontmatter + prose body.
 - `execution_class == "store_write_artifact"` — else redirect: `technical_artifact` → `/aeko-fix-technical`, `local_content_artifact` → `/aeko-create-content`.
 - `status ∈ {pending, ready}` — else stop with appropriate message.
 - `write_target` consistency: must pair with `write_mode` per contract §3 — `shadow_product ↔ shadow`, `append_below_existing ↔ live`, `preview_only ↔ local`. Mismatch → stop.
-- `tier_required` gate: compare `frontmatter.tier_required` (the artifact's required tier) against `frontmatter.account_tier` (the caller's current tier, stamped at fetch) — **no Brand Kit lookup**. Block with the §Copy tier-gate template if the caller is below. The backend also enforces this on the actual store-write (403), so this is a courtesy pre-check; if `account_tier` is absent (older backend), skip the pre-check and rely on the backend 403. Never gate on the Brand Kit.
+- `tier_required` gate: compare `frontmatter.tier_required` (the artifact's required tier) against `frontmatter.account_tier` (the caller's current tier, stamped at fetch). Block with the §Copy tier-gate template if the caller is below. The backend also enforces this on the actual store-write (403), so this is a courtesy pre-check; if `account_tier` is absent (older backend), skip the pre-check and rely on the backend 403.
 
 Print the header in the user's chat language:
 1. Action label — KO: "상품 페이지 개선" / EN: "Product page improvement"
@@ -55,25 +55,11 @@ Print the header in the user's chat language:
 
 Print prose body verbatim. Never echo raw frontmatter.
 
-## Step 2 — Brand-kit resolution (optional)
+## Step 2 — Voice (neutral, product-led)
 
-A Brand Kit is **optional**. When one is present it sets the voice; when absent,
-write in a neutral, product-led voice grounded in the product facts and the OCR
-substance from Step 4 (clinical/test results, numbers, ingredients). **Never stop
-for a missing kit.**
-
-If `frontmatter.requires_brand_kit == true` (a kit was explicitly attached to this plan):
-- Resolve the Brand Kit in this order:
-  1. If `frontmatter.brand_kit_id` is present and non-empty, call `aeko_get_brand_kit_by_id(frontmatter.brand_kit_id)`.
-  2. Else fall back to `aeko_get_brand_kit(frontmatter.domain_id)` for older Plan.md files.
-  3. If both miss, call `aeko_list_brand_kits(domain_id=frontmatter.domain_id)` once for diagnostics, then **continue without a kit** — emit the one-line no-kit note below. Do NOT stop.
-- Snapshot-version drift: ask user whether to abort or proceed with snapshot.
-
-If `frontmatter.requires_brand_kit == false` (no kit attached — the common case now): skip kit resolution and write in the neutral product-led voice.
-
-**No-kit note** (print once, in the user's chat language):
-- KO: "브랜드 키트가 없어 상품 정보 기반의 중립적인 톤으로 작성합니다. `/aeko-brand-kit`으로 추가하면 브랜드 톤이 반영됩니다."
-- EN: "No Brand Kit — writing in a neutral, product-led voice. Add one with `/aeko-brand-kit` for on-brand tone."
+This skill writes the PDP in a **neutral, product-led voice** grounded in the product facts and the OCR
+substance from Step 4 (clinical/test results, numbers, ingredients). There is no separate voice-config
+step. Honor `must_include` / `forbidden` from the Plan frontmatter.
 
 ## Step 3 — Image strategy (ask user)
 
@@ -161,15 +147,14 @@ Before generating, load these reference files in order. Anthropic progressive-di
 2. **If they exist (silent skip otherwise):**
    - `Read references/examples/pdp-html-example.html` — brand's preferred section order, heading copy, class naming. Mimic structure on top of the scaffold; recipe acceptance gates still apply.
    - `Read references/examples/json-ld-preferences.json` — brand's optional-field preferences for JSON-LD emission. Required keys cannot be overridden.
-   - `Read references/style/voice-overrides.md` — domain-scoped overrides; filter to blocks where `domain: <frontmatter.domain_id>` matches.
 
-**Precedence when sources conflict:** `voice-overrides` > `examples/*` > `recipes/*` > brand-kit `tone_of_voice` > prose body voice cues.
+**Precedence when sources conflict:** `examples/*` > `recipes/*` > prose body voice cues.
 
 The Step 9 summary must list which reference files were loaded so the user can verify their exemplars are picked up.
 
 ### 5.1 Apply
 
-Read `prose` for voice/structure guidance, `frontmatter.pdp_responsive_contract.*` for hard rules, live brand kit from Step 2, OCR payload from Step 4. Apply the loaded recipes (§5.0) — citability baseline, pending-verification handling, scaffold + strategy branches, responsive contract, JSON-LD schemas all live in the recipe files.
+Read `prose` for voice/structure guidance, `frontmatter.pdp_responsive_contract.*` for hard rules, OCR payload from Step 4. Apply the loaded recipes (§5.0) — citability baseline, pending-verification handling, scaffold + strategy branches, responsive contract, JSON-LD schemas all live in the recipe files.
 
 **Apply the AEO frameworks** — the PDP is the #1 ecommerce surface AI engines cite, so write it to the
 same standard as `/aeko-create-content`. Definitions live in
@@ -265,7 +250,6 @@ Only complete if:
   Refs loaded:   recipes/{pdp-scaffold,responsive-html-contract,json-ld-schemas}.md
                  + examples/pdp-html-example.html  (when present)
                  + examples/json-ld-preferences.json  (when present)
-                 + style/voice-overrides.md  (when present, scoped to this domain)
   OCR:           ingested N, skipped M (decorative / oversize)
   Verifications: resolved N items via Step 5b (V values, O omits, L left as HTML comments)
 
@@ -286,7 +270,6 @@ Next: /aeko-action-center <domain_id> pdp
 
 - Plan endpoint unavailable / parse error → stop; surface detail.
 - Contract mismatch → stop.
-- Stale brand kit + user declines → stop.
 - All image OCR failed → stop; do NOT fabricate copy.
 - Write-back 4xx → stop; do NOT mark complete; surface backend error verbatim.
 - Shadow-product endpoint unavailable (v0.5.0 transitional) → ask user before downgrading to preview_only.

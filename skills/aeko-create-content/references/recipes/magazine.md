@@ -8,7 +8,7 @@ load_when: SKILL.md §5.1 selects channel=magazine
 
 > Substance + quality/voice frameworks live in `../aeo-frameworks.md`. This recipe defines magazine format conventions only. Republished by a third-party editor/outlet that controls final markup — emit clean TEXT (markdown) only; no HTML, no structured data.
 
-- **Language follows `target_language`.** KO brands: Vogue-Korea register — 감각적 sensory verbs, 해요체 or 합니다체 per brand kit, KO-market cultural cues (계절감, 라이프스타일 scenes). Global sellers: Vogue-US / Harper's Bazaar editorial English; don't fabricate cultural specificity — stay neutral if the brand kit names no market. Other languages: that market's native magazine register.
+- **Language follows `target_language`.** KO brands: Vogue-Korea register — 감각적 sensory verbs, 해요체 or 합니다체, KO-market cultural cues (계절감, 라이프스타일 scenes). Global sellers: Vogue-US / Harper's Bazaar editorial English; don't fabricate cultural specificity — stay neutral when the market is unclear. Other languages: that market's native magazine register.
 - **Hook + thesis** — italic hook quote ≤25 words, then a 2–3문장 editor's note framing the piece.
 - **3–5 sections**, each with a subhead + body — lifestyle scenes weaving the product/topic in, NOT a listicle. Subject named per paragraph; sensory verbs throughout.
 - **Optional callout** — one short pull-quote / aside where it earns the space.

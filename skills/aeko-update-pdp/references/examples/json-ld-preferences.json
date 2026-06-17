@@ -2,7 +2,7 @@
   "_comment": "Brand-specific JSON-LD field preferences. The skill reads this file (when present) to decide which OPTIONAL fields to always emit or always omit. Required fields per references/recipes/json-ld-schemas.md cannot be overridden here.",
 
   "_format": {
-    "true": "Always include this field if any value is available (even from a fallback like brand kit defaults)",
+    "true": "Always include this field if any value is available",
     "false": "Always omit this field, even when the recipe recommends it",
     "_omit": "Field is not in this preferences file → use the recipe's default behavior"
   },

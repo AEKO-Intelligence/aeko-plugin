@@ -8,7 +8,7 @@ description: >
   `/schedule` to keep review counts / ratings fresh without touching the
   rest of the PDP.
 argument-hint: "<product-id> [integration-id]"
-allowed-tools: aeko_get_product_description, aeko_update_product_description, aeko_list_store_integrations, aeko_get_brand_kit, aeko_list_store_writes, aeko_revert_store_write, Write
+allowed-tools: aeko_get_product_description, aeko_update_product_description, aeko_list_store_integrations, aeko_list_store_writes, aeko_revert_store_write, Write
 ---
 
 # AEKO Refresh JSON-LD

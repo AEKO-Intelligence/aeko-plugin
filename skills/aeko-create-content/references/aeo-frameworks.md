@@ -11,7 +11,7 @@ AI engines (ChatGPT, Claude, Gemini, Perplexity) cite content that **answers dir
 self-contained, and says something a generic answer can't.** These four frameworks encode that.
 They are the *how* — they shape and voice content. The *what* (the actual claims, facts, and
 experiences) comes from the substance you were handed: **product info + context-reviews + the
-prompt + the brand kit.** Frameworks on top of thin substance still produce thin content, so use
+prompt.** Frameworks on top of thin substance still produce thin content, so use
 the substance generously.
 
 A note on why this matters: the old version of this skill crawled the pages AI engines already

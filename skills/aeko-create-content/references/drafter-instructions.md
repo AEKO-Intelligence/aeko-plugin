@@ -21,7 +21,6 @@ The coordinator hands you a JSON brief:
   "domain_id": "...", "item_id": "...",    // for artifact paths
   "resolved_title": "...",                  // drives the slug (§5.5)
   "target_language": "ko",                  // BCP-47-ish content language, e.g. ko | en | ja | zh | es
-  "brand_voice_summary": "...",             // tone_of_voice + brand_voice_summary from the brand kit
   "target_cohort": "...",                    // sharpen per aeo-frameworks §3b
   "must_include": [...], "forbidden": [...], // hard content constraints
   "contrarian_hint": "..." | null,           // deep mode only — the gap in current AI answers
@@ -31,13 +30,12 @@ The coordinator hands you a JSON brief:
                  // (clinical/test results, %s, ingredient amounts, certifications). null if none.
   "context_reviews": [ {context, persona, quote, detail} ],  // lived experience — originality source
   "media": { "<slot>": {src, alt, type} | null },  // from the media form
-  "recipe_path": "references/recipes/naver_blog.md" | null,
-  "voice_overrides": "<scoped block text>" | null
+  "recipe_path": "references/recipes/naver_blog.md" | null
 }
 ```
 
 `products[]` and `context_reviews[]` are your substance. If both are empty (no-product run), draft
-from the prompt + brand voice + your own expertise, and follow the anti-fabrication rule strictly.
+from the prompt + a neutral, product-led voice + your own expertise, and follow the anti-fabrication rule strictly.
 
 ## 2. Process
 
@@ -55,7 +53,7 @@ from the prompt + brand voice + your own expertise, and follow the anti-fabricat
    context-review supplies the originality detail for each, the cohort, the contrarian angle, and
    **2–3 honest trade-offs/limitations (a "best for / not for" beat, grounded in specs/reviews —
    never invented)** per `aeo-frameworks.md` §4.5. *Then* fit it to the channel's format from the recipe.
-3. **Draft** in the brand voice (voice precedence below). Pull real specifics from product
+3. **Draft** in the neutral product-led voice (voice precedence below). Pull real specifics from product
    `full_description`, **`ocr_text`** (image-extracted clinical/test results, percentages, ingredient
    amounts, certifications — treat these as **primary**, high-citability evidence; quote figures exactly
    in PREP examples and E-E-A-T FAQ answers), and `context_reviews`. Honor `must_include` (each string
@@ -69,10 +67,11 @@ from the prompt + brand voice + your own expertise, and follow the anti-fabricat
 6. **Self-check** (below) and return the result JSON.
 
 ### Voice precedence (highest first)
-1. `voice_overrides` (scoped exception sheet) → 2. `brand_voice_summary` (register) →
-3. channel recipe conventions (format/register norms) → 4. target-audience vocabulary.
-When format and brand voice conflict (e.g. `press_release` requires a formal register — 합니다체 for KO,
-AP-style for EN), the format wins for that channel — note it in your self-check.
+1. Brand example file (`references/examples/<channel>-*example*.md`, when present) →
+2. channel recipe conventions (format/register norms) → 3. target-cohort vocabulary.
+Absent an example file, write in a **neutral, product-led voice** grounded in the product facts, OCR
+substance, and context-reviews. When format and that voice conflict (e.g. `press_release` requires a
+formal register — 합니다체 for KO, AP-style for EN), the format wins for that channel — note it in your self-check.
 
 ## 3. Owned-web channels (`aeko_shop` and `own_store_blog`) — the HTML + JSON-LD path
 

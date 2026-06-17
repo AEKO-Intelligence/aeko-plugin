@@ -4,8 +4,8 @@ description: >
   Multi-channel AEO content executor for Action-tab items with
   `execution_class=local_content_artifact`. Fetches a Plan.md, pulls
   the substance to write from — product info (`aeko_get_product_description`
-  + Plan `products[]`), product context-reviews (lived experience), the
-  tracked prompts the brand wants to be cited for, and the brand kit — then
+  + Plan `products[]`), product context-reviews (lived experience), and the
+  tracked prompts the brand wants to be cited for — then
   fans out per-channel drafters IN PARALLEL, each writing genuinely original,
   citable content via proven AEO frameworks (BLUF, PREP, Informational Gain,
   E-E-A-T). Optional `+ competitive context` mode adds the tracked-prompt
@@ -14,7 +14,7 @@ description: >
   publish variations to the AEKO backend; never writes to a connected store
   and never auto-publishes.
 argument-hint: "<item-id> [deep]"
-allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_brand_kit_by_id, aeko_list_brand_kits, aeko_get_product_description, aeko_get_product_context_reviews, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_list_own_content, aeko_request_media_upload, aeko_save_content_variation, aeko_list_content_variations, aeko_complete_action_item, Task, Read, Write, Bash, WebFetch, WebSearch
+allowed-tools: aeko_get_action_plan, aeko_get_product_description, aeko_get_product_context_reviews, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_list_own_content, aeko_request_media_upload, aeko_save_content_variation, aeko_list_content_variations, aeko_complete_action_item, Task, Read, Write, Bash, WebFetch, WebSearch
 ---
 
 # AEKO Create Content
@@ -74,7 +74,7 @@ references in its answers). "Forensics" elsewhere in this doc is an internal lab
 Do **not** invent extra decision forms — most importantly, do not add a "how should I proceed?" gate when the
 citation signal is thin. A thin or empty signal (zero citations, prompts still in an AEKO re-query cycle, an
 un-indexed domain / own-content 404) is the **normal early state for a new brand, not an error**. When the
-brand kit + product substance are present, a Plan-only draft is fully workable: note the thin signal in one
+product substance is present, a Plan-only draft is fully workable: note the thin signal in one
 plain line and proceed straight to Step 4.
 
 Language: mirror the user's chat language for user-facing steps, summaries, questions, and risk/undo copy.
@@ -92,7 +92,7 @@ When a Plan includes `target_language`, use it for generated artifacts; do not l
 Issue exactly ONE `ToolSearch` call before any other tool use:
 
 ```
-ToolSearch(query="select:aeko_get_action_plan,aeko_get_brand_kit,aeko_get_brand_kit_by_id,aeko_list_brand_kits,aeko_get_product_description,aeko_get_product_context_reviews,aeko_resolve_prompts_by_text,aeko_get_tracked_prompts,aeko_get_tracked_prompt,aeko_list_own_content,aeko_request_media_upload,aeko_save_content_variation,aeko_list_content_variations,aeko_complete_action_item,Task,WebFetch,WebSearch", max_results=20)
+ToolSearch(query="select:aeko_get_action_plan,aeko_get_product_description,aeko_get_product_context_reviews,aeko_resolve_prompts_by_text,aeko_get_tracked_prompts,aeko_get_tracked_prompt,aeko_list_own_content,aeko_request_media_upload,aeko_save_content_variation,aeko_list_content_variations,aeko_complete_action_item,Task,WebFetch,WebSearch", max_results=20)
 ```
 
 Record `loaded_tools[]` for diagnostics. Do not add stale-MCP fallback branches: if a save/substance tool
@@ -109,7 +109,7 @@ Call `aeko_get_action_plan(item_id)`. Parse the frontmatter + prose. Validate `e
 local_content_artifact` (else stop and route to the right skill). Extract:
 
 - **`resolved_title`** — frontmatter `title` → Plan `# H1` → `item_id` (chain; first non-empty wins).
-- **`domain_id`**, **`brand_kit_id`** (if present), **`persona_label`** (if present), **`account_tier`**
+- **`domain_id`**, **`persona_label`** (if present), **`account_tier`**
   (if present — the caller's current tier; drives the tier heads-up in §4.0).
 - **`parsed_products[]`** — optional. Backend `build_plan_md()` hydrates this from the user's selected
   store products; each entry should carry `id`, `source_id`, `name`, `slug`, `sku`, `outbound_url`,
@@ -121,21 +121,14 @@ local_content_artifact` (else stop and route to the right skill). Extract:
 
 Print a compact context header in the user's chat language (domain, title, persona, product count). Never echo raw frontmatter.
 
-## Step 2 — Resolve the brand kit (voice — optional)
+## Step 2 — Voice (neutral, product-led)
 
-The brand kit is **optional**. Resolve in order: `aeko_get_brand_kit_by_id(brand_kit_id)` →
-`aeko_get_brand_kit(domain_id)` → `aeko_list_brand_kits(domain_id)`. When one resolves, capture
-`tone_of_voice`, `brand_voice_summary`, `target_audience`, `must_include`, `forbidden`,
-`aeko_shop_disabled`, and richness fields (`logo_url`, `primary_url`, `tagline`). If the voice fields
-are empty and the kit is `draft`/`generating`, warn but continue.
+This skill writes in a **neutral, product-led voice** grounded in the product/OCR substance (Step 3) —
+the product facts, specs, and lived-experience reviews carry the substance and the tone. There is no
+separate voice-config step. Honor `must_include` / `forbidden` from the Plan frontmatter (Step 1).
 
-**No kit is fine — never stop.** If no kit resolves, set `resolved_brand_kit_id = null` and write in a
-neutral, product-led voice grounded in the product/OCR substance (Step 3); note it in one line in the
-user's chat language — KO: "브랜드 키트가 없어 상품 정보 기반의 중립적인 톤으로 작성합니다. `/aeko-brand-kit`으로
-추가하면 브랜드 톤이 반영됩니다." / EN: "No Brand Kit — writing in a neutral, product-led voice. Add one with
-`/aeko-brand-kit` for on-brand tone." Publishing works without a kit: media presign falls back to the item/domain
-identity (pass `item_id` to `aeko_request_media_upload`), and the backend publishes under the verified
-domain. Keep `resolved_brand_kit_id` (or `null`) for media presign and the structured-data gate.
+Publishing works without any extra identity lookup: media presign uses the item/domain identity (pass
+`item_id` to `aeko_request_media_upload`), and the backend publishes under the verified domain.
 
 ## Step 2.5 — Mode selection (Standard vs + competitive context)
 
@@ -198,7 +191,7 @@ image-sourced claims must trace to what the image shows, never to category-typic
 - `aeko_get_product_description` 4xx/5xx → fall back to the `parsed_products[]` Plan fields alone; warn once.
 
 **No-product fallback** — when `parsed_products[]` is empty: skip the product/review calls entirely. The
-drafters will write from the prompt + brand kit + their own expertise (honest expertise, never faked
+drafters will write from the prompt + their own expertise (honest expertise, never faked
 experience — see `references/aeo-frameworks.md` anti-fabrication rule), and Step 8 surfaces a user-language
 note that attaching a product (and its context-reviews) yields more original content.
 
@@ -212,9 +205,9 @@ prompts resolve, continue (the prompt text itself still gives topic/intent) — 
 un-indexed domain (own-content 404) are normal for a new brand. Do not stop, and do not ask the user how to
 proceed — state it in one plain line and continue to Step 4. **Name only the sources that actually loaded**
 (don't claim "상품 정보" if the product fetch failed): build the list dynamically from {불러온 상품 정보, 리뷰,
-프롬프트, 브랜드 키트} that are present this run. Example when product + brand kit loaded: "AI 답변 참고 출처는
-아직 적지만, 브랜드 키트와 불러온 상품 정보로 작성합니다" / "few cited sources yet — drafting from the brand kit
-and loaded product info." If only the prompt + brand kit loaded, say exactly that instead. If
+프롬프트} that are present this run. Example when product loaded: "AI 답변 참고 출처는
+아직 적지만, 불러온 상품 정보로 작성합니다" / "few cited sources yet — drafting from the
+loaded product info." If only the prompt loaded, say exactly that instead. If
 `mode = competitive` but the signal is thin (no cited snippets to distill), silently degrade to Standard with
 that one-line note — competitive context adds nothing without citations.
 
@@ -235,10 +228,9 @@ ignore for channel suggestion. Suggestions are a convenience for Step 4; the use
 ## Step 4 — Channel & media selection (interactive)
 
 ### 4.0 Auto-add aeko.shop + own-store for tenant brands
-aeko.shop is AEKO's canonical destination. Prepend `aeko_shop` to the pre-checked set unless
-`brand_kit.aeko_shop_disabled === true` (missing/malformed → include it; emit a one-line "assuming
-enabled" note). Append `own_store_blog` to the offered set. Both are backend-saved draft targets; this
-skill never writes to the connected store.
+aeko.shop is AEKO's canonical destination. Prepend `aeko_shop` to the pre-checked set. Append
+`own_store_blog` to the offered set. Both are backend-saved draft targets; this skill never writes to
+the connected store.
 
 **Tier heads-up (set expectations before drafting).** Read `frontmatter.account_tier` (the caller's
 current tier, stamped at fetch). Drafting + saving works on any plan; **publishing to aeko.shop requires
@@ -250,7 +242,6 @@ Pro or Enterprise**; `own_store_blog` drafts have no tier gate.
   higher — for now you can save drafts and publish to your own-store blog; upgrade to publish to aeko.shop."
 - If `account_tier` is `pro`/`enterprise` or absent: proceed normally (a one-line "own_store_blog has no
   tier gate" mention is enough).
-(A Brand Kit is **not** required either way.)
 
 ### 4-Form-1 Channel selection
 Issue ONE elicitation form. Pre-check `suggested_channels[]` (from Step 3b) + `aeko_shop` + `own_store_blog`;
@@ -288,11 +279,10 @@ concurrently). Each drafter's prompt instructs it to:
 
 Pass the JSON brief (the shape in drafter-instructions.md §1): `channel`, `domain_id`, `item_id`,
 `resolved_title`, `slug`, `filename_token`, `aeko_shop_publish_slug` (aeko_shop only), `target_language`,
-`brand_voice_summary`, `target_cohort` (sharpen from `target_audience` + persona + the prompt),
+`target_cohort` (sharpen from `persona` + the prompt),
 `must_include`, `forbidden`, `sections_required`, `contrarian_hint`, `competitive_brief` (competitive mode
 only), `products` (with `full_description`), `context_reviews`, `media` (= `media_by_channel[channel]`),
-`recipe_path`, `voice_overrides` (scoped block, if `references/style/voice-overrides.md` has one for this
-domain/channel), and `resolved_brand_kit_id` (aeko_shop only, for media presign).
+and `recipe_path`.
 
 **Recipe routing by tier.** Owned-web channels (`aeko_shop`, `own_store_blog`) get
 `recipe_path: references/recipes/editorial-html-jsonld.md` — that recipe covers both (aeko_shop = body-only,
@@ -300,8 +290,8 @@ no in-body JSON-LD; `own_store_blog` = self-contained HTML with *embedded* JSON-
 since the brand's store won't regenerate schema). Paste-tier channels with a recipe (`naver_blog`,
 `tistory`, `instagram`, `tiktok`, `youtube`, `press_release`, `magazine`) get their thin
 `references/recipes/<channel>.md`. Channels with no recipe (`reddit`, `partner_media`, `other:<name>`) get
-`recipe_path: null` — the drafter works from frameworks + brand voice (+ matching example files per
-drafter-instructions.md §2 when present).
+`recipe_path: null` — the drafter works from frameworks + the neutral product-led voice (+ matching example
+files per drafter-instructions.md §2 when present).
 
 Collect each drafter's returned self-check into `drafter_results[]`. A drafter that returns no usable
 result (skipped/errored) is recorded as a failed channel; continue with the rest.
@@ -314,7 +304,7 @@ re-verifies before any save:
 - **Universal (every artifact):** no placeholder markers (`[Image`/`[photo`/`[placeholder`/`TODO` in body);
   every image has non-empty alt; `forbidden` strings absent; `must_include` strings present across the
   artifact set (not necessarily every channel); no fabricated external URLs (URLs must be from
-  `products[].outbound_url`, the brand kit, or user-supplied media in `media_by_channel{}` — there is no
+  `products[].outbound_url` or user-supplied media in `media_by_channel{}` — there is no
   crawl allowlist anymore).
 - **Framework quality (read each artifact):** BLUF in the opening; PREP-shaped body; ≥1 originality detail
   (traceable to a real context-review, or expertise-grounded + flagged when no reviews); a specific cohort
@@ -327,7 +317,7 @@ re-verifies before any save:
   body `<img src>` is an AEKO-media-CDN `public_url` (never a brand-domain URL, never `cdn.aeko.shop`); every
   `<img>` has `alt`/`width`/`height`/`loading`; the set of `data-product-source-id` in `.html` equals
   `featured_products[].product_source_id` in `.meta.json`; no `[image: …pending]` placeholders; structured-data
-  completeness (title, `og_description`, brand kit resolved; product fields when products attached).
+  completeness (title, `og_description`; product fields when products attached).
 - **`own_store_blog` hard gates (self-contained — the store renders it as-is, won't regenerate schema):**
   `.html` parses; it **embeds** `<script type="application/ld+json">` carrying `Article`/`BlogPosting`
   (always) **plus `Product`** when products are attached, and each block parses with `json.loads` with its
@@ -385,7 +375,7 @@ Source material used
 - Product facts: N
 - Real review/context details: N (or "none — attach product reviews for more original content")
 - Image-extracted substance: N products (clinical/numeric data pulled from images), or "none"
-- Brand voice: <brand kit | none (neutral product-led voice)>
+- Voice: neutral, product-led
 
 Safety
 - This skill did not publish anything live.
@@ -452,7 +442,6 @@ phonetic-gibberish 404 bug). For an already-English title, reusing the §A.3 slu
 ## Error paths
 
 - Plan unavailable / parse error / contract mismatch → stop with detail.
-- Stale brand kit + user declines → stop.
 - No prompts resolve in Step 3b → continue on prompt text + product/review substance (do NOT hard-stop;
   this is no longer forensics-gated).
 - `aeko_get_product_context_reviews` / `aeko_get_product_description` unavailable → degrade per Step 3.
