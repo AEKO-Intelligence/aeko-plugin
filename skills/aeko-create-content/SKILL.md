@@ -32,7 +32,7 @@ source material, publish safety, revision path, and next step in marketer-facing
 **Changelog v0.14.0** — Re-architected from forensics-mimicry to **framework-driven AEO**. Removed the
 Phase 3A/3B citation-forensics crawl engine (`aeko_crawl_url`, recrawl budgets, `cited_url_allowlist`,
 structural-target mimicry, crawl-based channel detection). Content substance now comes from **product
-info + context-reviews + the prompt + brand kit**; quality comes from the **AEO frameworks** in
+info + context-reviews + the prompt**; quality comes from the **AEO frameworks** in
 `references/aeo-frameworks.md` (BLUF, PREP, Informational Gain, E-E-A-T). Per-channel drafting now **fans
 out to parallel drafter subagents** instead of a sequential loop (see Step 5). New optional
 `+ competitive context` mode (arg `deep`) surfaces the tracked-prompt snapshot's current AI answer + cited
@@ -53,12 +53,11 @@ EN-market brands equally; the slug is ASCII (`press_release`), the KO label stay
 
 Executes one Action-tab content item end-to-end: fetch Plan.md → pull product/review/prompt substance →
 pick mode → confirm channels + media → **fan out parallel per-channel drafters** that write framework-driven
-artifacts in the brand voice → verify (re-checking publish-blocking gates) → auto-save `aeko_shop`
+artifacts in a neutral, product-led voice → verify (re-checking publish-blocking gates) → auto-save `aeko_shop`
 publish variations → mark complete only after required saves succeed.
 
 Contract reference: `docs/contracts/action-item-contract.md` §3 (Plan.md), §3.2.1 (ProductRef), §6
-(completion). Pinned to contract minor `v1.5`; tolerant of v1.3/v1.4 Plans where `brand_kit_id` or
-`products[]` is absent.
+(completion). Pinned to contract minor `v1.6`; tolerant of Plans where `products[]` is absent.
 
 ## Marketer-facing output contract
 
@@ -139,8 +138,8 @@ question in the user's chat language, defaulting to Standard. For Korean/English
 어떤 방식으로 콘텐츠를 만들까요? / How should I generate this content?
 
   [1] 표준 / Standard  (기본)
-      제품 정보 + 컨텍스트 리뷰 + 프롬프트 + 브랜드 보이스로 작성. 빠릅니다.
-      Product info + context-reviews + prompt + brand voice. Faster.
+      제품 정보 + 컨텍스트 리뷰 + 프롬프트로 작성. 빠릅니다.
+      Product info + context-reviews + prompt. Faster.
 
   [2] + 경쟁 컨텍스트 / + Competitive context
       추적 중인 프롬프트의 현재 AI 답변과 인용 출처를 함께 분석해
