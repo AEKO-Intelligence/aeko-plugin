@@ -7,6 +7,13 @@ The plugin follows [Semantic Versioning](https://semver.org/). All four host man
 (`.claude-plugin/`, `.codex-plugin/`, `gemini-extension.json`) are kept in version sync so that
 version-keyed host caches refresh on update.
 
+## [0.17.0] — 2026-06-17
+
+### Removed
+- **Brand kit retired.** Removed the `/aeko-brand-kit` skill, all brand-kit MCP tool usage across
+  skills, and the voice-overrides voice-steering mechanism. Content now drafts in a neutral,
+  product-led voice; aeko.shop publishing uses the verified domain identity.
+
 ## [0.16.0] — 2026-06
 
 > **Deploy order — ship together / backend first.** No-kit *media upload* depends on the AEKO backend
@@ -160,6 +167,8 @@ schema trick.
 - Publish-pipeline skill fixes: correct publish edit-path, loud product/image warnings, brand-kit
   terminology.
 
+[0.17.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
+[0.16.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.5]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.4]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.3]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main

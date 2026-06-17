@@ -2,9 +2,9 @@
 
 > 한국어 버전은 아래를 참고하세요 → [한국어](#한국어-버전).
 
-Skills for [AEKO](https://aeko-intelligence.com) — AEO (AI Engine Optimization) workflows for cross-border ecommerce. Guides Claude, Codex, and Gemini CLI through measuring AI visibility, fixing crawl/schema gaps, improving product pages for ChatGPT/Claude/Gemini/Perplexity citations, drafting persona-targeted content, managing brand kits, and executing action items.
+Skills for [AEKO](https://aeko-intelligence.com) — AEO (AI Engine Optimization) workflows for cross-border ecommerce. Guides Claude, Codex, and Gemini CLI through measuring AI visibility, fixing crawl/schema gaps, improving product pages for ChatGPT/Claude/Gemini/Perplexity citations, drafting persona-targeted content, and executing action items.
 
-This repo ships **skills only**. Backend access (tools like `aeko_get_domain_info`, `aeko_get_brand_kit`, etc.) comes from the separate [AEKO MCP server](https://github.com/AEKO-Intelligence/aeko-mcp), hosted at `https://aeko-intelligence.com/mcp`. Install both.
+This repo ships **skills only**. Backend access (tools like `aeko_get_domain_info`, `aeko_get_score`, etc.) comes from the separate [AEKO MCP server](https://github.com/AEKO-Intelligence/aeko-mcp), hosted at `https://aeko-intelligence.com/mcp`. Install both.
 
 Recent changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
@@ -135,9 +135,8 @@ AEKO will describe each run in plain business language: what it checks, why it m
 - `/aeko-action-center [domain_id] [category]` — front door: shows pending work as Technical health / Product pages / Content AI can cite, then prints ready-to-copy next commands
 - `/aeko-update-pdp <item_id>` — Product page improvement. Adds clearer shopper copy, review proof, FAQs, and AI-readable product facts; store writes are shadow-by-default
 - `/aeko-fix-technical <item_id>` — Technical health fix package. Prepares crawler access, llms.txt, robots.txt, or site-schema files with plain risk and undo notes
-- `/aeko-create-content <item_id>` — Content executor. Uses product facts (incl. clinical/numeric data pulled from image-only pages), real review context, tracked prompts, and an **optional** Brand Kit (neutral product-led voice when none) to draft balanced, framework-driven, citation-ready content; saves local artifacts and auto-saves aeko.shop publish variations, never writes to a connected store
+- `/aeko-create-content <item_id>` — Content executor. Uses product facts (incl. clinical/numeric data pulled from image-only pages), real review context, and tracked prompts to draft balanced, framework-driven, citation-ready content in a neutral, product-led voice; saves local artifacts and auto-saves aeko.shop publish variations, never writes to a connected store
 - `/aeko-publish-content <item_id>` — Publisher. Publishes saved content variations only after explicit confirmation; aeko.shop can go live, own-store blog remains an AEKO-owned draft
-- `/aeko-brand-kit <domain_id>` — view or edit your domain's brand kit (voice, guardrails, must-include / forbidden)
 
 **Research + discovery:**
 
@@ -171,13 +170,13 @@ Retired across the 2026-04 (v0.4.0) and 2026-04 v0.5.0 consolidations. If you ha
 | `/aeo-audit-local` | Deprecated — file-level citability lint isn't reliably doable from bare text |
 | `/competitive-research` | Split: `/aeko-brand-competitor-analysis` + `/aeko-product-competitor-analysis` |
 | `/create-visibility-report` | Merged into `/aeko-visibility-report [domain_id] [window] depth=full` |
-| `/create-blog-article`, `/create-social-content`, `/create-marketing-materials` | `/aeko-create-content` (brand-kit-grounded, tracked-prompt-seeded) |
+| `/create-blog-article`, `/create-social-content`, `/create-marketing-materials` | `/aeko-create-content` (tracked-prompt-seeded) |
 
 **Note on `/aeko-update-pdp`:** v0.4.0 retired it as a deprecated wrapper; v0.5.0 revives the name as a Plan.md-driven executor. Check `CHANGELOG.md` in `aeko-mcp` for the history.
 
 ### Skill operating principle
 
-An AEKO skill earns its slot if it **compresses useful workflow** — stringing together AEKO tools + Claude's reasoning into a repeatable single-command flow. Most AEKO skills call at least one `aeko_*` MCP tool (brand kit, tracked prompts, action items, store writes), but it isn't a hard rule. `/aeo-audit` is the exception: it operationalizes AEO audit heuristics as a workflow even though it uses no AEKO backend data.
+An AEKO skill earns its slot if it **compresses useful workflow** — stringing together AEKO tools + Claude's reasoning into a repeatable single-command flow. Most AEKO skills call at least one `aeko_*` MCP tool (tracked prompts, action items, store writes), but it isn't a hard rule. `/aeo-audit` is the exception: it operationalizes AEO audit heuristics as a workflow even though it uses no AEKO backend data.
 
 Bug fix if a skill's prose references AEKO primitives its `allowed-tools` doesn't actually list — that's credibility debt. Either ground the skill or retire it.
 
@@ -194,9 +193,9 @@ MIT
 
 # 한국어 버전
 
-[AEKO](https://aeko-intelligence.com) 스킬 모음 — 크로스보더 이커머스를 위한 AEO (AI Engine Optimization) 워크플로. Claude, Codex, Gemini CLI가 AI 가시성을 측정하고, 크롤링/스키마 빈틈을 고치고, ChatGPT/Claude/Gemini/Perplexity 인용을 위해 상품 페이지를 개선하며, 페르소나별 콘텐츠를 작성하고, 브랜드 키트를 관리하고, 액션 아이템을 실행하도록 안내합니다.
+[AEKO](https://aeko-intelligence.com) 스킬 모음 — 크로스보더 이커머스를 위한 AEO (AI Engine Optimization) 워크플로. Claude, Codex, Gemini CLI가 AI 가시성을 측정하고, 크롤링/스키마 빈틈을 고치고, ChatGPT/Claude/Gemini/Perplexity 인용을 위해 상품 페이지를 개선하며, 페르소나별 콘텐츠를 작성하고, 액션 아이템을 실행하도록 안내합니다.
 
-이 저장소는 **스킬만 배포합니다**. 백엔드 액세스(`aeko_get_domain_info`, `aeko_get_brand_kit` 등의 도구)는 별도의 [AEKO MCP 서버](https://github.com/AEKO-Intelligence/aeko-mcp) — `https://aeko-intelligence.com/mcp`에서 호스팅 — 에서 제공됩니다. 두 가지 모두 설치하세요.
+이 저장소는 **스킬만 배포합니다**. 백엔드 액세스(`aeko_get_domain_info`, `aeko_get_score` 등의 도구)는 별도의 [AEKO MCP 서버](https://github.com/AEKO-Intelligence/aeko-mcp) — `https://aeko-intelligence.com/mcp`에서 호스팅 — 에서 제공됩니다. 두 가지 모두 설치하세요.
 
 최근 변경 사항은 [CHANGELOG.md](CHANGELOG.md)에서 확인하세요.
 
@@ -325,9 +324,8 @@ AEKO는 매 실행마다 무엇을 확인하는지, 왜 중요한지, 읽기 전
 - `/aeko-action-center [domain_id] [category]` — 시작 화면: pending 작업을 Technical health / Product pages / Content AI can cite로 보여주고 바로 실행 가능한 다음 명령어를 출력
 - `/aeko-update-pdp <item_id>` — 상품 페이지 개선. 더 명확한 구매자 문구, 리뷰 근거, FAQ, AI가 읽을 수 있는 상품 사실을 추가; 스토어 기록은 shadow가 기본
 - `/aeko-fix-technical <item_id>` — 기술 상태 개선 패키지. 크롤러 접근, llms.txt, robots.txt, 사이트 스키마 파일을 준비하고 위험/되돌리기 안내를 함께 제공
-- `/aeko-create-content <item_id>` — Content executor. 상품 사실(이미지 전용 페이지에서 추출한 임상·수치 데이터 포함), 실제 리뷰 맥락, 추적 프롬프트, 그리고 **선택적** 브랜드 키트(없으면 중립적인 상품 중심 톤)를 바탕으로 장단점을 균형 있게 담은 프레임워크 기반의 인용 가능한 콘텐츠를 작성; 로컬 아티팩트를 저장하고 aeko.shop 게시 변형본을 자동 백엔드 저장, 연결된 스토어에는 절대 기록 안 함
+- `/aeko-create-content <item_id>` — Content executor. 상품 사실(이미지 전용 페이지에서 추출한 임상·수치 데이터 포함), 실제 리뷰 맥락, 추적 프롬프트를 바탕으로 중립적인 상품 중심 톤으로 장단점을 균형 있게 담은 프레임워크 기반의 인용 가능한 콘텐츠를 작성; 로컬 아티팩트를 저장하고 aeko.shop 게시 변형본을 자동 백엔드 저장, 연결된 스토어에는 절대 기록 안 함
 - `/aeko-publish-content <item_id>` — Publisher. 저장된 콘텐츠 변형본을 명시 확인 후 게시; aeko.shop은 라이브 게시 가능, 자사몰 블로그는 AEKO 소유 초안으로 저장
-- `/aeko-brand-kit <domain_id>` — 도메인의 브랜드 키트(보이스, 가드레일, must-include / forbidden) 조회·편집
 
 **리서치 + 디스커버리:**
 
@@ -361,7 +359,7 @@ AEKO는 매 실행마다 무엇을 확인하는지, 왜 중요한지, 읽기 전
 | `/aeo-audit-local` | 폐기 — 순수 텍스트만으로 파일 수준 citability 린트는 신뢰성 있게 불가능 |
 | `/competitive-research` | 분리: `/aeko-brand-competitor-analysis` + `/aeko-product-competitor-analysis` |
 | `/create-visibility-report` | `/aeko-visibility-report [domain_id] [window] depth=full`로 통합 |
-| `/create-blog-article`, `/create-social-content`, `/create-marketing-materials` | `/aeko-create-content` (브랜드 키트 기반, 추적 프롬프트 시드) |
+| `/create-blog-article`, `/create-social-content`, `/create-marketing-materials` | `/aeko-create-content` (추적 프롬프트 시드) |
 
 **`/aeko-update-pdp` 참고:** v0.4.0에서 deprecated wrapper로 폐기, v0.5.0에서 Plan.md 기반 executor로 부활. 히스토리는 `aeko-mcp`의 `CHANGELOG.md` 참조.
 
