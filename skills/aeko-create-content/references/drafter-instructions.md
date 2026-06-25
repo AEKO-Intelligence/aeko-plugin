@@ -30,12 +30,24 @@ The coordinator hands you a JSON brief:
                  short_description, full_description, evidence_facts} ],   // substance backbone
   "context_reviews": [ {context, persona, quote, detail} ],  // lived experience — originality source
   "media": { "<slot>": {src, alt, type} | null },  // from the media form
+  "run_example_refs": [
+    {
+      "channel": "naver_blog" | "global",
+      "source_type": "url" | "pasted_text" | "style_note",
+      "source_url": "https://..." | null,
+      "excerpt_or_text": "...",
+      "style_notes": "...",
+      "saved_path": "references/examples/naver_blog-summer-example.md" | null
+    }
+  ],
   "recipe_path": "references/recipes/naver_blog.md" | null,
   "voice_overrides": "<scoped block text>" | null
 }
 ```
 
 `products[]`, `products[].evidence_facts[]`, `context_reviews[]`, and `content_context` are your substance.
+`run_example_refs[]` and files under `references/examples/` are style/structure references only; never treat
+them as factual evidence, URLs to cite, product claims, or lived-experience proof.
 If both products and reviews are empty (no-product run), draft from the prompt + content context + your own expertise,
 and follow the anti-fabrication rule strictly.
 
@@ -49,8 +61,11 @@ and follow the anti-fabrication rule strictly.
    - Always read `references/examples/in-store-content-example.md` if it exists; it is the global owned-content voice signal.
    - `naver_blog` and `tistory`: read `references/examples/blog-example.md` plus any `references/examples/<channel>-*example*.md`.
    - `press_release`: read `references/examples/press-release-example.md` plus any `references/examples/press_release-*example*.md`. The Korean UI label is `보도자료`, but the channel slug is `press_release`.
-   - Other paste-tier channels: read any `references/examples/<channel>-*example*.md`.
+   - Owned-web and other paste-tier channels: read any `references/examples/<channel>-*example*.md`.
    - If an example file is missing, skip it silently. Examples shape tone and structure; they do not supply facts, URLs, or claims.
+   - Also apply `run_example_refs[]` entries whose `channel` matches your channel or `global`. If an entry has
+     `saved_path`, include that path in `references_loaded`; if it is unsaved, include
+     `run_example:<source_url|pasted_text|style_note>` in `references_loaded`.
 2. **Plan the substance, then the shape.** Decide the BLUF answer, the 2–4 PREP blocks, which
    evidence facts (clinical-test results, data, percentages, dimensions, certifications, or other numbers)
    support each claim, which context-review supplies the originality detail, the cohort, the honest
@@ -73,8 +88,9 @@ and follow the anti-fabrication rule strictly.
 6. **Self-check** (below) and return the result JSON.
 
 ### Voice precedence (highest first)
-1. `voice_overrides` (scoped exception sheet) → 2. `voice_summary` from content context →
-3. channel recipe conventions (format/register norms) → 4. target-audience vocabulary.
+1. `voice_overrides` (scoped exception sheet) → 2. current-run examples + matching files in
+`references/examples/` → 3. `voice_summary` from content context → 4. channel recipe conventions
+(format/register norms) → 5. target-audience vocabulary.
 If content context is thin, keep the tone neutral, specific, evidence-first, and publishable; do not block or
 apologize in the artifact.
 When format and brand voice conflict (e.g. `press_release` requires a formal register — 합니다체 for KO,

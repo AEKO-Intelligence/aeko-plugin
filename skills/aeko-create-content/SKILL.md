@@ -19,6 +19,10 @@ allowed-tools: aeko_get_action_plan, aeko_get_product_description, aeko_get_prod
 
 # AEKO Create Content
 
+**Changelog v0.15.3** — Added in-run owned-channel/content-example intake for users who skipped onboarding.
+The Step 4 channel form now asks for owned channels, URLs, or pasted examples to mimic, and asks whether to
+save them into `references/examples/` for future runs. Saved examples are style/structure references only.
+
 **Changelog v0.15.2** — Added the user-language output contract: skill steps, confirmations, risk notes,
 and summaries mirror the user's chat language, while `target_language` controls generated artifacts.
 
@@ -70,12 +74,14 @@ Before saving variations, show what will be saved, where it can appear, risk, an
 jargon to marketers). In English say **source analysis**; in Korean say **AI 답변 참고 출처** (the sources AI
 references in its answers). "Forensics" elsewhere in this doc is an internal label only.
 
-**Only two user prompts exist in this skill:** the Step 2.5 mode question and the Step 4 channel/media forms.
-Do **not** invent extra decision forms — most importantly, do not add a "how should I proceed?" gate when the
-citation signal is thin. A thin or empty signal (zero citations, prompts still in an AEKO re-query cycle, an
-un-indexed domain / own-content 404) is the **normal early state for a new brand, not an error**. When the
-content context + product substance are present, a Plan-only draft is fully workable: note the thin signal in one
-plain line and proceed straight to Step 4.
+**Only these interactive prompts exist in this skill:** the Step 2.5 mode question, the Step 4 channel +
+owned-example form, and the Step 4 media form. Do **not** invent extra decision forms — most importantly,
+do not add a "how should I proceed?" gate when the citation signal is thin. A thin or empty signal (zero
+citations, prompts still in an AEKO re-query cycle, an un-indexed domain / own-content 404) is the
+**normal early state for a new brand, not an error**. When the content context + product substance are
+present, a Plan-only draft is fully workable: note the thin signal in one plain line and proceed straight
+to Step 4. If the user did not onboard, capture optional owned-channel/content examples inside Step 4;
+never ask a separate onboarding-style question outside Step 4.
 
 Language: mirror the user's chat language for user-facing steps, summaries, questions, and risk/undo copy.
 Keep slash commands, IDs, file paths, channel slugs such as `press_release`, schema keys, JSON-LD terms, and tool names in English/ASCII.
@@ -100,8 +106,9 @@ is missing, the relevant step's degrade path handles it and the user should upda
 load deferred tools one-at-a-time mid-run.
 
 > Reference-file reads (`references/aeo-frameworks.md`, `references/drafter-instructions.md`, recipes,
-> examples) are **not** loaded by the coordinator — each drafter subagent reads what it needs (Step 5).
-> The coordinator only reads `references/examples/context-reviews-fixture.md`, and only as a Step 3 fallback.
+> persistent examples) are **not** loaded by the coordinator — each drafter subagent reads what it needs
+> (Step 5). The coordinator only reads `references/examples/context-reviews-fixture.md` as a Step 3
+> fallback, and may collect/write user-supplied owned examples in Step 4 when the user explicitly opts in.
 
 ## Step 1 — Fetch and parse the Plan.md
 
@@ -225,7 +232,7 @@ Inline domain→channel suggestion map (replaces the old crawl-based detector): 
 `youtube.com` → `youtube`; `instagram.com` → `instagram`. Anything else (wikipedia, generic web) →
 ignore for channel suggestion. Suggestions are a convenience for Step 4; the user always confirms.
 
-## Step 4 — Channel & media selection (interactive)
+## Step 4 — Channel, owned examples & media selection (interactive)
 
 ### 4.0 Auto-add aeko.shop + own-store for tenant brands
 aeko.shop is AEKO's canonical destination. Prepend `aeko_shop` to the pre-checked set unless
@@ -239,6 +246,49 @@ offer addon toggles: `press_release`, `magazine`, `instagram`, `tiktok`, `youtub
 `reddit`, `other:<ascii_name>` (free-form `<name>` + optional reference URL/description; reject non-ASCII
 `<name>`). Selecting `aeko_shop` is consent to backend-save after drafting. Use the §8.0 localized labels.
 **If 0 channels selected → stop** (user-language notice; do not complete the item).
+
+In the same form, ask for optional owned-channel/content examples for users who did not run onboarding:
+
+```
+참고할 온드 채널이나 기존 콘텐츠 예시가 있나요? / Any owned channels or existing content examples I should mimic?
+
+- Paste public URLs or raw examples for Naver Blog, Tistory, Instagram, YouTube, own-store blog, aeko.shop,
+  product/category pages, or other owned channels.
+- These examples guide tone and structure only; they are not factual sources for claims.
+- Use your own content and remove PII.
+- Save to references/examples for future runs? [no / yes for all / choose per example]
+```
+
+Parse the answer into `run_example_refs[]`:
+
+```
+{
+  channel: "naver_blog" | "instagram" | "own_store_blog" | "aeko_shop" | "global" | "other:<name>",
+  source_type: "url" | "pasted_text" | "style_note",
+  source_url: "https://..." | null,
+  excerpt_or_text: "...",
+  style_notes: "...",
+  save_to_references: true | false,
+  saved_path: "references/examples/<filename>.md" | null
+}
+```
+
+For each URL, `WebFetch` it once. Public blogs/pages may return usable text; JS-heavy or private social
+pages may be thin. If the fetched payload is thin, keep the URL + any user-provided note and warn once; do
+not browse further or ask another question. Pasted text takes precedence over scraped text.
+
+When `save_to_references=true`, write the example into this skill's local
+`references/examples/` directory before Step 5:
+
+- Filename: `<channel>-<safe-slug>-example.md`; use `in-store-<safe-slug>-example.md` for global owned
+  PDP/category/brand-page examples. Collapse non-ASCII to ASCII where possible; if empty, use
+  `example-<YYYYMMDD-HHMM>`. If the file exists, append `-2`, `-3`, etc. Do not overwrite.
+- File header:
+  `<!-- AEKO captured during /aeko-create-content. source: <url|pasted>; channel: <channel>; style-only, not factual source. -->`
+- Body: the fetched/pasted example plus any style notes. Strip obvious PII if the user supplied it, and
+  warn in the summary that saved examples are read into future model context.
+- Record `saved_path`. Saved files are picked up by the matching example-file rules in Step 5; unsaved
+  examples are passed directly in `run_example_refs`.
 
 ### 4-Form-2 Per-channel media + alt-text
 Issue a SECOND form. Per selected channel, collect image slots (editorial: hero + up to 2 inline; social:
@@ -271,9 +321,10 @@ Pass the JSON brief (the shape in drafter-instructions.md §1): `channel`, `doma
 `resolved_title`, `slug`, `filename_token`, `aeko_shop_publish_slug` (aeko_shop only), `target_language`,
 `content_context`, `voice_summary` (derived from content context), `target_cohort` (sharpen from context + persona + the prompt),
 `must_include`, `forbidden`, `sections_required`, `contrarian_hint`, `competitive_brief` (competitive mode
-only), `products` (with `full_description` and `evidence_facts`), `context_reviews`, `media` (= `media_by_channel[channel]`),
-`recipe_path`, `voice_overrides` (scoped block, if `references/style/voice-overrides.md` has one for this
-domain/channel).
+only), `products` (with `full_description` and `evidence_facts`), `context_reviews`, `media`
+(= `media_by_channel[channel]`), `run_example_refs` (matching this channel + `global`, including
+`saved_path` when saved), `recipe_path`, `voice_overrides` (scoped block, if
+`references/style/voice-overrides.md` has one for this domain/channel).
 
 **Recipe routing by tier.** Owned-web channels (`aeko_shop`, `own_store_blog`) get
 `recipe_path: references/recipes/editorial-html-jsonld.md` — that recipe covers both (aeko_shop = body-only,
@@ -370,6 +421,7 @@ Source material used
 - Evidence facts: N (clinical/data/numeric proof points; "none extractable" if the PDP was image-only)
 - Real review/context details: N (or "none — attach product reviews for more original content")
 - Content context: <loaded|thin — used neutral fallback>
+- Owned examples: <none|used this run: N|saved to references/examples: N>
 
 Safety
 - This skill did not publish anything live.
@@ -383,7 +435,8 @@ Recommended next step
 ```
 
 After that, include artifacts (one user-language line + path per file), media refs (N with alt / M skipped),
-`Refs loaded` (recipe + example paths per channel, so users can verify customization was picked up),
+owned examples saved/used (with paths when saved), `Refs loaded` (recipe + example paths per channel, so
+users can verify customization was picked up),
 citability (passed N/N · failed: list or none), and the "publish checklist (never auto-published by AEKO)"
 for client-managed channels.
 
@@ -456,5 +509,7 @@ phonetic-gibberish 404 bug). For an already-English title, reusing the §A.3 slu
   `/aeko-publish-content`, aeko.shop only). All other channels are generation-only outputs.
 - Never copies or uploads media for non-aeko_shop channels — references only. `aeko_shop` is the single
   exception — its media upload procedure lives in `references/recipes/editorial-html-jsonld.md`.
+- Never saves owned-channel/content examples into `references/examples/` without explicit user consent.
+  Saved examples are style/structure references only, not factual evidence for generated claims.
 - Never emits `[Image]`/`[photo]`/`[placeholder]`/`TODO` body markers; never invents URLs; never echoes raw
   frontmatter; never regenerates the Plan.md; never proceeds past Form-2 without an explicit submit.

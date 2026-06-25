@@ -7,6 +7,18 @@ The plugin follows [Semantic Versioning](https://semver.org/). All four host man
 (`.claude-plugin/`, `.codex-plugin/`, `gemini-extension.json`) are kept in version sync so that
 version-keyed host caches refresh on update.
 
+## [0.15.12] — 2026-06
+
+### Changed
+- **`/aeko-create-content` now asks for owned-channel/content examples during Step 4.** Users who skipped
+  onboarding can paste owned-channel URLs, raw content examples, or style notes while selecting channels.
+- The Step 4 form asks whether to save supplied examples into `references/examples/` for future runs.
+  Saved examples use non-overwriting `<channel>-<slug>-example.md` filenames and are treated as
+  style/structure references only, never factual evidence.
+- Updated the per-channel drafter contract to use current-run examples plus saved `references/examples/`
+  files in voice/structure precedence, and to report saved/unsaved example references in `Refs loaded`.
+- Bumped Claude, Codex, and Gemini manifests to `0.15.12`.
+
 ## [0.15.11] — 2026-06
 
 ### Changed
@@ -202,6 +214,7 @@ schema trick.
 - Publish-pipeline skill fixes: correct publish edit-path, loud product/image warnings, identity-context
   terminology.
 
+[0.15.12]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.11]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.10]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.9]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
