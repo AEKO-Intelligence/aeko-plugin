@@ -19,14 +19,15 @@ The coordinator hands you a JSON brief:
 {
   "channel": "naver_blog",                 // your channel slug
   "domain_id": "...", "item_id": "...",    // for artifact paths
-  "resolved_title": "...",                  // drives the slug (§5.5)
+  "resolved_title": "...",                  // drives the local slug (SKILL.md §A)
   "target_language": "ko",                  // BCP-47-ish content language, e.g. ko | en | ja | zh | es
-  "brand_voice_summary": "...",             // tone_of_voice + brand_voice_summary from the brand kit
-  "target_cohort": "...",                    // sharpen per aeo-frameworks §3b
+  "content_context": {...},                  // use case, situation, pain points, desired outcome
+  "voice_summary": "...",                    // tone derived from content context + Plan/product facts
+  "target_cohort": "...",                    // sharpen per aeo-frameworks §3c
   "must_include": [...], "forbidden": [...], // hard content constraints
   "contrarian_hint": "..." | null,           // deep mode only — the gap in current AI answers
   "products": [ {id, source_id, name, sku, slug, outbound_url, image_url,
-                 short_description, full_description} ],   // substance backbone
+                 short_description, full_description, evidence_facts} ],   // substance backbone
   "context_reviews": [ {context, persona, quote, detail} ],  // lived experience — originality source
   "media": { "<slot>": {src, alt, type} | null },  // from the media form
   "recipe_path": "references/recipes/naver_blog.md" | null,
@@ -34,8 +35,9 @@ The coordinator hands you a JSON brief:
 }
 ```
 
-`products[]` and `context_reviews[]` are your substance. If both are empty (no-product run), draft
-from the prompt + brand voice + your own expertise, and follow the anti-fabrication rule strictly.
+`products[]`, `products[].evidence_facts[]`, `context_reviews[]`, and `content_context` are your substance.
+If both products and reviews are empty (no-product run), draft from the prompt + content context + your own expertise,
+and follow the anti-fabrication rule strictly.
 
 ## 2. Process
 
@@ -50,22 +52,31 @@ from the prompt + brand voice + your own expertise, and follow the anti-fabricat
    - Other paste-tier channels: read any `references/examples/<channel>-*example*.md`.
    - If an example file is missing, skip it silently. Examples shape tone and structure; they do not supply facts, URLs, or claims.
 2. **Plan the substance, then the shape.** Decide the BLUF answer, the 2–4 PREP blocks, which
-   context-review supplies the originality detail for each, the cohort, and the contrarian angle.
-   *Then* fit it to the channel's format from the recipe.
-3. **Draft** in the brand voice (voice precedence below). Pull real specifics from product
-   `full_description` and `context_reviews`. Honor `must_include` (each string appears at least
-   once) and `forbidden` (never appears). No hard CTAs ("지금 구매" / "Buy now" / "Click here") —
+   evidence facts (clinical-test results, data, percentages, dimensions, certifications, or other numbers)
+   support each claim, which context-review supplies the originality detail, the cohort, the honest
+   limitation/trade-off, and the contrarian angle. *Then* fit it to the channel's format from the recipe.
+3. **Draft** for the content context (voice precedence below). Pull real specifics from product
+   `full_description`, `evidence_facts`, and `context_reviews`. If the product page was image-heavy,
+   use every extracted OCR/alt/caption/meta/table fact the coordinator supplied, especially clinical or
+   numeric proof. If no extractable evidence exists, say so in the self-check instead of inventing it.
+   Honor `must_include` (each string appears at least once) and `forbidden` (never appears). No hard CTAs ("지금 구매" / "Buy now" / "Click here") —
    AEKO content earns the click through authority, not commands.
+   Do not write a benefits-only brochure: include at least one realistic caveat, fit limitation, trade-off,
+   or "not for" line when the channel format allows it. Keep the caveat proportionate and evidence-based.
 4. **Media** — embed only what's in `media`. Use real `![alt](src)` / `<img alt>`; never emit
    `[Image]`/`[photo]`/`[placeholder]`/`TODO` markers. If a visual-first channel has no media, emit
    the fenced `media_specs:` YAML block (see recipe). Every image carries non-empty alt text.
-5. **Write the file(s)** to the §5.5 path: `./aeko-artifacts/<domain_id>/<item_id>/<filename_token>/<slug>__<filename_token>.<ext>`.
-   Derive `<slug>` and `<filename_token>` exactly per SKILL.md §5.5 (the coordinator passes those rules).
+5. **Write the file(s)** to the SKILL.md §A path template:
+   `./aeko-artifacts/<domain_id>/<item_id>/<filename_token>/<slug>__<filename_token>.<ext>`.
+   Use the coordinator-provided `<slug>` and `<filename_token>` exactly; do not recompute or switch to a
+   channel's historical literal filename.
 6. **Self-check** (below) and return the result JSON.
 
 ### Voice precedence (highest first)
-1. `voice_overrides` (scoped exception sheet) → 2. `brand_voice_summary` (register) →
+1. `voice_overrides` (scoped exception sheet) → 2. `voice_summary` from content context →
 3. channel recipe conventions (format/register norms) → 4. target-audience vocabulary.
+If content context is thin, keep the tone neutral, specific, evidence-first, and publishable; do not block or
+apologize in the artifact.
 When format and brand voice conflict (e.g. `press_release` requires a formal register — 합니다체 for KO,
 AP-style for EN), the format wins for that channel — note it in your self-check.
 
@@ -83,6 +94,9 @@ These two channels publish as real web pages, so they produce HTML with extra me
   `aeko_request_media_upload` (presign → curl PUT with the Azure headers → verify reachable). Brand-CDN
   product images are allowed only in the hero (`.meta.json hero_image_url`) and bottom product cards
   (`next/image`), never in body HTML. The recipe carries the exact steps and digests.
+  If the upload tool requires legacy identity fields or otherwise cannot presign, skip user-supplied
+  inline uploads, omit those body images, and still produce/save a valid text-first aeko.shop post.
+  Missing legacy identity data must not block publishing.
 - **Slug:** `.meta.json slug` must be a *meaningful English* slug (translate, don't transliterate),
   matching `^[a-z0-9]+(?:-[a-z0-9]+)*$`; for a Korean title it must NOT equal the romanized filename slug.
 - **Products:** render as `<figure role="callout" data-variant="product" data-product-source-id="<source_id>">`;
@@ -115,6 +129,8 @@ Return ONLY this object — it's data for the coordinator, not a message to a hu
   "references_loaded": ["references/recipes/naver_blog.md", "references/examples/blog-example.md"],
   "framework_check": {
     "bluf": true, "prep": true, "specific_cohort": true, "contrarian": true,
+    "evidence_facts_used": 2,
+    "tradeoff_or_limitation": true,
     "originality_source": "context_review" | "expertise_only",  // expertise_only = no reviews; flag it
     "eeat_faq": true | "n/a"
   },

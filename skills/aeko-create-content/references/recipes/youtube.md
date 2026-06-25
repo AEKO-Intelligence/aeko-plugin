@@ -20,4 +20,5 @@ load_when: SKILL.md §5.1 selects channel=youtube
 
 ## File output
 
-- Literal filename `youtube.md`. Single artifact, markdown only — no HTML pair.
+- Single artifact, markdown only: `./aeko-artifacts/<domain_id>/<item_id>/youtube/<slug>__youtube.md`
+  (path and `<slug>` per SKILL.md §A). No HTML pair.

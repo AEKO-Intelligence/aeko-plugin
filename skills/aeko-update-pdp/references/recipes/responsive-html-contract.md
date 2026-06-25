@@ -40,7 +40,7 @@ This skill produces AEO citability content for the PDP description block — not
 
 ## Pending verifications
 
-When a factual value is absent from OCR / brand kit / prose, do NOT emit `[VERIFY: <field>]` badges in the visible HTML and do NOT introduce a `.aeko-verify` style class. Production HTML must never carry visible VERIFY markers.
+When a factual value is absent from OCR / content context / prose, do NOT emit `[VERIFY: <field>]` badges in the visible HTML and do NOT introduce a `.aeko-verify` style class. Production HTML must never carry visible VERIFY markers.
 
 Instead, append an entry to an in-memory `pending_verifications` list (each entry: `{field, section, suggested_value_if_any, why_needed}`) and resolve it interactively with the user in Step 5b before finalizing. Never include unresolved values in JSON-LD (omit missing JSON-LD keys entirely).
 

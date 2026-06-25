@@ -2,7 +2,7 @@
   Per-domain voice overrides for /aeko-update-pdp.
 
   This file is OPTIONAL. The skill reads it (when present) at Step 5 alongside the
-  brand-kit voice and uses it to resolve conflicts between brand-kit register and
+  content-context voice and uses it to resolve conflicts between content context and
   PDP-specific conventions.
 
   Format: H2 headings scope each override block to a domain.

@@ -7,7 +7,7 @@ description: >
   Claude's reasoning — no prepare-* backend wrappers. Writes artifacts
   locally, surfaces a deploy checklist, marks the item complete.
 argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_brand_kit, aeko_get_brand_kit_by_id, aeko_list_brand_kits, aeko_get_domain_info, aeko_complete_action_item, Read, Write, WebFetch, WebSearch, Bash
+allowed-tools: aeko_get_action_plan, aeko_get_domain_info, aeko_complete_action_item, Read, Write, WebFetch, WebSearch, Bash
 ---
 
 # AEKO Fix Technical
@@ -48,7 +48,7 @@ Dispatch is driven by `frontmatter`. Prose is narrative guidance only.
 - `execution_class == "technical_artifact"` — else stop.
 - `artifact_type ∈ {llms_txt, robots_txt_patch, json_ld, technical_bundle}` — else stop.
 - `status ∈ {pending, ready}` — else stop with appropriate message.
-- `tier_required` gate: compare against the resolved Brand Kit metadata (`aeko_get_brand_kit_by_id` when `brand_kit_id` is present, otherwise `aeko_get_brand_kit`); block if caller tier is below (user-language tier-gate copy in §Copy).
+- `tier_required` is enforced by backend completion/deploy surfaces when applicable; do not resolve legacy identity metadata here.
 
 Print a plain-language header in the user's chat language, then the prose body verbatim. Translate
 `artifact_type` before showing it; for languages beyond Korean/English, use a natural plain-language label:
@@ -70,23 +70,18 @@ Never echo the raw frontmatter to the user.
 
 ### Copy templates (user's chat language)
 
-- **Brand Kit missing** — KO: "이 기술 수정을 실행하려면 <domain>의 브랜드 키트가 필요합니다. `/aeko-brand-kit`을 먼저 실행해 주세요." / EN: "This technical fix needs a Brand Kit for <domain>. Run `/aeko-brand-kit` first."
 - **Tier gate** — same template as `/aeko-update-pdp`.
 - **Minor-version advisory** — KO: "이 가이드는 계약 v<plan_minor> 기준입니다. 현재 스킬은 v1.2 — `/plugin update aeko`." / EN: "This plan uses contract v<plan_minor>; this skill is on v1.2 — run `/plugin update aeko`."
 
-## Step 2 — Stale brand-kit check (if used)
+## Step 2 — Resolve domain/context
 
-If `frontmatter.requires_brand_kit == true`:
-
-- Resolve the Brand Kit in this order:
-  1. If `frontmatter.brand_kit_id` is present and non-empty, call `aeko_get_brand_kit_by_id(frontmatter.brand_kit_id)` for the exact selected kit.
-  2. Else fall back to `aeko_get_brand_kit(frontmatter.domain_id)` for older Plan.md files.
-  3. If both miss, call `aeko_list_brand_kits(domain_id=frontmatter.domain_id)` for diagnostics, then stop with Brand-Kit-missing message and include any draft/generating/failed kit state shown by the list response.
-- If `frontmatter.brand_kit_snapshot_version` is present and live version is newer → ask user whether to abort or proceed with snapshot. Default to asking.
+Call `aeko_get_domain_info(domain_id)` for base URL, names, keywords, markets, and any site/entity context
+needed by the technical artifact. Ignore legacy `brand_kit_id` / `requires_brand_kit` fields if present in
+older Plan.md files; legacy identity metadata must not block technical artifacts.
 
 ## Step 3 — Dispatch by artifact_type
 
-Each branch uses **embedded spec rules** loaded from `references/recipes/` instead of backend prepare-tools. Read the live brand kit (if requested) and domain info via `aeko_get_domain_info(domain_id)` for context.
+Each branch uses **embedded spec rules** loaded from `references/recipes/` instead of backend prepare-tools. Use domain info + Plan/context for site/entity context.
 
 ### 3.0 Load references (per-artifact, on-demand)
 
@@ -168,7 +163,7 @@ Keep refs loaded and self-validation in a short "Technical details" block after 
 - Plan endpoint unavailable → stop; suggest retry.
 - Plan.md parse error → stop; surface exact parse failure + first 20 lines of response.
 - Contract mismatch → stop; exact mismatch surfaced.
-- Stale brand kit + user declines → stop; leave `pending`.
+- Missing domain/context details → continue where possible and surface deployment notes; leave `pending` only when a required artifact cannot be generated honestly.
 - Self-validation fails → do NOT call complete; write artifact anyway and tell user what to fix.
 - `robots_txt_patch` with missing `site_base_url` → stop; backend data problem.
 

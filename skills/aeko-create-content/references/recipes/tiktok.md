@@ -21,4 +21,5 @@ load_when: SKILL.md §5.1 selects channel=tiktok
 
 ## File output
 
-- Literal filename `tiktok.md`. Single artifact, markdown only — no HTML pair.
+- Single artifact, markdown only: `./aeko-artifacts/<domain_id>/<item_id>/tiktok/<slug>__tiktok.md`
+  (path and `<slug>` per SKILL.md §A). No HTML pair.

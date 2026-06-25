@@ -12,7 +12,7 @@ Drop your brand's preferred PDP HTML structure, JSON-LD field choices, or verifi
 
 ## Precedence
 
-> example file (if present) > recipe defaults > brand kit voice
+> example file (if present) > recipe defaults > Plan/content context
 
 The hard contract in `references/recipes/responsive-html-contract.md` (mobile-first, no JS, no action buttons, semantic tags only, citability baseline) **always applies** — examples can't relax it.
 

@@ -2,7 +2,7 @@
   Per-domain or per-channel voice overrides.
 
   This file is OPTIONAL. The skill reads it (when present) at SKILL.md §5.3 alongside the
-  brand-kit voice and uses it to resolve conflicts between brand kit, recipe, and channel
+  content-context voice and uses it to resolve conflicts between content context, recipe, and channel
   format requirements.
 
   When to use this file:
@@ -11,7 +11,7 @@
       always 합니다체 / AP-style even though brand voice is casual — though the skill already
       enforces a formal register for `press_release` per language).
     - You want to lock down a glossary of preferred terms / forbidden words that the
-      brand kit doesn't capture.
+      content context doesn't capture.
 
   Format:
     - Use H2 headings to scope each override block.

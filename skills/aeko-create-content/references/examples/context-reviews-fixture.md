@@ -88,5 +88,5 @@ back into marketing mush, and never invent entries that aren't here.
 - **Contrarian (§3c):** the monsoon review supports "여름 침구는 냉감보다 건조 속도가 중요하다."
 - **E-E-A-T FAQ (§4):** "세탁하면 줄어드나요?" → "약 2% 수축했고 건조기 사용 시 더 컸습니다. 자연건조를
   권합니다." (experience + specificity + honesty).
-- **Specific Cohort (§3b):** "에어컨을 끄고 자고 싶지만 새벽에 땀 때문에 깨는 1인 가구" — straight from a
+- **Specific Cohort (§3c):** "에어컨을 끄고 자고 싶지만 새벽에 땀 때문에 깨는 1인 가구" — straight from a
   review's persona.

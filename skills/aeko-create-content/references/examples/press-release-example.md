@@ -34,7 +34,7 @@
 
 ## [브랜드 보일러플레이트 헤딩 — 선택]
 
-[브랜드를 한 문단으로 소개. brand_kit.brand_voice_summary와 톤이 같아야 함.]
+[브랜드를 한 문단으로 소개. content context와 톤이 같아야 함.]
 
 ---
 
@@ -59,7 +59,7 @@
 
 ## About [Brand]
 
-[One-paragraph brand boilerplate. Tone should match brand_kit.brand_voice_summary.]
+[One-paragraph brand boilerplate. Tone should match content context.]
 
 ---
 

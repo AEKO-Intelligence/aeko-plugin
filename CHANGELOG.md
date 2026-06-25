@@ -7,6 +7,77 @@ The plugin follows [Semantic Versioning](https://semver.org/). All four host man
 (`.claude-plugin/`, `.codex-plugin/`, `gemini-extension.json`) are kept in version sync so that
 version-keyed host caches refresh on update.
 
+## [0.15.11] — 2026-06
+
+### Changed
+- **Retired `/aeko-brand-kit` from the active skill surface.** Removed the skill folder, onboarding catalog
+  entry, README active entry, and MCP-tool dependencies from active flows.
+- **Formalized context scope.** ICP is now treated as prompt-tracking metadata only; context applies to
+  prompt tracking plus content/PDP optimization.
+- Updated `/aeko-find-prompts-to-track`, `/aeko-prompt-deep-dive`, and `/aeko-visibility-report` to use
+  ICP/context only for prompt discovery, tracking, segmentation, and reporting.
+- Updated `/aeko-create-content`, `/aeko-update-pdp`, and technical/competitor helpers to rely on domain,
+  product, Plan.md, OCR/review evidence, and content context without requiring legacy identity metadata.
+- Bumped Claude, Codex, and Gemini manifests to `0.15.11`.
+
+## [0.15.10] — 2026-06
+
+### Changed
+- **`/aeko-create-content` now uses content context instead of legacy identity metadata.** The coordinator
+  derives audience, situation, voice, constraints, and publisher fallback from Plan.md context fields,
+  product facts, prompt, and domain/title context.
+- Updated drafter, examples, voice overrides, press-release, blog/social, and owned-web recipe language to
+  remove legacy identity metadata as an active dependency. Legacy `brand_kit_id` is tolerated only if old
+  Plans contain it.
+- aeko.shop media upload instructions no longer require legacy identity IDs; if the backend upload tool
+  still demands legacy identity fields, the drafter skips inline uploads and continues with a valid
+  text-first publishable artifact.
+
+## [0.15.9] — 2026-06
+
+### Changed
+- **`/aeko-create-content` now mines image-heavy PDPs harder for proof.** Product substance extraction
+  builds `evidence_facts[]` from visible PDP copy, JSON-LD/meta/table text, image alt/captions, OCR/text
+  fields returned by the backend, and a one-page `WebFetch` fallback when product descriptions are thin.
+  Clinical tests, percentages, sample size, duration, certifications, dimensions, and other numeric proof
+  are prioritized; missing OCR/text is reported as an evidence gap, never fabricated.
+- **Drafts must include realistic trade-offs.** The drafter/framework contract now requires a
+  proportionate caveat, limitation, "not for" note, or fit trade-off so content reads as trustworthy
+  decision support instead of benefits-only copy.
+- **Legacy identity metadata absence no longer blocks publishable drafts.** Missing identity metadata now
+  uses a neutral fallback voice and publisher metadata from the domain, Plan, prompt, and product facts.
+  aeko.shop media uploads that require `resolved_brand_kit_id` are skipped when unavailable, but
+  text-first publishable variations can still be saved and handed off.
+
+## [0.15.8] — 2026-06
+
+### Fixed
+- **`/aeko-create-content` drafter contract alignment.** Updated stale section references from the old
+  `§5.5` path rules to the current SKILL.md `§A` slug/path contract, so parallel drafters no longer
+  receive conflicting filename instructions.
+- **Channel recipe output paths now match the coordinator.** Paste-tier recipes now use
+  `<slug>__<channel>.md`, and the owned-web recipe names the aeko.shop triple as
+  `<slug>__aeko_shop.html`, `<slug>__aeko_shop.meta.json`, and `<slug>__aeko_shop.md`.
+- Removed stale `§5.4`/`§6.x` cross-references from Naver Blog, Tistory, and owned-web recipe notes,
+  replacing them with direct gate descriptions.
+
+## [0.15.7] — 2026-06
+
+### Fixed
+- **Host manifest sync for auto-update.** Bumped the remaining host manifests so version-keyed
+  caches pick up the `/aeko-publish-content` 0.15.6 fixes. The prior Claude marketplace bump had
+  advanced first, leaving Codex/Gemini metadata behind.
+
+## [0.15.6] — 2026-06
+
+### Fixed
+- **`/aeko-publish-content` 409 handling.** Clarified that aeko.shop `409` business gates should
+  surface backend detail verbatim, including entitlement failures such as `brand is not on an active
+  publishing tier`.
+- **Suspended the connect-brand nudge.** The self-verify flow can create a billing-owned quota-0
+  entitlement that blocks app-side publishing, so the optional `connect-brand` prompt stays disabled
+  until account-lookup or entitlement precedence is resolved.
+
 ## [0.15.5] — 2026-06
 
 ### Fixed
@@ -18,7 +89,8 @@ version-keyed host caches refresh on update.
   so the jargon can't leak into user phrasing. Korean user-facing term standardized to **AI 답변 참고 출처**
   (the sources AI references in its answers), replacing the earlier 소스 분석.
 - **Thin-signal note now lists only the sources that actually loaded** in `/aeko-create-content` —
-  prevents claiming "product info" when the product fetch failed and only prompt + brand kit are present.
+  prevents claiming "product info" when the product fetch failed and only prompt + legacy identity context
+  are present.
 - Fixed a stale `보도자료` slug in the action-center addon list → `press_release` (channels stay
   ASCII/language-neutral).
 
@@ -28,8 +100,8 @@ version-keyed host caches refresh on update.
 - **`/aeko-create-content` no longer stalls on thin citation signal.** When a brand is new (zero
   citations, prompts still in an AEKO re-query cycle, or an un-indexed domain / own-content 404), the
   skill previously could improvise an extra "how should I proceed?" elicitation form that failed to
-  complete. Thin signal is now explicitly the normal early state, not a decision point: with brand kit
-  + product substance present, the skill proceeds straight to channel selection. The only two user
+  complete. Thin signal is now explicitly the normal early state, not a decision point: with identity
+  context + product substance present, the skill proceeds straight to channel selection. The only two user
   prompts are mode selection (Step 2.5) and channel/media (Step 4); inventing extra forms is barred.
 - **Korean terminology:** user-facing copy now uses **소스 분석** (source analysis) instead of **포렌식**
   (forensics), which read as crime-lab jargon to marketers. Applied to `/aeko-create-content` and
@@ -127,9 +199,15 @@ schema trick.
 ## [0.13.0] — 2026-05
 
 ### Fixed
-- Publish-pipeline skill fixes: correct publish edit-path, loud product/image warnings, brand-kit
+- Publish-pipeline skill fixes: correct publish edit-path, loud product/image warnings, identity-context
   terminology.
 
+[0.15.11]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
+[0.15.10]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
+[0.15.9]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
+[0.15.8]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
+[0.15.7]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
+[0.15.6]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.5]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.4]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.3]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main

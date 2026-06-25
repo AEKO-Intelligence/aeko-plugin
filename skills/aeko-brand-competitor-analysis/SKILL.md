@@ -8,7 +8,7 @@ description: >
   brand doesn't. Replaces the retired `aeko_get_product_analysis` backend
   tool and the legacy `/competitive-research` skill.
 argument-hint: "[domain-id] <competitor>"
-allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_brand_kit, aeko_search_research_prompts, aeko_get_tracked_prompt, aeko_get_visibility_summary, WebSearch, WebFetch, Write
+allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_search_research_prompts, aeko_get_tracked_prompt, aeko_get_visibility_summary, WebSearch, WebFetch, Write
 ---
 
 # AEKO Brand Competitor Analysis
@@ -32,7 +32,7 @@ Keep slash commands, IDs, file paths, channel slugs, schema keys, and tool names
 ## Step 1 — Resolve user's domain + brand context
 
 1. Parse `$1` / `$2`. If first positional is clearly a UUID → `domain_id`, second is competitor. Else treat the positional as competitor and resolve domain via `aeko_list_domains`.
-2. `aeko_get_domain_info(domain_id)` + `aeko_get_brand_kit(domain_id)` to ground the "vs us" comparison.
+2. `aeko_get_domain_info(domain_id)` to ground the "vs us" comparison using domain names, URLs, keywords, market, industry, and any surfaced context.
 
 If competitor is a name (not URL), run a quick `WebSearch` for `"<competitor>" official site` to resolve to a root domain. Confirm with the user if ambiguous.
 
@@ -52,7 +52,7 @@ Record the sources. Do NOT fabricate; if a search returns empty, note that.
 This is the AEKO-grounded layer — skip this step and you're just a WebSearch wrapper.
 
 1. `aeko_get_visibility_summary(domain_id, scope="cited_sources")` — surfaces pages from the user's domain AI engines cite.
-2. For each of the user's top 5-10 tracked prompts (derive from `brand_kit.brand_keywords[]` + `aeko_search_research_prompts(scope=..., country=...)` if no tracked set yet):
+2. For each of the user's top 5-10 tracked prompts (derive from domain keywords/context + `aeko_search_research_prompts(scope=..., country=...)` if no tracked set yet):
    - Call `aeko_get_tracked_prompt(prompt_id, window="30d")` for cited-source analysis.
    - Count how often the competitor's brand name appears in `responses[].mentions`.
    - Count how often the competitor's root domain appears in `responses[].citations[].domain`.

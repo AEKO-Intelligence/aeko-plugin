@@ -96,7 +96,7 @@ For `aeko-create-content`, that mapping lives in §5.0 of [SKILL.md](skills/aeko
 
 The **precedence rule** when these conflict:
 
-> voice-overrides > example file > recipe defaults > brand kit `tone_of_voice`
+> voice-overrides > example file > content context > recipe defaults
 
 So your example file overrides the generic recipe's defaults, but the recipe's hard acceptance gates (like "5–12 hashtags" for Instagram) still apply. If you want to override an acceptance gate too — e.g., your brand uses 3 hashtags, not 5 — that's what `voice-overrides.md` is for (§5).
 
@@ -217,7 +217,7 @@ Same `## domain: <id>` block format as the other skills.
 
 ## 7. Advanced — voice overrides (universal pattern)
 
-`references/style/voice-overrides.md` is for rules that don't fit the brand kit — usually because they're **per-channel** or **per-domain** exceptions. Same pattern across all three executor skills (each skill has its own `voice-overrides.md`; the file isn't shared).
+`references/style/voice-overrides.md` is for rules that should be stricter than the domain's general content context — usually because they're **per-channel** or **per-domain** exceptions. Same pattern across all three executor skills (each skill has its own `voice-overrides.md`; the file isn't shared).
 
 Format (H2 blocks scope the rule):
 
@@ -238,10 +238,10 @@ Format (H2 blocks scope the rule):
 
 The skill reads this at §5.3 voice-discipline time and applies any block scoped to the current `frontmatter.domain_id` and the current channel. Unscoped blocks (e.g., a top-level `## glossary`) apply globally.
 
-When to use this vs. the brand kit:
-- **Brand kit** is for sentence-level register: *how should this brand sound?*
+When to use this vs. AEKO context:
+- **Content context** is the broad source of audience, situation, voice, constraints, and must-include facts for content optimization.
 - **voice-overrides** is for channel/domain-specific exceptions: *for this brand on this channel, override X.*
-- If you run multiple brands from one AEKO install, voice-overrides is essential — the brand kit only handles one voice at a time.
+- If you run multiple brands from one AEKO install, voice-overrides is essential because each skill reads the block scoped to the current `domain_id` and channel.
 
 ## 8. Contributing back
 
@@ -317,7 +317,7 @@ skills/aeko-fix-technical/
         └── voice-overrides.md                  ← edit for per-domain technical conventions
 ```
 
-Other AEKO skills (research, reporting, brand-kit) don't currently use `references/` — they're under Anthropic's 1,500-word target and don't have the kind of customizable structural detail that benefits from extraction.
+Other AEKO skills (research and reporting) don't currently use `references/` — they're under Anthropic's 1,500-word target and don't have the kind of customizable structural detail that benefits from extraction.
 
 ---
 
@@ -416,7 +416,7 @@ Anthropic의 스킬 시스템은 콘텐츠를 3단계로 로드합니다:
 
 이들이 충돌할 때의 **우선순위 규칙**:
 
-> voice-overrides > 예시 파일 > 레시피 기본값 > 브랜드 키트의 `tone_of_voice`
+> voice-overrides > 예시 파일 > 콘텐츠 컨텍스트 > 레시피 기본값
 
 즉, 예시 파일이 일반 레시피의 기본값을 덮어씁니다. 단, 레시피의 하드 수용 게이트(예: Instagram의 "해시태그 5–12개")는 여전히 적용됩니다. 수용 게이트도 덮어쓰고 싶다면 — 예: 우리 브랜드는 해시태그 3개 — 그게 `voice-overrides.md`의 역할입니다(§5).
 
@@ -537,7 +537,7 @@ Refs loaded:   recipes/{pdp-scaffold,responsive-html-contract,json-ld-schemas}.m
 
 ## 7. 고급 — 보이스 오버라이드 (공통 패턴)
 
-`references/style/voice-overrides.md`는 브랜드 키트에 들어가지 않는 규칙을 위한 곳입니다 — 보통 **채널별** 또는 **도메인별** 예외이기 때문입니다. 세 executor 스킬 모두 동일한 패턴 (각 스킬이 자체 `voice-overrides.md`를 가짐 — 파일은 공유되지 않음).
+`references/style/voice-overrides.md`는 도메인의 일반 콘텐츠 컨텍스트보다 더 강하게 적용해야 하는 규칙을 위한 곳입니다 — 보통 **채널별** 또는 **도메인별** 예외이기 때문입니다. 세 executor 스킬 모두 동일한 패턴 (각 스킬이 자체 `voice-overrides.md`를 가짐 — 파일은 공유되지 않음).
 
 형식 (H2 블록이 규칙의 범위를 정의):
 

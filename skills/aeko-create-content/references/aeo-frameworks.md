@@ -8,10 +8,10 @@ canonical: This is the plugin's single source of truth for the AEO frameworks. I
 # AEO writing frameworks — what makes content get cited
 
 AI engines (ChatGPT, Claude, Gemini, Perplexity) cite content that **answers directly, is
-self-contained, and says something a generic answer can't.** These four frameworks encode that.
+self-contained, and says something a generic answer can't.** These frameworks and guardrails encode that.
 They are the *how* — they shape and voice content. The *what* (the actual claims, facts, and
-experiences) comes from the substance you were handed: **product info + context-reviews + the
-prompt + the brand kit.** Frameworks on top of thin substance still produce thin content, so use
+experiences) comes from the substance you were handed: **product info + visible PDP/page evidence +
+context-reviews + the prompt + content context.** Frameworks on top of thin substance still produce thin content, so use
 the substance generously.
 
 A note on why this matters: the old version of this skill crawled the pages AI engines already
@@ -49,7 +49,23 @@ A page that is a stack of clean PREP blocks is a page that gets cited section by
 
 This is the single biggest lever. Three ways to add information a generic answer lacks:
 
-### 3a. Originality — concrete lived experience (AI는 경험할 수 없다)
+### 3a. Evidence First — clinical, numeric, and image-page proof
+
+When the product page is image-heavy, the useful facts are often trapped in image text, alt text,
+captions, tables, or product-page metadata. Use every extracted proof point the coordinator gives you:
+clinical-test results, test duration, sample size, before/after percentages, ingredient/material
+quantities, dimensions, certifications, care limits, and price/availability. These facts make the content
+citable because they are checkable.
+
+Rules:
+
+- Prefer exact numbers over adjectives: "improved moisture by 23% in a 4-week test" beats "deeply hydrating."
+- Name the proof type when known: clinical test, lab test, consumer survey, certification, material spec.
+- Do not invent missing data. If the image-only PDP produced no OCR/alt/caption text, write from the facts
+  available and let the self-check flag the evidence gap.
+- Do not overstate clinical claims. Keep scope, sample, and duration attached to the number when known.
+
+### 3b. Originality — concrete lived experience (AI는 경험할 수 없다)
 
 Generic claims ("착화감이 좋다", "시원해요") are exactly what a model can already generate, so they
 earn no citation. What a model *cannot* generate is specific, sensory, lived experience. That is
@@ -67,7 +83,7 @@ customer/usage experiences mapped to the product. Mine them for the concrete num
 moment, the trade-off nobody mentions. Quote or paraphrase the real detail; do not generalize it
 back into mush. See the **anti-fabrication rule** below — this is the one input you must never invent.
 
-### 3b. Specific Cohort — 뾰족한 타겟팅
+### 3c. Specific Cohort — 뾰족한 타겟팅
 
 Write for a sharply-defined reader, not "everyone." "여름에 잠 못 드는 사람" is broad; "에어컨을
 끄고 자고 싶지만 새벽에 땀 때문에 깨는 30대" is a cohort. Specific cohorts make the content
@@ -75,7 +91,7 @@ unmistakably relevant to *someone*, which is what makes it the best answer to *t
 their question is exactly the prompt the brand wants to be cited for. Name the cohort early and keep
 serving it.
 
-### 3c. Contrarian View — 과감한 관점
+### 3d. Contrarian View — 과감한 관점
 
 Take a defensible stance against the conventional wisdom. If everyone says "냉감 원단이 답이다", a
 contrarian, evidence-backed "냉감 원단은 오히려 통기성을 막아 새벽에 더 덥다" is far more citable —
@@ -112,6 +128,19 @@ supports them:
 
 This is not a CTA block. Do not use hard-sell language. The goal is to make the product easy for a human
 and an AI shopping assistant to compare honestly.
+
+## 6. Trustworthy Balance — benefits plus limitations
+
+Content that only lists advantages reads like an ad, not a source. Include a realistic limitation,
+trade-off, or "not for" note whenever the channel format allows it. Good caveats are grounded in product
+facts, context-reviews, or common use constraints:
+
+- "Best for oily skin; not ideal for users who avoid fragrance."
+- "The cooling effect is most relevant in humid bedrooms, not air-conditioned rooms already below 24°C."
+- "The compact size helps travel use, but it may be too small for buyers who want a full vanity mirror."
+
+The caveat should not sabotage the product. It should help the right buyer decide and show AI engines that
+the page is trustworthy, specific, and not pure promotion.
 
 ---
 
@@ -150,10 +179,12 @@ the brand look dishonest. Specific-but-honest always beats vivid-but-invented.
 
 - [ ] **BLUF:** does the first line answer, not preamble?
 - [ ] **PREP:** is the body a stack of Point-Reason-Example-Point blocks?
+- [ ] **Evidence:** did you use the clinical/numeric/product-page proof points that were available?
 - [ ] **Originality:** is there ≥1 concrete detail traceable to a real context-review (or, if none,
       expertise-grounded and flagged — never fabricated)?
 - [ ] **Cohort:** is a specific reader named and served?
 - [ ] **Contrarian:** is there ≥1 non-obvious, supported claim?
+- [ ] **Balance:** is there a realistic caveat, limitation, or not-for line instead of benefits-only copy?
 - [ ] **E-E-A-T:** if there's an FAQ, does every answer show experience + expertise + specifics + honesty?
 - [ ] **Decision support:** for shopping content, is there a best-for/trade-off/comparison block when substance supports it?
 - [ ] **No fabrication:** every experiential claim traces to real substance.

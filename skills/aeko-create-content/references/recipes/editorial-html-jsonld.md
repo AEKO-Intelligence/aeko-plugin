@@ -12,7 +12,7 @@ Two distinct artifact layouts live in this recipe:
 
 | Channel | Artifacts | Where the `.html` lands |
 |---|---|---|
-| `aeko_shop` | `<slug>.html` (publish-ready body) + `<slug>.meta.json` (publish-ready metadata) + `<slug>.md` (debug mirror) | Shipped to aeko.shop's backend by `/aeko-publish-content`. The `.html` becomes `PostUpsert.body_html` **verbatim**; `.meta.json` populates the top-level publish fields. Round-trips through `aeko-shop-backend/app/sanitizer.py`. |
+| `aeko_shop` | `<slug>__aeko_shop.html` (publish-ready body) + `<slug>__aeko_shop.meta.json` (publish-ready metadata) + `<slug>__aeko_shop.md` (debug mirror) | Shipped to aeko.shop's backend by `/aeko-publish-content`. The `.html` becomes `PostUpsert.body_html` **verbatim**; `.meta.json` populates the top-level publish fields. Round-trips through `aeko-shop-backend/app/sanitizer.py`. |
 | `own_store_blog` | `<slug>__own_store_blog.html` (self-contained) + `<slug>__own_store_blog.md` (mirror) | The brand imports/pastes the `.html` into their own Cafe24/Shopify store blog **as-is**. Saved to the backend via `aeko_save_content_variation`. **Not** sanitizer-constrained; **must** embed its own JSON-LD. |
 
 The two channels differ fundamentally in **who renders the schema**:
@@ -59,7 +59,7 @@ Emit a flat stream of allow-listed body tags only. No file-level wrapper:
 
 What this file MUST NOT contain (each triggers HTTP 400 at publish): `<!doctype>`, `<html>`, `<head>`, `<body>`, `<meta>`, `<title>`, `<link>`, `<article>`, `<header>`, `<section>`, `<footer>`, `<h1>`, `<script>` (including JSON-LD), `<style>`, and any `<a data-aeko-product-ref>` / `<a data-product-sku>` attribute (not in the sanitizer's allow-list; no frontend upgrader exists).
 
-Metadata that historically lived in `<head>` (title, og_description, canonical, locale, hero image) is carried by the sibling `<slug>.meta.json` — it is **never** embedded in the body HTML.
+Metadata that historically lived in `<head>` (title, og_description, canonical, locale, hero image) is carried by the sibling `<slug>__aeko_shop.meta.json` — it is **never** embedded in the body HTML.
 
 ---
 
@@ -85,7 +85,7 @@ Verbatim from `aeko-shop-backend/app/sanitizer.py`. The sanitizer raises `HTTPEx
 
 `data-variant` value enum: `info | warn | product` — the sanitizer rejects any other value when `role="callout"`. Only `product` has a wired frontend consumer; `info` and `warn` are reserved and not required by this recipe.
 
-**Allowed `<a href>` protocols:** `http`, `https`, `mailto`. Only link to **real URLs you were given in the brief** (`products[].outbound_url`, brand kit links, user-supplied media). **Never invent URLs.**
+**Allowed `<a href>` protocols:** `http`, `https`, `mailto`. Only link to **real URLs you were given in the brief** (`products[].outbound_url`, Plan/context links, user-supplied media). **Never invent URLs.**
 
 **Allowed `<img src>` origins:** must match `settings.allowed_image_origins ∪ {settings.media_public_base_url}` — the AEKO media CDN (today `https://aekoshop-htgrg9fha0bbfmed.z02.azurefd.net`, plus the `aekoshopmedia.blob.core.windows.net` blob origin). **Always embed the `public_url` returned by `aeko_request_media_upload` verbatim** — that is the configured origin. Any other origin (the brand's own non-AEKO domain, a hand-written `cdn.aeko.shop`) returns 400. `cdn.aeko.shop` is **not** a serving origin.
 
@@ -93,7 +93,7 @@ Verbatim from `aeko-shop-backend/app/sanitizer.py`. The sanitizer raises `HTTPEx
 
 ---
 
-## `<slug>.meta.json` — `aeko_shop` publish payload (sidecar)
+## `<slug>__aeko_shop.meta.json` — `aeko_shop` publish payload (sidecar)
 
 **Scope:** `aeko_shop` only. The companion JSON that `/aeko-publish-content` reads as the single source of truth for top-level publish fields. Mirror of `PostUpsert` in `aeko-shop-backend/app/schemas.py`. `brand_id` is added by the courier from `frontmatter.domain_id`; everything else comes from this file.
 
@@ -120,7 +120,7 @@ Field-by-field constraints (mirror `PostUpsert`):
 |---|---|---|---|
 | `locale` | yes | str | 2..12 chars. `ko`, `en`, `en-US`, `ko-KR`, `ja`, `zh`, `es` all valid. Normalize common language names (`Korean`/`한국어`→`ko`, `English`/`영어`→`en`, `Japanese`→`ja`, `Chinese`→`zh`, etc.). If the value is a plausible BCP-47 language tag, use it; otherwise fall back to `en` and emit a one-line warning. |
 | `title` | yes | str | 1..300 chars. |
-| `slug` | **required (`aeko_shop`)** | str | A **meaningful English** slug (translate, don't transliterate) — see SKILL.md §5.5.6. Must match `^[a-z0-9]+(?:-[a-z0-9]+)*$` (lowercase ASCII, hyphen-separated; ≤220); for a **non-ASCII (Korean) title** it must NOT equal the §5.5.3 romanized filename slug (for an already-English title that equality is fine). Becomes the post URL slug (backend appends `-2`/`-3` on collision). Enforced by the SKILL §6.3 hard gate — omitting it (or reusing a romanized filename slug) fails the draft. The backend itself allows null and would otherwise transliterate the title to phonetic ASCII; the gate prevents that. **Never Korean/non-ASCII** — the backend rejects it (422). |
+| `slug` | **required (`aeko_shop`)** | str | A **meaningful English** slug (translate, don't transliterate) — see SKILL.md §A.4. Must match `^[a-z0-9]+(?:-[a-z0-9]+)*$` (lowercase ASCII, hyphen-separated; ≤220); for a **non-ASCII (Korean) title** it must NOT equal the §A.3 romanized filename slug (for an already-English title that equality is fine). Becomes the post URL slug (backend appends `-2`/`-3` on collision). Enforced by the SKILL Step 6 hard gate — omitting it (or reusing a romanized filename slug) fails the draft. The backend itself allows null and would otherwise transliterate the title to phonetic ASCII; the gate prevents that. **Never Korean/non-ASCII** — the backend rejects it (422). |
 | `og_description` | **yes** (recipe requirement, even though `PostUpsert` allows null) | str | ≤500 chars. Absent → the rendered page's `speakable` JSON-LD does not emit (`structured-data.ts:67-73`), so always include. |
 | `hero_image_url` | recommended | str \| null | Absolute https URL. Uploaded heroes use the presign `public_url` (AEKO media CDN); a **product** hero may use `parsed_products[0].image_url` on the brand's own https CDN — the frontend renders this via `next/image` (any https host), not the body sanitizer, so brand-CDN origins are fine **here only**. Never a hand-written `cdn.aeko.shop`. Renders as the 16:9 hero `<Image>` above body HTML (page.tsx). |
 | `source_content_id` | yes | str | 1..240 chars. Set to `frontmatter.item_id`. **Advisory:** the content-variation publish path derives its own item-scoped key `aeko-item:{item_id}` and ignores this field — re-publishes overwrite the same post in place (idempotent by `(brand_id, aeko-item:{item_id})`). |
@@ -142,7 +142,12 @@ No other top-level fields are allowed. **Field-growth path:** when the backend a
    - `content_sha256` = SHA-256 hex (lowercase, 64 chars).
    - `content_md5` = base64-encoded **raw** MD5 digest (24 chars incl. padding — **NOT hex**; the backend Pydantic field is `min_length=24, max_length=24`).
    - `byte_length` = file size in bytes.
-3. **Request the presign:** call `aeko_request_media_upload(brand_kit_id=<resolved_brand_kit_id from brief>, source_content_id=<item_id>, filename=<basename only>, content_type=<image/(jpeg|png|webp|gif)>, content_sha256=<hex>, content_md5=<base64>, byte_length=<n>)`. Returns `{upload_url, public_url, blob_key, expires_at}`.
+3. **Request the presign:** call `aeko_request_media_upload` with the current backend-required identity
+   fields from the brief (for example `domain_id` / `source_content_id`) plus `filename`,
+   `content_type`, `content_sha256`, `content_md5`, and `byte_length`. Returns
+   `{upload_url, public_url, blob_key, expires_at}`. Do not require legacy identity IDs. If the upload
+   tool still demands legacy identity fields or cannot presign, skip that image, warn in the self-check,
+   and continue with a text-first post plus product hero/card imagery where available.
 4. **PUT the bytes:** `curl -X PUT --data-binary @<staged_path> -H "x-ms-blob-type: BlockBlob" -H "Content-Type: <type>" -H "Content-MD5: <base64>" "<upload_url>"`. Every header is required; `Content-MD5` MUST equal the base64 from step 2; verify HTTP 2xx.
 5. **Verify reachability:** `curl -fsSI "<public_url>"` (fallback `curl -fsS -r 0-0 "<public_url>"`). Continue only on 2xx.
 6. **Embed the returned `public_url` VERBATIM** (do not rewrite the host): `<figure><img src="<public_url>" alt="<alt>" width="<w>" height="<h>" loading="lazy"></figure>`. Also record it into `.meta.json` `media[]` with matching `alt_text`.
@@ -187,11 +192,11 @@ The single most likely silent-failure mode. The rules:
 
 1. **`featured_products[].product_source_id`** in `.meta.json` is `ProductRef.source_id` (the external brand-registered identifier; e.g. a Shopify variant ID). Backend joins on `Product.source_id` via `_product_by_source(brand_id, source_id)` in `aeko-shop-backend/app/routes/internal.py:352-356`.
 2. **`data-product-source-id` on every `<figure data-variant="product">`** in `.html` carries the same `ProductRef.source_id`.
-3. **Hard acceptance gate** (recipe §6.3): the set of `data-product-source-id` values in `.html` equals the set of `featured_products[].product_source_id` values in `.meta.json` — count and set match.
+3. **Hard acceptance gate** (Acceptance gates below): the set of `data-product-source-id` values in `.html` equals the set of `featured_products[].product_source_id` values in `.meta.json` — count and set match.
 
 `build_plan_md()` hydrates `products[]` (with `source_id` from `StoreProducts.external_product_id`) for `상품 선택`-mode plans. When `products[]` is empty (brand-wide mode, or no store-synced products), the product-callout path is simply absent: `.meta.json` has empty `featured_products[]`, no `<figure>` callouts appear, and the frontend's "Featured products" section just doesn't render.
 
-When `ProductRef.source_id` is missing (the product isn't synced from the brand's connected store), **drop the product callout entirely and warn loudly** per SKILL.md §1.1 — tell the user the product won't appear and that the store catalog needs to be connected/synced. Do not fabricate a value; do not use `ProductRef.id` (UUID).
+When `ProductRef.source_id` is missing (the product isn't synced from the brand's connected store), **drop the product callout entirely and warn loudly** per SKILL.md Step 1 — tell the user the product won't appear and that the store catalog needs to be connected/synced. Do not fabricate a value; do not use `ProductRef.id` (UUID).
 
 ---
 
@@ -201,7 +206,7 @@ When `ProductRef.source_id` is missing (the product isn't synced from the brand'
 - Every `<img>` carries `alt`, `width`, `height`, `loading`. `loading="lazy"` is recommended for every body image; the rendered page eager-loads the top-level hero itself.
 - User-supplied images uploaded via the procedure above land at `<media_public_base_url>/brands/<brand_id>/posts/<source_content_id>/<sha256>.<ext>` — reference the returned `public_url` directly and verbatim.
 - `parsed_products[].image_url` usually points at the **brand's own** catalog CDN, not the AEKO media CDN. It is fine for the `hero_image_url` and the bottom product card (rendered by `next/image`, any https host). For an **inline body** `<figure>` callout the image must be on an AEKO media origin — re-host via the upload procedure or omit the inline `<img>` and let the bottom card carry it.
-- No `media_specs:` YAML for `aeko_shop`. The artifact is publish-ready or it isn't (SKILL.md §6.1 hard gate fails on `[image: …pending]` placeholders).
+- No `media_specs:` YAML for `aeko_shop`. The artifact is publish-ready or it isn't (SKILL.md Step 6 hard gate fails on `[image: …pending]` placeholders).
 
 ---
 
@@ -242,11 +247,11 @@ When emitting both Article and Product, either place them in separate `<script>`
   "headline": "<headline (≤110 chars per Schema.org guidance)>",
   "datePublished": "<ISO 8601>",
   "dateModified": "<ISO 8601, if known>",
-  "author": { "@type": "Person|Organization", "name": "<from brand kit, else 'Editorial'>" },
+  "author": { "@type": "Person|Organization", "name": "<from content context, else domain/product name, else 'Editorial'>" },
   "publisher": {
     "@type": "Organization",
-    "name": "<brand_kit.brand_name>",
-    "logo": { "@type": "ImageObject", "url": "<brand_kit.logo_url if present>" }
+    "name": "<publisher from content context, else domain/product name, else 'Publisher'>",
+    "logo": { "@type": "ImageObject", "url": "<logo URL if present in Plan/context>" }
   },
   "image": "<hero/figure image URL if available>",
   "inLanguage": "<frontmatter.target_language>"
@@ -380,7 +385,7 @@ The `own_store_blog` metadata schema (`OwnStoreBlogMetadata`) is looser than `ae
 - A `Product` JSON-LD block is present for **every** attached product (set of products in `Product` blocks == set rendered as callouts). **Hard gate when products are attached.**
 - Every `<img>` carries `alt`, `width`, `height`, `loading`, and `style="max-width:100%;height:auto"`. **Hard gate.**
 - No placeholder markers remain (no `[image: …pending]`, no `<…>` template tokens). **Hard gate.**
-- Only real URLs are referenced (product `outbound_url` / `image_url` on the brand CDN, brand kit links, user-supplied media). No invented URLs; no AEKO media CDN presign (that's aeko_shop-only). **Hard gate.**
+- Only real URLs are referenced (product `outbound_url` / `image_url` on the brand CDN, Plan/context links, user-supplied media). No invented URLs; no AEKO media CDN presign (that's aeko_shop-only). **Hard gate.**
 
 ---
 
@@ -394,13 +399,13 @@ The `own_store_blog` metadata schema (`OwnStoreBlogMetadata`) is looser than `ae
 - The opening tag is exactly `<script type="application/ld+json">` — no extra attributes, no whitespace differences in `type=`.
 - `@context` is `https://schema.org` (not `http://`, not omitted).
 - For numeric fields like `ratingValue`, do not include them unless the body actually justifies a number.
-- **`inLanguage` must be a valid ISO-639-1 / BCP 47 code** (e.g. `"ko"`, `"en"`, `"en-US"`). Defensively normalize per the `<slug>.meta.json` locale rule above.
+- **`inLanguage` must be a valid ISO-639-1 / BCP 47 code** (e.g. `"ko"`, `"en"`, `"en-US"`). Defensively normalize per the `<slug>__aeko_shop.meta.json` locale rule above.
 
 ---
 
 ## HTML emission notes
 
-- (`own_store_blog` only) The `media_specs:` YAML block (SKILL.md §5.4), when present in lieu of real media, is mirrored into the HTML as an HTML comment. Sanitize: replace any `--` sequence inside user-supplied strings with `- -` before wrapping in `<!-- … -->` so the comment can't close prematurely. **Not applicable to `aeko_shop`** — it has no `media_specs:` (publish-ready or not).
+- (`own_store_blog` only) The `media_specs:` YAML block from the channel recipe, when present in lieu of real media, is mirrored into the HTML as an HTML comment. Sanitize: replace any `--` sequence inside user-supplied strings with `- -` before wrapping in `<!-- … -->` so the comment can't close prematurely. **Not applicable to `aeko_shop`** — it has no `media_specs:` (publish-ready or not).
 - HTML files are minified-optional; readable indentation is fine.
 - The skill never injects CSS or external `<script>` tags. For `aeko_shop`, no `<script>` at all. For `own_store_blog`, the only `<script>` permitted is the `application/ld+json` JSON-LD block(s).
 
@@ -410,14 +415,14 @@ The `own_store_blog` metadata schema (`OwnStoreBlogMetadata`) is looser than `ae
 
 ### Common to both owned-web channels
 
-Both the `.md` AND `.html` artifacts must exist. The `.html` parses with `lxml` / `html.parser`. No placeholder markers remain (no `[image: …pending]`, no `<…>` template tokens). Only real URLs are referenced (product `outbound_url` / `image_url`, brand kit links, user-supplied media) — never invented URLs.
+Both the `.md` AND `.html` artifacts must exist. The `.html` parses with `lxml` / `html.parser`. No placeholder markers remain (no `[image: …pending]`, no `<…>` template tokens). Only real URLs are referenced (product `outbound_url` / `image_url`, Plan/context links, user-supplied media) — never invented URLs.
 
 ### `aeko_shop`-only gates
 
-- `<slug>.meta.json` exists and parses with `json.loads`.
-- `<slug>.meta.json` validates against the `PostUpsert` shape table above: required fields present, every field within its constraint (length, count caps, absolute-https origin for `hero_image_url`, valid `locale`, valid `product_source_id` length, etc.).
-- `<slug>.meta.json` `slug` is present and matches `^[a-z0-9]+(?:-[a-z0-9]+)*$`; when `resolved_title` is non-ASCII (Korean) it is NOT the §5.5.3 romanized filename slug. **Hard gate.**
-- `<slug>.html` is sanitizer-safe: zero matches for `<(script|article|header|footer|section|h1|meta|title|link|html|body|head)\b`. **Hard gate.**
+- `<slug>__aeko_shop.meta.json` exists and parses with `json.loads`.
+- `<slug>__aeko_shop.meta.json` validates against the `PostUpsert` shape table above: required fields present, every field within its constraint (length, count caps, absolute-https origin for `hero_image_url`, valid `locale`, valid `product_source_id` length, etc.).
+- `<slug>__aeko_shop.meta.json` `slug` is present and matches `^[a-z0-9]+(?:-[a-z0-9]+)*$`; when `resolved_title` is non-ASCII (Korean) it is NOT the §A.3 romanized filename slug. **Hard gate.**
+- `<slug>__aeko_shop.html` is sanitizer-safe: zero matches for `<(script|article|header|footer|section|h1|meta|title|link|html|body|head)\b`. **Hard gate.**
 - Every `<a>` tag's attributes are a subset of `{href, title, rel, target, class, data-mention-type, data-mention-id}`. No `data-aeko-product-ref` or `data-product-sku`. **Hard gate.**
 - Every body `<img src>` is on the AEKO media CDN — the presign `public_url` (`settings.allowed_image_origins ∪ {settings.media_public_base_url}`) — no other origins (no brand-domain URL, no hand-written `cdn.aeko.shop`). **Hard gate.** (Confirms the upload procedure ran and no external URL leaked in.)
 - Every `<img>` carries `alt`, `width`, `height`, `loading`. **Hard gate.**
@@ -428,7 +433,7 @@ Both the `.md` AND `.html` artifacts must exist. The `.html` parses with `lxml` 
 
 ### Structured-data completeness
 
-Article (or BlogPosting) + Brand/Organization (the `publisher`) must always be present in the emitted/rendered structured data. **Product** structured data must be present when products are attached:
+Article (or BlogPosting) + Brand/Organization (the `publisher`) must always be present in the emitted/rendered structured data. Derive a neutral publisher name from content context, domain, Plan title, or product name; do not block the artifact on legacy identity data. **Product** structured data must be present when products are attached:
 - `aeko_shop`: the rendered page derives Article + Brand always, and Product (with `offers` when price/availability snapshots are supplied) whenever `featured_products[]` is non-empty — so a draft with attached products MUST carry those products through `featured_products[]`.
 - `own_store_blog`: the **embedded** in-body JSON-LD carries Article (or BlogPosting) + the `publisher` Organization always, plus an embedded `Product` block for each attached product.
 
@@ -449,7 +454,7 @@ Field map — `.meta.json` → `aeko_save_content_variation(metadata=...)`:
 | `.meta.json` field | `metadata` key | Required for `aeko_shop`? |
 |---|---|---|
 | `title` | (top-level `title` arg, not in `metadata`) | yes — top-level arg |
-| `slug` | `slug` | **required** — meaningful English slug (§5.5.6); lowercase-ASCII `^[a-z0-9]+(?:-[a-z0-9]+)*$`; for a non-ASCII title, not the §5.5.3 romanized filename slug. Enforced by SKILL §6.3 hard gate. |
+| `slug` | `slug` | **required** — meaningful English slug (SKILL.md §A.4); lowercase-ASCII `^[a-z0-9]+(?:-[a-z0-9]+)*$`; for a non-ASCII title, not the §A.3 romanized filename slug. Enforced by SKILL Step 6 hard gate. |
 | `og_description` | `og_description` | **yes** |
 | `hero_image_url` | `hero_image_url` | recommended (may be `null`; when present, an absolute https URL — the presign `public_url`, or a brand-CDN `parsed_products[0].image_url`) |
 | `featured_products[].product_source_id` | `featured_product_source_ids` (flat `list[str]`) | **yes** (may be `[]`) |

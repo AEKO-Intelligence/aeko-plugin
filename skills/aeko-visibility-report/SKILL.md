@@ -8,7 +8,7 @@ description: >
   pick the lookback (7d / 14d / 30d / 90d). Replaces the retired
   `/create-visibility-report` and the weekly-only `/aeko-weekly-report`.
 argument-hint: "[domain-id] [window] [depth]"
-allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_brand_kit, aeko_get_visibility_summary, aeko_get_score, Write
+allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_visibility_summary, aeko_get_score, Write
 ---
 
 # AEKO Visibility Report
@@ -29,11 +29,13 @@ Keep slash commands, IDs, file paths, channel slugs, schema keys, and tool names
 - `window` (optional) — `7d` (default), `14d`, `30d`, `90d`.
 - `depth` (optional) — `summary` (default) or `full`.
 
-## Step 1 — Resolve domain + context
+## Step 1 — Resolve domain + prompt context
 
 1. Parse `$1` for UUID. If absent → `aeko_list_domains` → pick.
-2. `aeko_get_domain_info(domain_id)` for `base_url`, `brand_keywords`, AI-readiness flags.
-3. `aeko_get_brand_kit(domain_id)` for brand_name + target_audience (used to contextualize the report).
+2. `aeko_get_domain_info(domain_id)` for `base_url`, brand/domain names, domain keywords, AI-readiness
+   flags, and any prompt-tracking ICP/context metadata surfaced by the backend.
+3. Use **ICP + context only for prompt tracking/report segmentation**. Use context, not ICP, when
+   recommending content/PDP optimization actions.
 
 ## Step 2 — Pull visibility data
 
@@ -97,7 +99,9 @@ Add the following sections after the summary:
 | ...    | ...      | ...     | ...      | ...       | Yes / No     |
 ```
 
-(Pull from the `tracked_prompt_metrics` scope's breakdown if it surfaces per-prompt data; else cite the summary data and note that per-prompt detail requires `/aeko-prompt-deep-dive <prompt_id>`.)
+(Pull from the `tracked_prompt_metrics` scope's breakdown if it surfaces per-prompt data; include ICP and
+context columns when present. Else cite the summary data and note that per-prompt detail requires
+`/aeko-prompt-deep-dive <prompt_id>`.)
 
 ```
 ## Cited-source breakdown

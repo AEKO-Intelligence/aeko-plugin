@@ -1,6 +1,6 @@
 {
   "name": "aeko-plugin",
-  "version": "0.15.5",
+  "version": "0.15.11",
   "description": "AEKO skills for Codex — first-run onboarding plus AEO workflows for ecommerce visibility, product pages, content, schema, and action items. User-facing steps mirror the user's language. Pair with the AEKO MCP connector for backend tool access.",
   "author": {
     "name": "AEKO",
@@ -14,7 +14,7 @@
   "interface": {
     "displayName": "AEKO",
     "shortDescription": "AEO skills for ecommerce — onboarding, visibility, PDP, content, schema",
-    "longDescription": "AEKO skills guide Codex through AEO (AI Engine Optimization) workflows for cross-border ecommerce. After install, run /aeko-onboarding to confirm setup, tour the skills, and choose the right next step. User-facing steps mirror the user's language while stable commands, file paths, slugs, and schema keys stay in English/ASCII. Then measure AI visibility, improve product pages for ChatGPT/Claude/Gemini/Perplexity citations, draft citation-ready content, manage your brand kit, and execute action items. Requires the AEKO MCP connector for backend access.",
+    "longDescription": "AEKO skills guide Codex through AEO (AI Engine Optimization) workflows for cross-border ecommerce. After install, run /aeko-onboarding to confirm setup, tour the skills, and choose the right next step. User-facing steps mirror the user's language while stable commands, file paths, slugs, and schema keys stay in English/ASCII. Then measure AI visibility, improve product pages for ChatGPT/Claude/Gemini/Perplexity citations, draft citation-ready content, and execute action items. Requires the AEKO MCP connector for backend access.",
     "developerName": "AEKO",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],

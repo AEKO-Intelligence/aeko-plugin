@@ -126,7 +126,7 @@ Refuse: tell the user to run each executor one item at a time so they can review
 
 - `domain_id` missing AND `aeko_list_domains` returns zero → tell the user to add a domain in the AEKO dashboard first; stop.
 - Both list endpoints unavailable → surface both error messages; suggest the user re-check backend deploy; stop.
-- Zero pending items across all three categories → congratulate the user; suggest checking the Brand Kit (`/aeko-brand-kit <domain_id>`) or running `/aeko-visibility-report <domain_id>`.
+- Zero pending items across all three categories → congratulate the user; suggest running `/aeko-visibility-report <domain_id>` or `/aeko-find-prompts-to-track <domain_id>` to refresh measurement.
 
 ## What this skill never does
 

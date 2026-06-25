@@ -8,7 +8,7 @@ load_when: SKILL.md §5.1 selects channel=instagram
 
 > Substance + quality/voice frameworks live in `../aeo-frameworks.md`. This recipe defines Instagram-specific conventions only. Paste-into-platform: Instagram renders the post; emit clean TEXT (markdown), no HTML/JSON-LD.
 
-- **Language follows `target_language`.** KO brands: KO caption with KO+EN hashtag mix (`#홈인테리어 #homedecor`). Global sellers: single-language hashtags matching the target market — don't bolt KO hashtags onto EN content. `target_audience` overrides if it names a different market.
+- **Language follows `target_language`.** KO brands: KO caption with KO+EN hashtag mix (`#홈인테리어 #homedecor`). Global sellers: single-language hashtags matching the target market — don't bolt KO hashtags onto EN content. Content context overrides if it names a different market.
 - **Caption** — 1 hook line, then 3–5 body lines, then 5–12 hashtags (language per above).
 - **Alt text** — ≤125 chars, language matches caption.
 - **Optional 5-slide carousel outline** only when a multi-slide walkthrough genuinely beats a single image.
@@ -20,4 +20,5 @@ load_when: SKILL.md §5.1 selects channel=instagram
 
 ## File output
 
-- Literal filename `instagram.md` (channel slug, not title slug). Single artifact, markdown only — no HTML pair.
+- Single artifact, markdown only: `./aeko-artifacts/<domain_id>/<item_id>/instagram/<slug>__instagram.md`
+  (path and `<slug>` per SKILL.md §A). No HTML pair.

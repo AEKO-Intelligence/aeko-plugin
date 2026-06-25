@@ -7,7 +7,7 @@ description: >
   the AEKO pipeline re-queries them on cadence. Closes the find → pick →
   track loop without leaving Claude.
 argument-hint: "[domain-id]"
-allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_brand_kit, aeko_search_research_prompts, aeko_track_prompt, aeko_get_tracked_prompts, WebFetch
+allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_search_research_prompts, aeko_track_prompt, aeko_get_tracked_prompts, WebFetch
 ---
 
 # AEKO Find Prompts To Track
@@ -26,13 +26,16 @@ Keep slash commands, IDs, file paths, prompt metadata keys, and tool names in En
 
 - `domain-id` (optional) — UUID of the domain to scope suggestions to. If missing, offer `aeko_list_domains` pick-list.
 
-## Step 1 — Resolve domain + brand context
+## Step 1 — Resolve domain + ICP/context defaults
 
 1. If `$1` is set → use it.
 2. Else → `aeko_list_domains`. If one domain: auto-pick. If multiple: show list and ask.
-3. Call `aeko_get_domain_info(domain_id)` and `aeko_get_brand_kit(domain_id)`. Use these to seed sensible default filters:
-   - `country` = first entry in domain's `selected_markets` if available, else from `target_country` on the brand kit, else ask.
+3. Call `aeko_get_domain_info(domain_id)`. Use domain fields plus any prompt-tracking ICP/context fields
+   surfaced by the backend to seed sensible defaults:
+   - `country` = first entry in domain's `selected_markets` / `target_country` if available, else ask.
    - `scope` = domain's `industry` / `vertical` / `scope` field if set.
+   - `persona` / `icp` = tracked-prompt ICP only. ICP is valid for prompt tracking, not for content/PDP optimization.
+   - `context` = prompt/search context such as buyer situation, use case, pain point, product category, or job-to-be-done.
 
 ## Step 2 — Ask user for filter intent
 
@@ -45,7 +48,8 @@ languages, translate the EN template naturally while keeping platform/country/qu
 
 - 플랫폼: [claude / openai / google / perplexity / all]
 - 국가: [KR / US / JP / ... / all]
-- 페르소나 (예: new_mom, enthusiast, beginner)
+- ICP/페르소나 (프롬프트 추적용, 예: new_mom, enthusiast, beginner)
+- 컨텍스트 (예: 여름 수면, 민감성 피부, 선물 구매)
 - 키워드 (예: "이불 추천", "민감성 피부")
 - 쿼리 유형 (informational / comparison / recommendation / transactional)
 
@@ -58,7 +62,8 @@ What research prompts should I look for? Leave fields blank to use your brand de
 
 - Platform: [claude / openai / google / perplexity / all]
 - Country: [KR / US / JP / ... / all]
-- Persona (e.g. new_mom, enthusiast, beginner)
+- ICP/persona (prompt tracking only, e.g. new_mom, enthusiast, beginner)
+- Context (e.g. hot sleeper, sensitive skin, gift purchase)
 - Keyword (e.g. "bedding recommendation", "sensitive skin")
 - Query type (informational / comparison / recommendation / transactional)
 
@@ -76,8 +81,9 @@ If zero results → widen: drop the most restrictive filter (typically `persona_
 ## Step 4 — Score + rank candidates
 
 For each returned prompt, assemble a relevance score using these signals:
-- **Keyword overlap** between brand kit `brand_keywords[]` + `must_include[]` and the prompt's text or `keywords[]`. High overlap → high score.
-- **Persona match** — prompt's `persona` vs brand kit `target_audience`.
+- **Keyword/context overlap** between domain keywords, product/category context, user-provided context, and the prompt's text or `keywords[]`. High overlap → high score.
+- **ICP/persona match** — prompt's `persona` / `icp` vs the user's prompt-tracking ICP, when provided.
+- **Context match** — prompt context/use case vs the requested context. Context applies here and also later to content optimization.
 - **Latest-response signals** (from the search payload's `latest_response`):
   - High `mention_count` across competitors → the prompt is a battleground worth contesting.
   - Presence of this brand in the mention breakdown → already getting mentioned; may not need tracking (user's call).
@@ -105,7 +111,9 @@ Parse response into a list of row indices → prompt payloads.
 
 ## Step 6 — Pre-flight package limits
 
-Call `aeko_get_tracked_prompts` to see the user's current tracked count. Compare against known package limits (derived from brand kit `metadata.account_tier` or, if unknown, just proceed and let the backend 403 — tell the user that's the fallback).
+Call `aeko_get_tracked_prompts` to see the user's current tracked count. If the backend returns package
+limit/account-tier metadata, compare against it; otherwise proceed and let the backend 403, then surface the
+backend message.
 
 If the user's selection would exceed their package cap → warn, show how many they can track, ask them to narrow.
 
@@ -125,6 +133,8 @@ aeko_track_prompt(
     industry=row.industry,
     vertical=row.vertical,
     persona=row.persona,
+    icp=row.icp,                    # only if the search result provides it
+    context=row.context,            # only if the search result provides it
     tags=row.tags,
 )
 ```

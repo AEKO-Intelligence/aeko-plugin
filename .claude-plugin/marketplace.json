@@ -8,8 +8,8 @@
   "plugins": [
     {
       "name": "aeko-plugin",
-      "description": "AEKO skills for Claude — onboarding, visibility, PDP, content, schema, brand kit, action center, and user-language guidance.",
-      "version": "0.15.7",
+      "description": "AEKO skills for Claude — onboarding, visibility, PDP, content, schema, action center, and user-language guidance.",
+      "version": "0.15.11",
       "source": "./"
     }
   ]
