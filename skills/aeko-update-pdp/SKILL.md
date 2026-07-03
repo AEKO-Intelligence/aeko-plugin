@@ -8,7 +8,7 @@ description: >
   marks complete with full audit trail. Splits the PDP branch out of the
   retired `/aeko-run-action`.
 argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_product_description, aeko_get_product_context_reviews, aeko_list_store_integrations, aeko_update_product_description, aeko_update_product_tags, aeko_update_product_meta, aeko_revert_store_write, aeko_list_store_writes, aeko_complete_action_item, Read, Write, WebFetch, Bash
+allowed-tools: aeko_get_action_plan, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_list_store_integrations, aeko_update_product_description, aeko_update_product_tags, aeko_update_product_meta, aeko_revert_store_write, aeko_list_store_writes, aeko_complete_action_item, Read, Write, WebFetch, Bash
 ---
 
 # AEKO Update PDP
@@ -124,8 +124,10 @@ of **lived experience** — the thing AI engines reward and a generic descriptio
 context-mapped reviews. Fetch them (this runs even for `rebuild_with_local`, since it doesn't depend on the
 page fetch):
 
-- Call `aeko_get_product_context_reviews(<product_source_id>)` where `product_source_id` is the store
-  product id (the `external_product_id` resolved for this item / from `aeko_list_store_integrations`).
+- Resolve the domain's review source with `aeko_list_review_integrations(domain_id)` → `integration_id`
+  (skip reviews if none connected), then call `aeko_get_product_reviews(integration_id, <product_source_id>)`
+  where `product_source_id` is the store product id (the `external_product_id` resolved for this item /
+  from `aeko_list_store_integrations`).
 - Build `context_reviews = [{context, persona, quote, detail}]` — the concrete, situational details
   (numbers, surprises, trade-offs) you'll mine for Originality and for E-E-A-T FAQ answers in Step 5.
 

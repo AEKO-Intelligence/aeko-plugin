@@ -14,7 +14,7 @@ description: >
   publish variations to the AEKO backend; never writes to a connected store
   and never auto-publishes.
 argument-hint: "<item-id> [deep]"
-allowed-tools: aeko_get_action_plan, aeko_get_product_description, aeko_get_product_context_reviews, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_list_own_content, aeko_request_media_upload, aeko_save_content_variation, aeko_list_content_variations, aeko_complete_action_item, Task, Read, Write, Bash, WebFetch, WebSearch
+allowed-tools: aeko_get_action_plan, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_list_own_content, aeko_request_media_upload, aeko_save_content_variation, aeko_list_content_variations, aeko_complete_action_item, Task, Read, Write, Bash, WebFetch, WebSearch
 ---
 
 # AEKO Create Content
@@ -41,7 +41,7 @@ info + page-level evidence + context-reviews + the prompt + content context**; q
 out to parallel drafter subagents** instead of a sequential loop (see Step 5). New optional
 `+ competitive context` mode (arg `deep`) surfaces the tracked-prompt snapshot's current AI answer + cited
 snippets for a gap/contrarian angle — no crawling, but it takes noticeably longer, so the skill warns
-first. New tools: `aeko_get_product_description`, `aeko_get_product_context_reviews`. The aeko.shop
+first. New tools: `aeko_get_product_description`, `aeko_list_review_integrations`, `aeko_get_product_reviews`. The aeko.shop
 publish mechanics (media upload, sanitizer-safe HTML, meaningful-English slug, `.meta.json` payload,
 product callouts) are unchanged and live in `references/recipes/editorial-html-jsonld.md`.
 
@@ -98,7 +98,7 @@ When a Plan includes `target_language`, use it for generated artifacts; do not l
 Issue exactly ONE `ToolSearch` call before any other tool use:
 
 ```
-ToolSearch(query="select:aeko_get_action_plan,aeko_get_product_description,aeko_get_product_context_reviews,aeko_resolve_prompts_by_text,aeko_get_tracked_prompts,aeko_get_tracked_prompt,aeko_list_own_content,aeko_request_media_upload,aeko_save_content_variation,aeko_list_content_variations,aeko_complete_action_item,Task,WebFetch,WebSearch", max_results=20)
+ToolSearch(query="select:aeko_get_action_plan,aeko_get_product_description,aeko_list_review_integrations,aeko_get_product_reviews,aeko_resolve_prompts_by_text,aeko_get_tracked_prompts,aeko_get_tracked_prompt,aeko_list_own_content,aeko_request_media_upload,aeko_save_content_variation,aeko_list_content_variations,aeko_complete_action_item,Task,WebFetch,WebSearch", max_results=20)
 ```
 
 Record `loaded_tools[]` for diagnostics. Do not add stale-MCP fallback branches: if a save/substance tool
@@ -167,11 +167,14 @@ tracked-prompt analysis and hands each drafter more context, so it is slower.
 
 ## Step 3 — Pull the substance (the *what to write about*)
 
-This is the substance backbone. When `parsed_products[]` is non-empty (the usual case), issue a single
+This is the substance backbone. First resolve the domain's review source ONCE with
+`aeko_list_review_integrations(domain_id)` → pick an `integration_id` (if none is connected, skip reviews
+and degrade per below). Then, when `parsed_products[]` is non-empty (the usual case), issue a single
 **parallel batch** of, per product `p`:
 
 - `aeko_get_product_description(p.source_id or p.id)` → full product copy / specs (`full_description`).
-- `aeko_get_product_context_reviews(p.source_id)` → lived-experience reviews keyed by context/persona.
+- `aeko_get_product_reviews(integration_id, p.source_id)` → lived-experience contextual reviews with the
+  memory facets (고객 상태 / 최근 고민 / 상황 / 대상 / 제품 경험 / 느낀 효과), keyed by product.
 
 Build `substance` = `{ products: [...with full_description...], context_reviews: [...] }`.
 
@@ -192,7 +195,7 @@ product-page substance. This is mandatory, especially when the PDP is image-heav
   the remaining product facts.
 
 **Degrade gracefully:**
-- `aeko_get_product_context_reviews` missing/empty → continue; product copy still carries substance.
+- `aeko_get_product_reviews` missing/empty → continue; product copy still carries substance.
   For evals or when no live reviews exist, read `references/examples/context-reviews-fixture.md` and use
   matching `product_source_id` entries as the review pool. Note in the summary that reviews were a fixture.
 - `aeko_get_product_description` 4xx/5xx → fall back to the `parsed_products[]` Plan fields alone; warn once.
@@ -492,7 +495,7 @@ phonetic-gibberish 404 bug). For an already-English title, reusing the §A.3 slu
 - Content context thin/missing → continue with neutral evidence-first voice; do not block save or publish handoff.
 - No prompts resolve in Step 3b → continue on prompt text + product/review substance (do NOT hard-stop;
   this is no longer forensics-gated).
-- `aeko_get_product_context_reviews` / `aeko_get_product_description` unavailable → degrade per Step 3.
+- `aeko_get_product_reviews` / `aeko_get_product_description` unavailable → degrade per Step 3.
 - A drafter subagent errors/skips → record the channel as failed, continue with the rest.
 - Citability hard-gate fails after the fix iteration → leave item `pending`; surface failed channels + dimensions.
 - aeko.shop media upload fails → drafter omits that image, produces a valid text-only post, warns loudly; never a placeholder.
