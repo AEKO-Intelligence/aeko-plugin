@@ -8,7 +8,7 @@ description: >
   pick the lookback (7d / 14d / 30d / 90d). Replaces the retired
   `/create-visibility-report` and the weekly-only `/aeko-weekly-report`.
 argument-hint: "[domain-id] [window] [depth]"
-allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_visibility_summary, aeko_get_score, Write
+allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_visibility_summary, Write
 ---
 
 # AEKO Visibility Report
@@ -43,7 +43,6 @@ Call in parallel:
 - `aeko_get_visibility_summary(domain_id, scope="overview")` — 30-day mention / citation / source counts + sentiment + recent brand mentions + monthly trend.
 - `aeko_get_visibility_summary(domain_id, scope="tracked_prompt_metrics", window=$2)` — 7-day performance with WoW trends (the tool window arg only affects this scope in v0.5.0; use 7d default).
 - `aeko_get_visibility_summary(domain_id, scope="cited_sources")` — pages from this domain AI engines cite.
-- `aeko_get_score(domain_id)` — composite AEKO Score (Brand Visibility dashboard score).
 
 ## Step 3 — Compose report — summary depth
 
@@ -55,7 +54,7 @@ Call in parallel:
 
 ## Headline
 
-AEKO Score: <score>/100
+AI visibility: <total_mentions> mentions · <total_citations> citations
 Mentions: <total_mentions> (<WoW trend>)
 Citations: <total_citations> (<WoW trend>)
 Sentiment: <avg_sentiment_score>% positive (<WoW trend>)
@@ -149,13 +148,13 @@ Write the full markdown to:
 
 ```
 ✔ Report saved: <path>
-  AEKO Score: <score>  (<trend>)
+  Visibility: <total_mentions> mentions · <total_citations> citations
   Recommended next: <the first command from Step 4's ranked list>
 ```
 
 ## Error paths
 
-- `aeko_get_score` or `aeko_get_visibility_summary` 500 → note which data is missing in the report ("AEKO Score unavailable — backend returned error; rerun in a moment"). Do NOT block the whole report on one failed scope.
+- `aeko_get_visibility_summary` 500 → note which data is missing in the report ("visibility summary unavailable — backend returned error; rerun in a moment"). Do NOT block the whole report on one failed scope.
 - Zero domains → tell user to add one at the AEKO dashboard.
 - Zero tracked prompts (tracked_prompt_metrics scope returns empty) → note in report: "No tracked prompts yet. Run `/aeko-find-prompts-to-track` to start collecting data."
 

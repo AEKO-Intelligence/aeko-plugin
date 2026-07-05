@@ -7,7 +7,7 @@ description: >
   AEKO's ORGANIC AI-visibility (mentions/citations across ChatGPT, Claude, Gemini,
   Perplexity) for a paid + organic cross-surface view. Read-only; schedulable.
 argument-hint: "[domain-id] [days]"
-allowed-tools: aeko_list_domains, aeko_list_campaigns, aeko_list_ad_groups, aeko_list_ads, aeko_get_ad_insights, aeko_get_visibility_summary, aeko_get_score, Write
+allowed-tools: aeko_list_domains, aeko_list_campaigns, aeko_list_ad_groups, aeko_list_ads, aeko_get_ad_insights, aeko_get_visibility_summary, Write
 ---
 
 # AEKO Ad Report
@@ -69,7 +69,6 @@ Skip rows below a minimum-impressions floor (e.g. < 100) as low-signal, and say 
 ## Step 4 — (Optional) organic cross-surface layer
 
 If the user wants the full picture (or by default for a CMO report), add an **AI-visibility** section:
-- `aeko_get_score(domain_id)` — the AEKO Score + grade + components.
 - `aeko_get_visibility_summary(domain_id)` — mentions/citations across ChatGPT/Claude/Gemini/Perplexity.
 Frame the cross-surface insight, e.g. "Product X wins organically on '민감성' but its paid CTR is low —
 worth stronger creative," or "high organic visibility, no ads yet — a proven-winner to promote."
@@ -95,7 +94,7 @@ Winners: ...   |   Underperformers (candidates to pause): ...
 ...
 
 ## (optional) Organic AI-visibility
-AEKO Score <n>/<grade>; mentions/citations by engine; cross-surface takeaways.
+Mentions/citations by engine; cited-source signal; cross-surface takeaways.
 
 ## Recommendations
 - Scale: ...   Fix: ...   Pause: ...   (actionable, tied to the numbers)

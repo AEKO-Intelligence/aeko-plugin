@@ -7,7 +7,7 @@ description: >
   the AEKO pipeline re-queries them on cadence. Closes the find → pick →
   track loop without leaving Claude.
 argument-hint: "[domain-id]"
-allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_search_research_prompts, aeko_track_prompt, aeko_get_tracked_prompts, WebFetch
+allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_search_research_prompts, aeko_track_prompt, aeko_get_tracked_prompts, aeko_get_quota, aeko_list_icps, aeko_create_icp, aeko_suggest_icps, aeko_list_contexts, aeko_create_context, aeko_list_views, aeko_create_view, aeko_add_prompts_to_view
 ---
 
 # AEKO Find Prompts To Track
@@ -26,16 +26,21 @@ Keep slash commands, IDs, file paths, prompt metadata keys, and tool names in En
 
 - `domain-id` (optional) — UUID of the domain to scope suggestions to. If missing, offer `aeko_list_domains` pick-list.
 
-## Step 1 — Resolve domain + ICP/context defaults
+## Step 1 — Resolve domain + optional angle defaults
 
 1. If `$1` is set → use it.
 2. Else → `aeko_list_domains`. If one domain: auto-pick. If multiple: show list and ask.
-3. Call `aeko_get_domain_info(domain_id)`. Use domain fields plus any prompt-tracking ICP/context fields
-   surfaced by the backend to seed sensible defaults:
+3. Call `aeko_get_domain_info(domain_id)`.
+4. Call `aeko_list_icps` and `aeko_list_views(domain_id=...)`. These are safe for Starter users and help attach prompts to persona/view angles when available.
+5. Call `aeko_list_contexts(domain_id=...)` only if the user explicitly wants Context grounding, or if the domain info/tool output indicates Context is available. Context library is Pro+; a Starter 403 is not a blocker for basic prompt tracking.
+6. Use domain fields plus the available IDs to seed sensible defaults:
    - `country` = first entry in domain's `selected_markets` / `target_country` if available, else ask.
    - `scope` = domain's `industry` / `vertical` / `scope` field if set.
-   - `persona` / `icp` = tracked-prompt ICP only. ICP is valid for prompt tracking, not for content/PDP optimization.
-   - `context` = prompt/search context such as buyer situation, use case, pain point, product category, or job-to-be-done.
+   - `icp_id` = a real ICP id from `aeko_list_icps`. Persona is attached through ICP only.
+   - `context_ids[]` = real Context ids from `aeko_list_contexts` when Pro+ Context is available.
+   - `view_id` = a real saved view id from `aeko_list_views`.
+
+If no ICP fits and the user wants one, use `aeko_suggest_icps` or `aeko_create_icp` after explicit confirmation. If no view fits and the user wants grouping, use `aeko_create_view`. Do not block Starter users on missing Context access.
 
 ## Step 2 — Ask user for filter intent
 
@@ -48,8 +53,9 @@ languages, translate the EN template naturally while keeping platform/country/qu
 
 - 플랫폼: [claude / openai / google / perplexity / all]
 - 국가: [KR / US / JP / ... / all]
-- ICP/페르소나 (프롬프트 추적용, 예: new_mom, enthusiast, beginner)
-- 컨텍스트 (예: 여름 수면, 민감성 피부, 선물 구매)
+- ICP/페르소나 (프롬프트 추적용, 기존 ICP 선택 또는 새 ICP 생성)
+- 컨텍스트 (저장된 Context 선택 또는 새 Context 저장)
+- 저장할 View (선택)
 - 키워드 (예: "이불 추천", "민감성 피부")
 - 쿼리 유형 (informational / comparison / recommendation / transactional)
 
@@ -62,15 +68,26 @@ What research prompts should I look for? Leave fields blank to use your brand de
 
 - Platform: [claude / openai / google / perplexity / all]
 - Country: [KR / US / JP / ... / all]
-- ICP/persona (prompt tracking only, e.g. new_mom, enthusiast, beginner)
-- Context (e.g. hot sleeper, sensitive skin, gift purchase)
+- ICP/persona (prompt tracking only; choose an existing ICP or create one)
+- Context (choose saved Context IDs, or save a new Context)
+- Saved view (optional)
 - Keyword (e.g. "bedding recommendation", "sensitive skin")
 - Query type (informational / comparison / recommendation / transactional)
 
 Describe the combination you want.
 ```
 
-Parse the user's response into filter args. `all` / blank → omit that filter (no param to the tool).
+Parse the user's response into search filters and tracking angles. `all` / blank → omit that filter (no param to the tool).
+
+Tracking angles are only:
+- `ai_platforms[]`
+- `countries[]`
+- `icp_id`
+- `view_id`
+- `context_ids[]` (Pro+ Context library only)
+
+Do not promise direct persona/tag/funnel/query-type writes. Persona is represented by the chosen ICP; tags, funnel stage, and query type are derived by AEKO after tracking.
+For Starter users, use `ai_platforms=["openai"]` and one allowed country unless the backend/domain data says otherwise.
 
 ## Step 3 — Search
 
@@ -111,9 +128,7 @@ Parse response into a list of row indices → prompt payloads.
 
 ## Step 6 — Pre-flight package limits
 
-Call `aeko_get_tracked_prompts` to see the user's current tracked count. If the backend returns package
-limit/account-tier metadata, compare against it; otherwise proceed and let the backend 403, then surface the
-backend message.
+Call `aeko_get_quota` to see the tracked-prompt cap and remaining capacity. If quota data is unavailable, call `aeko_get_tracked_prompts` as a fallback count and let the backend enforce the hard cap.
 
 If the user's selection would exceed their package cap → warn, show how many they can track, ask them to narrow.
 
@@ -124,26 +139,22 @@ For each selected row, call:
 ```
 aeko_track_prompt(
     raw_prompt=row.raw_prompt,
-    ai_platform=row.ai_platform,
     prompt_en=row.prompt_en,
-    prompt_ko=row.prompt_ko,
-    model=row.model,
-    language=row.language,
-    country=row.country,
-    industry=row.industry,
-    vertical=row.vertical,
-    persona=row.persona,
-    icp=row.icp,                    # only if the search result provides it
-    context=row.context,            # only if the search result provides it
-    tags=row.tags,
+    ai_platforms=[row.ai_platform] or selected_ai_platforms,
+    countries=[row.country] or selected_countries,
+    icp_id=selected_icp_id,          # only a real ID from aeko_list_icps / aeko_create_icp
+    view_id=selected_view_id,        # only a real ID from aeko_list_views / aeko_create_view
+    context_ids=selected_context_ids # only real IDs from aeko_list_contexts / aeko_create_context
 )
 ```
 
-Handle response codes:
-- Success → note the new tracked prompt ID.
-- 409 (already tracking) → skip, note "already tracked".
-- 403 (package cap hit) → stop loop; tell user how many succeeded before cap.
-- Reactivation message (backend returns 200 with status `tracked` when previously untracked) → note "reactivated".
+Never pass search-row-only fields such as `prompt_ko`, `model`, `language`, `industry`, `vertical`, `persona`, `tags`, `query_type`, or `funnel_stage` to `aeko_track_prompt`; AEKO derives them server-side.
+
+Handle tool output:
+- `tracked` / `associated` → note the tracked prompt ID.
+- `already_tracked` → skip, note "already tracked". The backend returns HTTP 201 with this status, not 409.
+- `reactivated` → note "reactivated". The backend returns HTTP 201 with this status.
+- `failed` / `limit_blocked` / backend 403 → stop loop if it is a package cap; tell user how many succeeded before cap.
 
 ## Step 8 — Summary
 
@@ -175,5 +186,5 @@ Next: AEKO will re-query these on cadence; check back in 1-3 days.
 ## What this skill never does
 
 - Never tracks a prompt without explicit user selection.
-- Never calls `aeko_track_prompt` with fields the search result didn't provide (no fabrication).
-- Never deletes or untracks existing prompts — for that, use `/aeko-prompt-deep-dive` or the dashboard.
+- Never calls `aeko_track_prompt` with non-settable metadata fields, even if a search row contains them.
+- Never deletes or untracks existing prompts — for that, use `/aeko-manage-tracked-prompts` or the dashboard.

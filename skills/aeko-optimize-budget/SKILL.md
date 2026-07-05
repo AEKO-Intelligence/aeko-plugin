@@ -7,7 +7,7 @@ description: >
   ALWAYS previews as a dry run first, and only writes after explicit confirmation
   within strict guardrails. Schedulable, but spend-safety is the headline.
 argument-hint: "[domain-id] [days]"
-allowed-tools: aeko_list_domains, aeko_list_campaigns, aeko_list_ad_groups, aeko_get_ad_insights, aeko_update_campaign_budget, aeko_list_ads, aeko_set_ad_state
+allowed-tools: aeko_list_domains, aeko_list_campaigns, aeko_list_ad_groups, aeko_get_ad_insights, aeko_update_campaign_budget, aeko_list_ads, aeko_set_campaign_state, aeko_set_ad_state
 ---
 
 # AEKO Optimize Budget
@@ -94,6 +94,8 @@ If asked to also trim waste:
    accounts and say so.)
 2. Present them; on confirmation, `aeko_set_ad_state(ad_id, "pause", idempotency_key=<stable>)` each.
    Pausing is reversible in the dashboard; never archive here.
+3. Never resume campaigns or ads automatically. If the user explicitly asks to restart spend, restate the
+   campaign/ad ids and call the state tool only after confirmation with `confirm_active=True`.
 
 ## Step 7 — Summary (with revert path)
 
@@ -103,7 +105,7 @@ If asked to also trim waste:
   Paused ads: <n> (waste-cut)
   Revert: set budgets back with aeko_update_campaign_budget(<campaign>, <original_micros>, ...):
     A ← ₩200k   B ← ₩200k
-  Re-activate paused ads in the AEKO dashboard (광고 성과) if needed.
+  Re-activate paused ads only after explicit spend-restart confirmation (`confirm_active=True`).
   Measure the effect with /aeko-ad-report in ~1 week.
 ```
 

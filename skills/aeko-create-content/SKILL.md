@@ -227,7 +227,7 @@ that one-line note — competitive context adds nothing without citations.
 - **+ Competitive context mode:** additionally retain, per resolved prompt, the **current AI answer** and
   the **600-char cited snippets** + who's-mentioned. Distill these into a compact `competitive_brief`:
   what the consensus answer says, which competitors win it, and the **gap/contrarian angle** the brand can
-  own. This is intelligence already in the snapshot — **never call `aeko_crawl_url`, never fetch pages,
+  own. This is intelligence already in the snapshot — **never crawl or fetch pages,
   never build a URL allowlist.** Pass `competitive_brief` + `contrarian_hint` into each drafter brief.
 
 Inline domain→channel suggestion map (replaces the old crawl-based detector): `*.blog.naver.com` →

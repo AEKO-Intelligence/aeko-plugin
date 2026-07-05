@@ -8,7 +8,7 @@ description: >
   relative to the user's product. Replaces the retired aeko_ai backend
   product-analysis service.
 argument-hint: "<product-id> [competitor-urls...]"
-allowed-tools: aeko_get_domain_info, aeko_get_product_description, aeko_list_store_integrations, aeko_search_research_prompts, aeko_get_tracked_prompt, WebSearch, WebFetch, Write
+allowed-tools: aeko_get_domain_info, aeko_get_product_description, aeko_list_store_integrations, aeko_search_research_prompts, aeko_get_tracked_prompts, aeko_get_tracked_prompt, WebSearch, WebFetch, Write
 ---
 
 # AEKO Product Competitor Analysis

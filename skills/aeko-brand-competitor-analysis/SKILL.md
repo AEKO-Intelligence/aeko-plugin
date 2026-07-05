@@ -8,7 +8,7 @@ description: >
   brand doesn't. Replaces the retired `aeko_get_product_analysis` backend
   tool and the legacy `/competitive-research` skill.
 argument-hint: "[domain-id] <competitor>"
-allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_search_research_prompts, aeko_get_tracked_prompt, aeko_get_visibility_summary, WebSearch, WebFetch, Write
+allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_search_research_prompts, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_get_visibility_summary, WebSearch, WebFetch, Write
 ---
 
 # AEKO Brand Competitor Analysis

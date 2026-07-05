@@ -8,7 +8,7 @@ description: >
   skill operationalizes AEKO's unique cited-source analysis value-prop —
   vanilla Claude cannot do it.
 argument-hint: "<prompt-id> [window]"
-allowed-tools: aeko_get_tracked_prompt, aeko_get_domain_info, WebFetch
+allowed-tools: aeko_get_tracked_prompt, aeko_get_domain_info, WebFetch, Write
 ---
 
 # AEKO Prompt Deep-Dive

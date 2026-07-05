@@ -29,7 +29,7 @@ risk, and undo/revision path. Never publish automatically after listing rows; re
 Language: mirror the user's chat language for user-facing steps, summaries, questions, confirmations, and risk/undo copy.
 Keep slash commands, IDs, file paths, destination slugs such as `aeko_shop`, schema keys, and tool names in English/ASCII.
 
-> **Backend prerequisite — three new MCP tools.** This skill requires `aeko_list_content_variations` and `aeko_publish_content_variation`. If either is missing from the current MCP session (handlers rolling out), Step 0 surfaces a friendly user-language "come back later" message before any user prompts. The companion tool `aeko_save_content_variation` is called by `/aeko-create-content`; this skill never calls it directly.
+> **Backend prerequisite.** This skill requires `aeko_list_content_variations` and `aeko_publish_content_variation`. If either is missing from the current MCP session, the user's connector is stale or unavailable; Step 0 explains that plainly before any publish prompt. The companion tool `aeko_save_content_variation` is called by `/aeko-create-content`; this skill never calls it directly.
 
 ## Input
 
@@ -37,34 +37,9 @@ Keep slash commands, IDs, file paths, destination slugs such as `aeko_shop`, sch
 
 ## Step 0 — Backend availability preflight
 
-The three new MCP tools (`aeko_save_content_variation`, `aeko_list_content_variations`, `aeko_publish_content_variation`) are shipped ahead of the backend handlers in some environments. This skill calls two of them; rather than introspect the tool registry (FastMCP doesn't expose a public registry API to skills), wrap the first MCP call in a try/except — if the tool isn't registered the MCP layer raises `MethodNotFound` (or equivalent), and we catch it to surface a friendly user-language message instead of a raw stack trace.
+Wrap the first MCP call in a try/except. If Step 1's `aeko_list_content_variations` call raises `MethodNotFound` / "tool not found" / equivalent, stop and explain in the user's language that the AEKO MCP connector is stale or unavailable. Tell them to reconnect the AEKO connector or retry after the hosted connector is redeployed. Saved drafts are preserved; no re-drafting is needed.
 
-The probe is implicit: if Step 1's `aeko_list_content_variations` call raises `MethodNotFound` / "tool not found" / equivalent, stop and print in the user's chat language. Use these EN/KO templates when they match; otherwise translate the EN template naturally:
-
-- EN:
-  ```
-  aeko publish backend is rolling out
-
-  The MCP tools that drive publish (aeko_list_content_variations,
-  aeko_publish_content_variation) are the last pieces still shipping.
-  Your saved drafts are preserved — re-run /aeko-publish-content <item_id>
-  once the tools land. No re-drafting needed.
-
-  Status: track AEKO release notes or run /aeko-action-center to check.
-  ```
-- KO:
-  ```
-  AEKO 게시 백엔드가 곧 출시됩니다
-
-  게시를 담당하는 MCP 도구 (aeko_list_content_variations,
-  aeko_publish_content_variation)가 마지막으로 출시 대기 중입니다.
-  저장된 초안은 보존되어 있으니, 도구가 출시되면 /aeko-publish-content <item_id>를
-  다시 실행하면 됩니다. 다시 작성할 필요는 없습니다.
-
-  상태 확인: AEKO 릴리즈 노트를 확인하거나 /aeko-action-center를 실행하세요.
-  ```
-
-Exit with status code 0 — work-preserved, come-back-later. Apply the same try/except pattern around Step 6's `aeko_publish_content_variation` call.
+Apply the same try/except pattern around Step 6's `aeko_publish_content_variation` call.
 
 ## Step 1 — Fetch saved variations for the item
 
@@ -175,7 +150,7 @@ The backend route reads the variation row server-side and branches on `destinati
 
 If the call fails:
 
-- **`MethodNotFound` / tool unregistered** → emit the Step 0 user-language "rolling out" message and exit 0.
+- **`MethodNotFound` / tool unregistered** → emit the Step 0 stale-connector message and exit 0.
 - **4xx** — surface the backend message verbatim. Common cases:
   - `403` Pro+ tier gate failed (enforced by `publisher.enforce_publish_gate`) — common for `aeko_shop`; rare for `own_store_blog` (no tier gate on draft creation).
   - `409` business gate — `aeko_shop` only. Either `brand.aeko_shop_disabled = true` (per-brand opt-out) or an aeko.shop-side gate passed through with its detail. The variation stays `saved`. **Important:** for Pro/Enterprise accounts the publish entitlement is granted automatically *inside the same publish request*, so if the user still sees `brand is not on an active publishing tier`, the automatic grant was blocked (the brand's entitlement is owned by aeko.shop billing — e.g. it was claimed via self-verify). Do NOT advise re-running for this case — it will fail identically; tell the user to contact support. The `aeko_shop_disabled` case also has no self-serve toggle today — contact support as well. Surface the backend detail verbatim (with a Korean gloss when the chat is in Korean).
@@ -259,7 +234,7 @@ There are two distinct edit paths depending on whether the variation has been pu
 
 ## Error paths
 
-- Tools rolling out (`MethodNotFound` at Step 1 or Step 6) → emit Step 0 user-language message; exit 0.
+- Missing MCP tools (`MethodNotFound` at Step 1 or Step 6) → emit Step 0 stale-connector message; exit 0.
 - Zero saved variations → emit Step 1.a actionable message; exit 0.
 - User cancels at Step 1.c picker → exit 0 silently.
 - User declines at Step 5 → exit 0 silently.

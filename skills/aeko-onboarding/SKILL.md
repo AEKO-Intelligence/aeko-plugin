@@ -61,20 +61,26 @@ Mirror `session_language` for every subsequent prompt and table caption. Code bl
 
 ## Step 2 — Skill catalog
 
-List the 13 skills grouped by marketer journey so the user can see the surface area at a glance. Render as a markdown table; mirror header labels in `session_language`.
+List the 19 skills grouped by marketer journey so the user can see the surface area at a glance. Render as a markdown table; mirror header labels in `session_language`.
 
 | Group | Slash command | One-liner |
 |---|---|---|
 | **Start here** | `/aeko-action-center` | Shows pending work as Technical health, Product pages, and Content AI can cite. |
 |  | `/aeko-onboarding` | Guided first-run setup check and skill tour. |
+|  | `/aeko-setup-store` | Add a domain, connect or inject products, set markets, and accept starter prompts through MCP. |
 | **Visibility & research** | `/aeko-visibility-report` | AEO score, mentions, citations, sentiment over a window. |
 |  | `/aeko-prompt-deep-dive` | Shows why one tracked prompt wins or loses across AI platforms. |
 |  | `/aeko-find-prompts-to-track` | Discover and track prompts your audience actually asks. |
+|  | `/aeko-manage-tracked-prompts` | Review quota, segment tracked prompts by angles, and untrack selected prompts. |
 |  | `/aeko-brand-competitor-analysis` | Brand-level positioning vs. competitors in AI answers. |
 |  | `/aeko-product-competitor-analysis` | Product-level matrix: JSON-LD, FAQ, reviews, gaps. |
 | **Executors (customizable)** | `/aeko-update-pdp` | Product page improvement with shopper copy, review proof, FAQ, and AI-readable facts. |
 |  | `/aeko-create-content` | Multi-channel content grounded in product facts, reviews, tracked prompts, and content context. |
 |  | `/aeko-fix-technical` | Technical health package for crawler access, llms.txt, robots.txt, and site schema. |
+| **Agentic ads & reviews** | `/aeko-inject-reviews` | Inject real merchant-provided or gathered reviews for stores without a review app. |
+|  | `/aeko-compose-ads` | Compose paused, review-grounded OpenAI Ads groups from contextual reviews. |
+|  | `/aeko-ad-report` | Produce a paid-ad performance report from OpenAI Ads metrics. |
+|  | `/aeko-optimize-budget` | Dry-run and confirm guarded campaign budget optimization. |
 | **Publish** | `/aeko-publish-content` | Publish saved content variations only after explicit confirmation. |
 | **Maintenance** | `/aeko-refresh-jsonld` | Refresh review facts AI can read, such as rating and review count. |
 |  | `/aeo-audit` | Generic AEO audit; add `shopping` for product-level AI shopping readiness. |
@@ -111,7 +117,7 @@ If no `plugin.json` is found after Glob:
 
 Call `aeko_list_domains`.
 
-- **Success** (any HTTP 2xx, even with empty list): MCP is reachable and authenticated. Capture `domains.length`.
+- **Success** (any HTTP 2xx, even with empty list): MCP is reachable and authenticated. Capture `domains.length`. If `domains.length == 0`, suggest `/aeko-setup-store` as the next step instead of sending the user to the dashboard.
 - **401 / authentication error**: tell the user the AEKO connector isn't authenticated. Instruct: "Open Claude → Settings → Connectors → AEKO → re-authenticate at `https://aeko-intelligence.com/mcp`, then re-run `/aeko-onboarding`." Stop here; do NOT proceed to Phase 4 until reachable.
 - **Other failures** (5xx, network): report verbatim. Offer to continue to Phase 4 in a degraded mode (the customization step uses local file edits, no MCP needed) but warn that visibility / executor skills will fail until the connector is reachable again.
 
@@ -225,7 +231,8 @@ The "Suggested next step" line should be context-aware:
 - Customized `aeko-create-content` → `/aeko-create-content <item_id>` (or `/aeko-action-center <domain_id> content` if no item handy).
 - Customized `aeko-update-pdp` → `/aeko-action-center <domain_id> pdp`.
 - Customized `aeko-fix-technical` → `/aeko-action-center <domain_id> technical`.
-- Skipped Phase 4 → `/aeko-action-center <domain_id>` (or `/aeko-visibility-report <domain_id>` if no domain has pending items).
+- Skipped Phase 4 with at least one domain → `/aeko-action-center <domain_id>` (or `/aeko-visibility-report <domain_id>` if no domain has pending items).
+- No domains connected → `/aeko-setup-store`.
 
 End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION.md` for the self-serve file guide, and invite them to come back to `/aeko-onboarding` whenever they want to add more recipes / examples.
 
@@ -265,20 +272,26 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 
 ### 2단계 — 스킬 카탈로그
 
-13개의 스킬을 마케터 여정 기준으로 묶어 표로 보여줍니다.
+19개의 스킬을 마케터 여정 기준으로 묶어 표로 보여줍니다.
 
 | 그룹 | 슬래시 명령 | 한 줄 설명 |
 |---|---|---|
 | **시작점** | `/aeko-action-center` | 대기 작업을 기술 상태, 상품 페이지, 인용 가능한 콘텐츠로 나눠 안내. |
 |  | `/aeko-onboarding` | 첫 실행 설정 확인과 스킬 안내. |
+|  | `/aeko-setup-store` | 도메인 추가, 스토어 연결/상품 주입, 시장 설정, 시작 프롬프트 수락. |
 | **가시성 · 리서치** | `/aeko-visibility-report` | 기간별 AEO 점수, 멘션, 인용, 감성 분석. |
 |  | `/aeko-prompt-deep-dive` | 추적 중인 프롬프트 1건이 AI 플랫폼별로 왜 이기거나 지는지 분석. |
 |  | `/aeko-find-prompts-to-track` | 사용자 오디언스가 실제로 묻는 프롬프트 발굴 + 추적. |
+|  | `/aeko-manage-tracked-prompts` | 쿼터 확인, 각도별 프롬프트 정리, 선택 프롬프트 추적 중단. |
 |  | `/aeko-brand-competitor-analysis` | AI 답변 안에서 브랜드 vs 경쟁사 포지셔닝. |
 |  | `/aeko-product-competitor-analysis` | 제품 단위 매트릭스 (JSON-LD, FAQ, 리뷰, 빈틈). |
 | **실행 (커스터마이즈 가능)** | `/aeko-update-pdp` | 구매자 문구, 리뷰 근거, FAQ, AI가 읽는 상품 사실로 상품 페이지 개선. |
 |  | `/aeko-create-content` | 상품 사실, 리뷰, 추적 프롬프트, 콘텐츠 컨텍스트 기반 멀티채널 콘텐츠 생성. |
 |  | `/aeko-fix-technical` | 크롤러 접근, llms.txt, robots.txt, 사이트 스키마를 위한 기술 상태 패키지. |
+| **광고 · 리뷰** | `/aeko-inject-reviews` | 리뷰 앱이 없는 스토어의 실제 리뷰를 주입. |
+|  | `/aeko-compose-ads` | 컨텍스트 리뷰 기반의 일시중지 상태 OpenAI Ads 그룹 구성. |
+|  | `/aeko-ad-report` | OpenAI Ads 성과 리포트 생성. |
+|  | `/aeko-optimize-budget` | 확인 후 실행되는 예산 최적화 드라이런. |
 | **게시** | `/aeko-publish-content` | 저장된 콘텐츠 변형본을 명시 확인 후 게시. |
 | **유지보수** | `/aeko-refresh-jsonld` | 평점과 리뷰 수처럼 AI가 읽는 리뷰 사실 새로고침. |
 |  | `/aeo-audit` | 일반 AEO 진단; `shopping`을 붙이면 상품 단위 AI 쇼핑 준비도 진단. |

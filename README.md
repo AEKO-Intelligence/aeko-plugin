@@ -141,9 +141,18 @@ AEKO will describe each run in plain business language: what it checks, why it m
 **Research + discovery:**
 
 - `/aeko-find-prompts-to-track [domain_id]` — filter the research library, rank candidates for your brand, track selected prompts
+- `/aeko-manage-tracked-prompts [domain_id]` — review tracked prompts by angle, quota, ICP, context, and platform
 - `/aeko-prompt-deep-dive <prompt_id> [window]` — breakdown for one tracked prompt: who wins, which sources AI cites, and what content gap to close
 - `/aeko-brand-competitor-analysis [domain_id] <competitor>` — brand-level positioning via WebSearch + Wikipedia/Wikidata + AEKO citation data
 - `/aeko-product-competitor-analysis <product_id> [urls...]` — product-level property-by-property comparison against 3-5 competing PDPs
+
+**Agentic ads & reviews:**
+
+- `/aeko-setup-store [domain_id]` — add a domain, connect or inject products, generate starter prompts, and set markets from the agent
+- `/aeko-inject-reviews [domain_id]` — inject real merchant-provided or gathered reviews for stores without a review app
+- `/aeko-compose-ads [domain_id] [min_score]` — compose paused, review-grounded OpenAI Ads groups from contextual reviews
+- `/aeko-ad-report [domain_id] [days]` — report on OpenAI Ads efficiency using CTR, CPC, spend, and clicks
+- `/aeko-optimize-budget [domain_id] [days]` — dry-run and confirm guarded campaign budget optimization
 
 **Maintenance + reporting:**
 
@@ -330,9 +339,18 @@ AEKO는 매 실행마다 무엇을 확인하는지, 왜 중요한지, 읽기 전
 **리서치 + 디스커버리:**
 
 - `/aeko-find-prompts-to-track [domain_id]` — 리서치 라이브러리 필터링, 브랜드별 후보 랭킹, 선택된 프롬프트 트래킹
+- `/aeko-manage-tracked-prompts [domain_id]` — 각도, 할당량, ICP, 컨텍스트, 플랫폼별 추적 프롬프트 관리
 - `/aeko-prompt-deep-dive <prompt_id> [window]` — 추적된 프롬프트 1건 분석: 누가 이기는지, AI가 어떤 소스를 인용하는지, 어떤 콘텐츠 빈틈을 메울지 확인
 - `/aeko-brand-competitor-analysis [domain_id] <competitor>` — WebSearch + Wikipedia/Wikidata + AEKO 인용 데이터를 통한 브랜드 수준 포지셔닝
 - `/aeko-product-competitor-analysis <product_id> [urls...]` — 3–5개 경쟁 PDP 대비 제품 수준 속성별 비교
+
+**광고 · 리뷰:**
+
+- `/aeko-setup-store [domain_id]` — 에이전트에서 도메인 추가, 상품 연결/주입, 스타터 프롬프트 생성, 시장 설정
+- `/aeko-inject-reviews [domain_id]` — 리뷰 앱이 없는 스토어의 실제 리뷰를 주입
+- `/aeko-compose-ads [domain_id] [min_score]` — 컨텍스트 리뷰 기반의 일시중지 상태 OpenAI Ads 그룹 구성
+- `/aeko-ad-report [domain_id] [days]` — CTR, CPC, 지출, 클릭 기준 OpenAI Ads 효율 리포트
+- `/aeko-optimize-budget [domain_id] [days]` — 확인 후 실행되는 예산 최적화 드라이런
 
 **유지보수 + 리포팅:**
 
