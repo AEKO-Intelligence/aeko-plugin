@@ -13,7 +13,11 @@ allowed-tools: aeko_get_action_plan, aeko_get_product_description, aeko_list_rev
 
 # AEKO Update PDP
 
-Executes one Action-tab PDP item end-to-end: fetch Plan.md → parse frontmatter + prose → ask image strategy → WebFetch page + images → generate responsive HTML + JSON-LD → write to store (shadow-by-default) → mark complete.
+Executes one Action-tab PDP item end-to-end: fetch Plan.md → parse frontmatter + prose → ask optimization scope → ask image strategy → WebFetch page + images → generate responsive HTML + JSON-LD → write to store (shadow-by-default) → mark complete.
+
+Two optimization scopes the user chooses up front:
+- **`content_and_metadata`** — rewrite the product-page copy to AEO standards AND emit structured data / meta. The full pipeline (image strategy, AEO frameworks, copy generation).
+- **`metadata_only`** — leave the merchant's existing description copy untouched; only generate/optimize the machine-readable layer (Product / FAQPage / Review JSON-LD + `<meta>` tags + semantic heading fixes) so AI engines can parse and cite the page. No copy rewrite, no image work.
 
 Contract reference: `docs/contracts/action-item-contract.md` §3 (Plan.md), §7 (shadow product), §6 (completion).
 
@@ -63,10 +67,46 @@ frontmatter + prose: `context`, `use_case`, `buyer_context`, `pain_points`, `des
 ICP in PDP optimization. If context is thin, continue with product facts, OCR, reviews, and a neutral
 evidence-first voice.
 
-## Step 3 — Image strategy (ask user)
+## Step 2.5 — Optimization scope (ask user — FIRST question)
 
-Ask in the user's chat language. Use the matching KO/EN template below when applicable; for other
-languages, translate the EN template naturally while keeping `write_mode` and option numbers unchanged.
+Ask this **before** the image-strategy question. It decides whether we touch the merchant's copy at all.
+Ask in the user's chat language; for languages other than KO/EN, translate the EN template naturally while
+keeping the option numbers unchanged.
+
+**KO:**
+```
+이 상품 페이지를 어떻게 최적화할까요?
+
+1. 콘텐츠 + 메타데이터 최적화 — 상품 설명 문구를 AEO 기준으로 다시 쓰고, 구조화 데이터(JSON-LD)·메타태그도 함께 생성
+2. 메타데이터만 최적화 — 기존 상품 설명은 그대로 두고, AI 엔진이 읽을 수 있는 구조화 데이터(JSON-LD)·메타태그·제목 구조만 최적화
+
+번호를 입력하거나 원하는 방향을 자유롭게 설명해 주세요.
+```
+
+**EN:**
+```
+How should we optimize this product page?
+
+1. Content + metadata — rewrite the product description copy to AEO standards, and generate structured data (JSON-LD) + meta tags
+2. Metadata only — leave the existing description copy as-is; only optimize the machine-readable layer AI engines read: structured data (JSON-LD), meta tags, and heading structure
+
+Reply with a number or describe the direction you want.
+```
+
+Store as `optimization_scope ∈ {content_and_metadata, metadata_only}`.
+
+**How the scope changes the rest of the run:**
+- `content_and_metadata` → proceed normally: ask image strategy (Step 3), run the full AEO copy generation (Step 5.1), honor `must_include` / `sections_required` in the visible body.
+- `metadata_only` → SKIP the image-strategy question (Step 3); force `image_strategy = preserve_existing` internally and never rebuild. In Step 5, do NOT rewrite or reorder the merchant's description copy. Generate only: Product / FAQPage / Review JSON-LD, `<meta>` tags (title/description/OG where the Plan asks), and semantic heading corrections that do not change wording. `must_include` / `forbidden` are validated against the JSON-LD + meta output, not by injecting copy into the visible body. `sections_required` acceptance is waived (no new body sections are authored). The FAQPage / Review JSON-LD may still be built from `context_reviews` (Step 4.5) and on-page reviews, since that is machine-readable structured data, not visible-copy rewriting.
+
+**Scope ↔ write_mode note:** `metadata_only` naturally pairs with `append_below_existing` (append a `<script type="application/ld+json">` block + meta below the existing description) or with `aeko_update_product_meta` for `<meta>` fields. It never replaces the existing description body.
+
+## Step 3 — Image strategy (ask user — content_and_metadata scope only)
+
+**Skip this step when `optimization_scope == metadata_only`** (force `image_strategy = preserve_existing`,
+proceed to Step 4). Otherwise ask in the user's chat language. Use the matching KO/EN template below when
+applicable; for other languages, translate the EN template naturally while keeping `write_mode` and option
+numbers unchanged.
 
 **KO:**
 ```
@@ -159,6 +199,15 @@ The Step 9 summary must list which reference files were loaded so the user can v
 
 ### 5.1 Apply
 
+**Scope branch (from Step 2.5):**
+- `metadata_only` → do NOT author or rewrite visible description copy. Preserve the merchant's existing
+  description HTML verbatim. Produce only the machine-readable layer: Product / FAQPage / Review JSON-LD
+  (built from specs + `context_reviews` + on-page reviews) and `<meta>` tags, plus non-destructive semantic
+  heading corrections (e.g. fixing heading levels without changing wording). Skip the BLUF/PREP copy-writing
+  below, skip `sections_required`, and validate `must_include` / `forbidden` against the JSON-LD + meta output.
+  Then continue to Step 5b.
+- `content_and_metadata` → run the full generation below.
+
 Read `prose` and Step 2 content context for voice/structure guidance, `frontmatter.pdp_responsive_contract.*`
 for hard rules, and OCR payload from Step 4. Apply the loaded recipes (§5.0) — citability baseline,
 pending-verification handling, scaffold + strategy branches, responsive contract, JSON-LD schemas all live
@@ -250,6 +299,7 @@ Only complete if:
 
 ```
 ✔ Product page improvement complete
+  Scope:         <content_and_metadata: copy rewritten + structured data | metadata_only: structured data + meta only, copy untouched>
   Safety:        <preview file | draft/shadow | live PDP updated>
   Audit ID:      <audit_id>         (revert: aeko_revert_store_write("<audit_id>"))
   Admin URL:     <admin_url>
@@ -287,6 +337,7 @@ Next: /aeko-action-center <domain_id> pdp
 ## What this skill never does
 
 - Never writes to the live PDP by default; default is shadow/preview.
+- In `metadata_only` scope, never rewrites, reorders, or deletes the merchant's existing description copy — only adds the machine-readable layer (JSON-LD + meta + non-destructive heading fixes).
 - Never handles Technical or Content items (redirect to sibling executors).
 - Never hallucinates product copy from blank OCR.
 - Never omits alt text on an `<img>`.
