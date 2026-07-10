@@ -7,7 +7,7 @@ The plugin follows [Semantic Versioning](https://semver.org/). All four host man
 (`.claude-plugin/`, `.codex-plugin/`, `gemini-extension.json`) are kept in version sync so that
 version-keyed host caches refresh on update.
 
-## Unreleased
+## [0.23.0] — 2026-07-10
 
 ### Changed
 - Reworked prompt discovery and tracked-prompt management around saved Contexts and Views.
