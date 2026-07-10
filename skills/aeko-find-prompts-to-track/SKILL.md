@@ -2,12 +2,12 @@
 name: aeko-find-prompts-to-track
 description: >
   Discovery workflow for research prompts. Walks the user through filtering
-  AEKO's prompt library (AI platform + persona + country + scope), surfaces
+  AEKO's prompt library (AI platform + context + country + scope), surfaces
   the best candidates for their brand, and tracks the selected prompts so
   the AEKO pipeline re-queries them on cadence. Closes the find → pick →
   track loop without leaving Claude.
 argument-hint: "[domain-id]"
-allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_search_research_prompts, aeko_track_prompt, aeko_get_tracked_prompts, aeko_get_quota, aeko_list_icps, aeko_create_icp, aeko_suggest_icps, aeko_list_contexts, aeko_create_context, aeko_list_views, aeko_create_view, aeko_add_prompts_to_view
+allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_search_research_prompts, aeko_track_prompt, aeko_get_tracked_prompts, aeko_get_quota, aeko_list_contexts, aeko_create_context, aeko_list_views, aeko_create_view, aeko_add_prompts_to_view
 ---
 
 # AEKO Find Prompts To Track
@@ -31,16 +31,15 @@ Keep slash commands, IDs, file paths, prompt metadata keys, and tool names in En
 1. If `$1` is set → use it.
 2. Else → `aeko_list_domains`. If one domain: auto-pick. If multiple: show list and ask.
 3. Call `aeko_get_domain_info(domain_id)`.
-4. Call `aeko_list_icps` and `aeko_list_views(domain_id=...)`. These are safe for Starter users and help attach prompts to persona/view angles when available.
+4. Call `aeko_list_views(domain_id=...)`.
 5. Call `aeko_list_contexts(domain_id=...)` only if the user explicitly wants Context grounding, or if the domain info/tool output indicates Context is available. Context library is Pro+; a Starter 403 is not a blocker for basic prompt tracking.
 6. Use domain fields plus the available IDs to seed sensible defaults:
    - `country` = first entry in domain's `selected_markets` / `target_country` if available, else ask.
    - `scope` = domain's `industry` / `vertical` / `scope` field if set.
-   - `icp_id` = a real ICP id from `aeko_list_icps`. Persona is attached through ICP only.
    - `context_ids[]` = real Context ids from `aeko_list_contexts` when Pro+ Context is available.
    - `view_id` = a real saved view id from `aeko_list_views`.
 
-If no ICP fits and the user wants one, use `aeko_suggest_icps` or `aeko_create_icp` after explicit confirmation. If no view fits and the user wants grouping, use `aeko_create_view`. Do not block Starter users on missing Context access.
+If no Context fits and the user wants one, use `aeko_create_context` after explicit confirmation. If no view fits and the user wants grouping, use `aeko_create_view`. Do not block Starter users on missing Context access.
 
 ## Step 2 — Ask user for filter intent
 
@@ -53,7 +52,6 @@ languages, translate the EN template naturally while keeping platform/country/qu
 
 - 플랫폼: [claude / openai / google / perplexity / all]
 - 국가: [KR / US / JP / ... / all]
-- ICP/페르소나 (프롬프트 추적용, 기존 ICP 선택 또는 새 ICP 생성)
 - 컨텍스트 (저장된 Context 선택 또는 새 Context 저장)
 - 저장할 View (선택)
 - 키워드 (예: "이불 추천", "민감성 피부")
@@ -68,7 +66,6 @@ What research prompts should I look for? Leave fields blank to use your brand de
 
 - Platform: [claude / openai / google / perplexity / all]
 - Country: [KR / US / JP / ... / all]
-- ICP/persona (prompt tracking only; choose an existing ICP or create one)
 - Context (choose saved Context IDs, or save a new Context)
 - Saved view (optional)
 - Keyword (e.g. "bedding recommendation", "sensitive skin")
@@ -82,25 +79,23 @@ Parse the user's response into search filters and tracking angles. `all` / blank
 Tracking angles are only:
 - `ai_platforms[]`
 - `countries[]`
-- `icp_id`
 - `view_id`
 - `context_ids[]` (Pro+ Context library only)
 
-Do not promise direct persona/tag/funnel/query-type writes. Persona is represented by the chosen ICP; tags, funnel stage, and query type are derived by AEKO after tracking.
+Do not promise direct tag/funnel/query-type writes. Tags, funnel stage, and query type are derived by AEKO after tracking.
 For Starter users, use `ai_platforms=["openai"]` and one allowed country unless the backend/domain data says otherwise.
 
 ## Step 3 — Search
 
 Call `aeko_search_research_prompts` with the parsed filters + `page_size=25`. At least one filter must be non-null (the tool rejects fully empty queries).
 
-If zero results → widen: drop the most restrictive filter (typically `persona_type` or `query_type`) and retry once. Tell the user what was relaxed.
+If zero results → widen: drop the most restrictive filter, typically `query_type` or an overly narrow keyword, and retry once. Tell the user what was relaxed.
 
 ## Step 4 — Score + rank candidates
 
 For each returned prompt, assemble a relevance score using these signals:
 - **Keyword/context overlap** between domain keywords, product/category context, user-provided context, and the prompt's text or `keywords[]`. High overlap → high score.
-- **ICP/persona match** — prompt's `persona` / `icp` vs the user's prompt-tracking ICP, when provided.
-- **Context match** — prompt context/use case vs the requested context. Context applies here and also later to content optimization.
+- **Context match** — prompt context/use case vs the requested customer situation. Context applies here and also later to content optimization.
 - **Latest-response signals** (from the search payload's `latest_response`):
   - High `mention_count` across competitors → the prompt is a battleground worth contesting.
   - Presence of this brand in the mention breakdown → already getting mentioned; may not need tracking (user's call).
@@ -110,9 +105,9 @@ For each returned prompt, assemble a relevance score using these signals:
 Show top 10-15 sorted by score, in a compact table:
 
 ```
-| # | Prompt | Platform | Country | Persona | Competitors mentioning |
+| # | Prompt | Platform | Country | Context | Competitors mentioning |
 |---|--------|----------|---------|---------|------------------------|
-| 1 | ...    | Claude   | KR      | new_mom | 필리, 모노랩스          |
+| 1 | ...    | Claude   | KR      | sensitive skin | 필리, 모노랩스  |
 ```
 
 Include the prompt ID as a monospace UUID column so the user can reference specific rows.
@@ -142,13 +137,12 @@ aeko_track_prompt(
     prompt_en=row.prompt_en,
     ai_platforms=[row.ai_platform] or selected_ai_platforms,
     countries=[row.country] or selected_countries,
-    icp_id=selected_icp_id,          # only a real ID from aeko_list_icps / aeko_create_icp
     view_id=selected_view_id,        # only a real ID from aeko_list_views / aeko_create_view
     context_ids=selected_context_ids # only real IDs from aeko_list_contexts / aeko_create_context
 )
 ```
 
-Never pass search-row-only fields such as `prompt_ko`, `model`, `language`, `industry`, `vertical`, `persona`, `tags`, `query_type`, or `funnel_stage` to `aeko_track_prompt`; AEKO derives them server-side.
+Never pass search-row-only fields such as `prompt_ko`, `model`, `language`, `industry`, `vertical`, `tags`, `query_type`, or `funnel_stage` to `aeko_track_prompt`; AEKO derives them server-side.
 
 Handle tool output:
 - `tracked` / `associated` → note the tracked prompt ID.

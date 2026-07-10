@@ -141,7 +141,7 @@ AEKO will describe each run in plain business language: what it checks, why it m
 **Research + discovery:**
 
 - `/aeko-find-prompts-to-track [domain_id]` — filter the research library, rank candidates for your brand, track selected prompts
-- `/aeko-manage-tracked-prompts [domain_id]` — review tracked prompts by angle, quota, ICP, context, and platform
+- `/aeko-manage-tracked-prompts [domain_id]` — review tracked prompts by angle, quota, context, and platform
 - `/aeko-prompt-deep-dive <prompt_id> [window]` — breakdown for one tracked prompt: who wins, which sources AI cites, and what content gap to close
 - `/aeko-brand-competitor-analysis [domain_id] <competitor>` — brand-level positioning via WebSearch + Wikipedia/Wikidata + AEKO citation data
 - `/aeko-product-competitor-analysis <product_id> [urls...]` — product-level property-by-property comparison against 3-5 competing PDPs
@@ -339,7 +339,7 @@ AEKO는 매 실행마다 무엇을 확인하는지, 왜 중요한지, 읽기 전
 **리서치 + 디스커버리:**
 
 - `/aeko-find-prompts-to-track [domain_id]` — 리서치 라이브러리 필터링, 브랜드별 후보 랭킹, 선택된 프롬프트 트래킹
-- `/aeko-manage-tracked-prompts [domain_id]` — 각도, 할당량, ICP, 컨텍스트, 플랫폼별 추적 프롬프트 관리
+- `/aeko-manage-tracked-prompts [domain_id]` — 각도, 할당량, 컨텍스트, 플랫폼별 추적 프롬프트 관리
 - `/aeko-prompt-deep-dive <prompt_id> [window]` — 추적된 프롬프트 1건 분석: 누가 이기는지, AI가 어떤 소스를 인용하는지, 어떤 콘텐츠 빈틈을 메울지 확인
 - `/aeko-brand-competitor-analysis [domain_id] <competitor>` — WebSearch + Wikipedia/Wikidata + AEKO 인용 데이터를 통한 브랜드 수준 포지셔닝
 - `/aeko-product-competitor-analysis <product_id> [urls...]` — 3–5개 경쟁 PDP 대비 제품 수준 속성별 비교

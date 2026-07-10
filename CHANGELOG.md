@@ -7,6 +7,13 @@ The plugin follows [Semantic Versioning](https://semver.org/). All four host man
 (`.claude-plugin/`, `.codex-plugin/`, `gemini-extension.json`) are kept in version sync so that
 version-keyed host caches refresh on update.
 
+## Unreleased
+
+### Changed
+- Reworked prompt discovery and tracked-prompt management around saved Contexts and Views.
+- Removed instructions to call retired ICP tools or pass `icp_id`/persona fields to tracking.
+- Updated content, PDP, and reporting skills to use Context/customer-situation language.
+
 ## [0.15.12] — 2026-06
 
 ### Changed
@@ -24,10 +31,9 @@ version-keyed host caches refresh on update.
 ### Changed
 - **Retired `/aeko-brand-kit` from the active skill surface.** Removed the skill folder, onboarding catalog
   entry, README active entry, and MCP-tool dependencies from active flows.
-- **Formalized context scope.** ICP is now treated as prompt-tracking metadata only; context applies to
-  prompt tracking plus content/PDP optimization.
+- **Formalized context scope.** Context applies to prompt tracking plus content/PDP optimization.
 - Updated `/aeko-find-prompts-to-track`, `/aeko-prompt-deep-dive`, and `/aeko-visibility-report` to use
-  ICP/context only for prompt discovery, tracking, segmentation, and reporting.
+  Context for prompt discovery, tracking, segmentation, and reporting.
 - Updated `/aeko-create-content`, `/aeko-update-pdp`, and technical/competitor helpers to rely on domain,
   product, Plan.md, OCR/review evidence, and content context without requiring legacy identity metadata.
 - Bumped Claude, Codex, and Gemini manifests to `0.15.11`.

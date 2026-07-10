@@ -33,9 +33,8 @@ Keep slash commands, IDs, file paths, channel slugs, schema keys, and tool names
 
 1. Parse `$1` for UUID. If absent → `aeko_list_domains` → pick.
 2. `aeko_get_domain_info(domain_id)` for `base_url`, brand/domain names, domain keywords, AI-readiness
-   flags, and any prompt-tracking ICP/context metadata surfaced by the backend.
-3. Use **ICP + context only for prompt tracking/report segmentation**. Use context, not ICP, when
-   recommending content/PDP optimization actions.
+   flags, and any prompt-tracking context metadata surfaced by the backend.
+3. Use context only for prompt tracking/report segmentation and for content/PDP recommendations.
 
 ## Step 2 — Pull visibility data
 
@@ -98,7 +97,7 @@ Add the following sections after the summary:
 | ...    | ...      | ...     | ...      | ...       | Yes / No     |
 ```
 
-(Pull from the `tracked_prompt_metrics` scope's breakdown if it surfaces per-prompt data; include ICP and
+(Pull from the `tracked_prompt_metrics` scope's breakdown if it surfaces per-prompt data; include
 context columns when present. Else cite the summary data and note that per-prompt detail requires
 `/aeko-prompt-deep-dive <prompt_id>`.)
 

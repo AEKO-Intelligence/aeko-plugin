@@ -47,8 +47,7 @@ Call `aeko_get_action_plan(item_id)`. Parse YAML frontmatter + prose body.
 Print the header in the user's chat language:
 1. Action label — KO: "상품 페이지 개선" / EN: "Product page improvement"
 2. Context: domain, product title (resolve via `target_url` inspection), channels.
-3. Persona: `persona_label` if present.
-4. Safety: user-language readout of `write_mode` as one of:
+3. Safety: user-language readout of `write_mode` as one of:
    - `shadow_product` → "Draft/shadow copy first — safest"
    - `append_below_existing` → "Can affect live store description"
    - `preview_only` → "Read-only preview file"
@@ -59,8 +58,7 @@ Print prose body verbatim. Never echo raw frontmatter.
 
 Do not call legacy identity tools. Extract content/PDP context from
 frontmatter + prose: `context`, `use_case`, `buyer_context`, `pain_points`, `desired_outcome`, `tone`,
-`positioning`, `must_include`, `forbidden`, and `sections_required`. This is **context-only**; do not use
-ICP in PDP optimization. If context is thin, continue with product facts, OCR, reviews, and a neutral
+`positioning`, `must_include`, `forbidden`, and `sections_required`. This is **context-only**. If context is thin, continue with product facts, OCR, reviews, and a neutral
 evidence-first voice.
 
 ## Step 3 — Image strategy (ask user)
@@ -128,7 +126,7 @@ page fetch):
   (skip reviews if none connected), then call `aeko_get_product_reviews(integration_id, <product_source_id>)`
   where `product_source_id` is the store product id (the `external_product_id` resolved for this item /
   from `aeko_list_store_integrations`).
-- Build `context_reviews = [{context, persona, quote, detail}]` — the concrete, situational details
+- Build `context_reviews = [{context, shopper, quote, detail}]` — the concrete, situational details
   (numbers, surprises, trade-offs) you'll mine for Originality and for E-E-A-T FAQ answers in Step 5.
 
 **Degrade gracefully:** tool absent/empty → continue. The product copy + specs + Step 4.4 on-page reviews
