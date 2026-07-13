@@ -62,7 +62,7 @@ publish variations → mark complete only after required saves succeed.
 
 Contract reference: `docs/contracts/action-item-contract.md` §3 (Plan.md), §3.2.1 (ProductRef), §6
 (completion). Pinned to contract minor `v1.5`; tolerant of legacy Plans where `brand_kit_id` appears,
-but the current source for content optimization is Plan.md context, not legacy identity fields or ICP.
+but the current source for content optimization is Plan.md context, not legacy identity fields.
 
 ## Marketer-facing output contract
 
@@ -116,10 +116,9 @@ Call `aeko_get_action_plan(item_id)`. Parse the frontmatter + prose. Validate `e
 local_content_artifact` (else stop and route to the right skill). Extract:
 
 - **`resolved_title`** — frontmatter `title` → Plan `# H1` → `item_id` (chain; first non-empty wins).
-- **`domain_id`**, **`persona_label`** (if present), and **content context fields** from frontmatter/prose
+- **`domain_id`** and **content context fields** from frontmatter/prose
   (`context`, `use_case`, `buyer_context`, `pain_points`, `desired_outcome`, `tone`, `positioning`,
-  `audience`, or equivalent labels). Treat `brand_kit_id` as legacy only. Do not use ICP here; ICP is
-  scoped to prompt tracking.
+  `audience`, or equivalent labels). Treat `brand_kit_id` as legacy only.
 - **`parsed_products[]`** — optional. Backend `build_plan_md()` hydrates this from the user's selected
   store products; each entry should carry `id`, `source_id`, `name`, `slug`, `sku`, `outbound_url`,
   `image_url`, `short_description`. **Drop with a loud warning** any entry missing `id`/`source_id`/`name`/
@@ -128,7 +127,7 @@ local_content_artifact` (else stop and route to the right skill). Extract:
 - **`must_include[]`**, **`forbidden[]`**, **`sections_required[]`**, **`prompts_to_rank_on`** (raw prompt
   text or IDs the brand wants to be cited for).
 
-Print a compact context header in the user's chat language (domain, title, persona, product count). Never echo raw frontmatter.
+Print a compact context header in the user's chat language (domain, title, customer context, product count). Never echo raw frontmatter.
 
 ## Step 2 — Resolve content context (use case, situation, and voice)
 
@@ -137,7 +136,7 @@ the Plan.md frontmatter + prose:
 
 - `context` / `use_case` / `buyer_context` / `pain_points` / `desired_outcome` → the situation and job to
   solve.
-- `audience` / `persona` only when they appear as content context in the Plan; do not infer or apply ICP.
+- `audience` / customer segment only when it appears as content context in the Plan.
 - `tone` / `positioning` / `must_include` / `forbidden` / `sections_required` → voice and constraints.
 - Domain/title/product/prompt facts → fallback voice when no explicit tone exists.
 
@@ -322,7 +321,7 @@ concurrently). Each drafter's prompt instructs it to:
 
 Pass the JSON brief (the shape in drafter-instructions.md §1): `channel`, `domain_id`, `item_id`,
 `resolved_title`, `slug`, `filename_token`, `aeko_shop_publish_slug` (aeko_shop only), `target_language`,
-`content_context`, `voice_summary` (derived from content context), `target_cohort` (sharpen from context + persona + the prompt),
+`content_context`, `voice_summary` (derived from content context), `target_cohort` (sharpen from context + the prompt),
 `must_include`, `forbidden`, `sections_required`, `contrarian_hint`, `competitive_brief` (competitive mode
 only), `products` (with `full_description` and `evidence_facts`), `context_reviews`, `media`
 (= `media_by_channel[channel]`), `run_example_refs` (matching this channel + `global`, including

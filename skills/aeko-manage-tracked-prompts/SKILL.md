@@ -2,12 +2,12 @@
 name: aeko-manage-tracked-prompts
 description: >
   Manage existing tracked prompts through AEKO MCP: inspect quota, list prompts
-  grouped by ICP, Context, saved view, platform, country, funnel stage, query
+  grouped by Context, saved view, platform, country, funnel stage, query
   type, and tags, then untrack selected prompt IDs only after explicit user
   confirmation. Does not create new prompts; use /aeko-find-prompts-to-track
   for discovery and tracking.
 argument-hint: "[domain-id]"
-allowed-tools: aeko_list_domains, aeko_get_tracked_prompts, aeko_get_quota, aeko_untrack_prompt, aeko_list_icps, aeko_list_contexts, aeko_list_views
+allowed-tools: aeko_list_domains, aeko_get_tracked_prompts, aeko_get_quota, aeko_untrack_prompt, aeko_list_contexts, aeko_list_views
 ---
 
 # AEKO Manage Tracked Prompts
@@ -44,7 +44,6 @@ If quota is unavailable, continue with `aeko_get_tracked_prompts` and say that t
 Call `aeko_get_tracked_prompts`.
 
 If `domain_id` is known, also call:
-- `aeko_list_icps`
 - `aeko_list_contexts(domain_id=domain_id)`
 - `aeko_list_views(domain_id=domain_id)`
 
@@ -54,18 +53,17 @@ Use those catalogs only to make IDs human-readable. The tracked-prompt list is a
 
 Render a compact grouped view. Prefer these groups in order when the data exists:
 
-1. ICP: `icp_name` / `icp_id`
-2. Context: `context_title` / `context_id`
-3. Saved view: `view_id`
-4. Platform + country
-5. Funnel stage + query type
-6. Tags
+1. Context: `context_title` / `context_id`
+2. Saved view: `view_id`
+3. Platform + country
+4. Funnel stage + query type
+5. Tags
 
 Show a table with:
 
 ```
-| # | prompt_id | Prompt | Platform | Country | ICP | Context | Status |
-|---|-----------|--------|----------|---------|-----|---------|--------|
+| # | prompt_id | Prompt | Platform | Country | Context | Status |
+|---|-----------|--------|----------|---------|---------|--------|
 ```
 
 Keep prompt text to about 80 characters. Include exact `prompt_id` values in monospace.

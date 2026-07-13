@@ -84,7 +84,7 @@ Shopping facts AI can verify
 
 ### FAQ source — never use these
 
-- **Never** call `aeko_get_tracked_prompts` to fill an empty `prompts_to_rank_on`. Tracked prompts span the whole domain (multiple products, personas) and force-mapping them dilutes citation quality and produces off-product FAQ entries.
+- **Never** call `aeko_get_tracked_prompts` to fill an empty `prompts_to_rank_on`. Tracked prompts span the whole domain (multiple products and contexts) and force-mapping them dilutes citation quality and produces off-product FAQ entries.
 - **Never** call `aeko_search_research_prompts` either, for the same reason — PDP FAQ must be product-specific, not domain-wide.
 
 ### Thin-input exception

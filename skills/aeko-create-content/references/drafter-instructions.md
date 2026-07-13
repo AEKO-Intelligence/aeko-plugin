@@ -28,7 +28,7 @@ The coordinator hands you a JSON brief:
   "contrarian_hint": "..." | null,           // deep mode only — the gap in current AI answers
   "products": [ {id, source_id, name, sku, slug, outbound_url, image_url,
                  short_description, full_description, evidence_facts} ],   // substance backbone
-  "context_reviews": [ {context, persona, quote, detail} ],  // lived experience — originality source
+  "context_reviews": [ {context, shopper, quote, detail} ],  // lived experience — originality source
   "media": { "<slot>": {src, alt, type} | null },  // from the media form
   "run_example_refs": [
     {

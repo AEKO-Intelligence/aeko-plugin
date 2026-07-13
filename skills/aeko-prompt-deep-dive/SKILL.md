@@ -41,7 +41,7 @@ Call `aeko_get_tracked_prompt(prompt_id, window=<from $2 or "latest">)`.
 On 404 → the user isn't tracking this prompt (or never did). Tell them and suggest `/aeko-find-prompts-to-track` to discover + track candidates.
 
 On success, the payload includes:
-- `prompt`: text, language, country, industry, vertical, query_type, funnel_stage, persona.
+- `prompt`: text, language, country, industry, vertical, query_type, funnel_stage, context.
 - `responses`: array of per-platform responses (`ai_platform`, `response_date`, `full_response`, `mention_count`, `citation_count`, `source_count`, `sentiment`, `observed_intent`, `mentions`, `citations[]`, `citations_truncated`).
 - Each citation: `source_url`, `domain`, `source_type`, `mention_name`, `position_in_response`, `context_snippet`, `crawl` (or null).
 - Each crawl (when non-null): `extracted_text` (may be truncated to 5000 chars, flagged), `meta`, `json_ld[]`, `source_analysis`.
@@ -54,7 +54,7 @@ Print a header block:
 # Deep-dive: <prompt text, truncated to 100 chars>
 - ID:        <prompt_id>
 - Window:    <window>
-- Prompt context: <country> · <industry> · <query_type> · <persona/icp> · <context>
+- Prompt context: <country> · <industry> · <query_type> · <context>
 ```
 
 Then a per-platform summary table:

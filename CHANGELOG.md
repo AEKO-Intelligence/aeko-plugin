@@ -3,9 +3,22 @@
 All notable changes to the AEKO plugin (skills + manifests). This repo ships skills only; backend
 tool changes live in [`aeko-mcp`](https://github.com/AEKO-Intelligence/aeko-mcp).
 
-The plugin follows [Semantic Versioning](https://semver.org/). All four host manifests
-(`.claude-plugin/`, `.codex-plugin/`, `gemini-extension.json`) are kept in version sync so that
+The plugin follows [Semantic Versioning](https://semver.org/). All five manifest version fields
+across `.claude-plugin/`, `.codex-plugin/`, and `gemini-extension.json` are kept in sync so that
 version-keyed host caches refresh on update.
+
+## [0.23.0] — 2026-07-10
+
+### Changed
+- Reworked prompt discovery and tracked-prompt management around saved Contexts and Views.
+- Removed instructions to call retired ICP tools or pass `icp_id`/persona fields to tracking.
+- Updated content, PDP, and reporting skills to use Context/customer-situation language.
+
+## [0.22.0] — 2026-07-05
+
+### Changed
+- Added guided store setup and tracked-prompt management skills.
+- Refreshed skill instructions to match the expanded MCP capability surface.
 
 ## [0.15.12] — 2026-06
 
@@ -24,10 +37,9 @@ version-keyed host caches refresh on update.
 ### Changed
 - **Retired `/aeko-brand-kit` from the active skill surface.** Removed the skill folder, onboarding catalog
   entry, README active entry, and MCP-tool dependencies from active flows.
-- **Formalized context scope.** ICP is now treated as prompt-tracking metadata only; context applies to
-  prompt tracking plus content/PDP optimization.
+- **Formalized context scope.** Context applies to prompt tracking plus content/PDP optimization.
 - Updated `/aeko-find-prompts-to-track`, `/aeko-prompt-deep-dive`, and `/aeko-visibility-report` to use
-  ICP/context only for prompt discovery, tracking, segmentation, and reporting.
+  Context for prompt discovery, tracking, segmentation, and reporting.
 - Updated `/aeko-create-content`, `/aeko-update-pdp`, and technical/competitor helpers to rely on domain,
   product, Plan.md, OCR/review evidence, and content context without requiring legacy identity metadata.
 - Bumped Claude, Codex, and Gemini manifests to `0.15.11`.
@@ -214,6 +226,8 @@ schema trick.
 - Publish-pipeline skill fixes: correct publish edit-path, loud product/image warnings, identity-context
   terminology.
 
+[0.23.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
+[0.22.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.12]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.11]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.10]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main

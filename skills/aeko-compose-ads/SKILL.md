@@ -44,7 +44,7 @@ composed `context_hints` themselves in the target market's language (they are ad
 ## Step 2 — Cluster by shared shopper situation
 
 Group the reviews by a **shared pre-purchase facet** that spans multiple products. Good clustering axes:
-- a shared `customer_state` / persona — e.g. `민감성 피부`, `수분부족형 지성`;
+- a shared `customer_state` — e.g. `민감성 피부`, `수분부족형 지성`;
 - a shared `recent_concern` — e.g. `모공 관리`, `트러블 진정`;
 - a shared `occasion` — e.g. `선물`, `여행`, `계절` (seasonal campaigns);
 - a shared `recipient` — e.g. `친구 선물`, `엄마 선물`.
