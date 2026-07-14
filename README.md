@@ -133,9 +133,10 @@ AEKO will describe each run in plain business language: what it checks, why it m
 
 - `/aeko-onboarding` — guided first-run walkthrough: confirms setup, tours the skills, and points marketers to the right next action
 - `/aeko-action-center [domain_id] [category]` — front door: shows pending work as Technical health / Product pages / Content AI can cite, then prints ready-to-copy next commands
-- `/aeko-update-pdp <item_id>` — Product page improvement. Adds clearer shopper copy, review proof, FAQs, and AI-readable product facts; store writes are shadow-by-default
+- `/aeko-update-pdp <item_id>` or `/aeko-update-pdp domain_id=<uuid> product_id=<id>` — Product page improvement. Direct mode safely reuses or creates and atomically claims the audited PDP ActionItem, always opens a local preview, and updates the current product only after a separate Before/After/Risk/Undo confirmation. A private draft is offered only when the connected store actually supports it.
 - `/aeko-fix-technical <item_id>` — Technical health fix package. Prepares crawler access, llms.txt, robots.txt, or site-schema files with plain risk and undo notes
-- `/aeko-create-content <item_id>` — Content executor. Uses product facts, real review context, tracked prompts, and content context to draft framework-driven, citation-ready content; saves local artifacts and auto-saves aeko.shop publish variations, never writes to a connected store
+- `/aeko-create-content <item_id>` or `/aeko-create-content handoff=<id>` — Content executor. ActionItem mode supports multi-channel artifacts; direct handoff mode locks the server snapshot returned for that run, drafts one prescribed channel, and never saves/completes/publishes through AEKO
+- `/aeko-check-source domain_id=<uuid> source_id=<uuid>` — Read-only cited-page check against verified brand, prompt/Context, and official-product evidence; returns claim-level corrections and an optional outreach draft
 - `/aeko-publish-content <item_id>` — Publisher. Publishes saved content variations only after explicit confirmation; aeko.shop can go live, own-store blog remains an AEKO-owned draft
 
 **Research + discovery:**
@@ -156,7 +157,7 @@ AEKO will describe each run in plain business language: what it checks, why it m
 
 **Maintenance + reporting:**
 
-- `/aeko-refresh-jsonld <product_id>` — periodic refresh for review facts AI can read, such as rating and review count. Designed for `/schedule`
+- `/aeko-refresh-jsonld <product_id> [integration_id]` — periodic refresh for review facts AI can read, such as rating and review count. Uses a claimed `json_ld` item and one audited store update; designed for `/schedule`
 - `/aeko-visibility-report [domain_id] [window] [depth]` — on-demand report. `window=7d|14d|30d|90d`, `depth=summary|full`
 - `/aeo-audit <url> [shopping]` — generic AEO readiness audit for any URL, with optional product-level AI shopping readiness mode (uses Claude's reasoning; no AEKO data dependency)
 
@@ -331,9 +332,10 @@ AEKO는 매 실행마다 무엇을 확인하는지, 왜 중요한지, 읽기 전
 
 - `/aeko-onboarding` — 첫 실행 가이드: 설정 상태를 확인하고, 스킬을 안내하며, 마케터가 바로 할 다음 행동을 제안
 - `/aeko-action-center [domain_id] [category]` — 시작 화면: pending 작업을 Technical health / Product pages / Content AI can cite로 보여주고 바로 실행 가능한 다음 명령어를 출력
-- `/aeko-update-pdp <item_id>` — 상품 페이지 개선. 더 명확한 구매자 문구, 리뷰 근거, FAQ, AI가 읽을 수 있는 상품 사실을 추가; 스토어 기록은 shadow가 기본
+- `/aeko-update-pdp <item_id>` 또는 `/aeko-update-pdp domain_id=<uuid> product_id=<id>` — 상품 페이지 개선. 직접 실행 모드는 감사 가능한 PDP ActionItem을 안전하게 재사용하거나 생성한 뒤 원자적으로 선점하고, 항상 로컬 미리보기를 먼저 엽니다. 현재 상품 페이지 적용은 Before/After/Risk/Undo 안내 후 별도 확인을 받아야 하며, 비공개 초안은 연결된 스토어가 실제로 지원할 때만 제안합니다.
 - `/aeko-fix-technical <item_id>` — 기술 상태 개선 패키지. 크롤러 접근, llms.txt, robots.txt, 사이트 스키마 파일을 준비하고 위험/되돌리기 안내를 함께 제공
-- `/aeko-create-content <item_id>` — Content executor. 상품 사실, 실제 리뷰 맥락, 추적 프롬프트, 콘텐츠 컨텍스트를 바탕으로 프레임워크 기반의 인용 가능한 콘텐츠를 작성; 로컬 아티팩트를 저장하고 aeko.shop 게시 변형본을 자동 백엔드 저장, 연결된 스토어에는 절대 기록 안 함
+- `/aeko-create-content <item_id>` 또는 `/aeko-create-content handoff=<id>` — Content executor. ActionItem 모드는 멀티채널 아티팩트를 지원하고, 직접 handoff 모드는 실행 시작 시 받은 서버 스냅샷을 해당 실행 동안 고정해 지정된 단일 채널만 작성하며 AEKO 저장·완료·게시를 호출하지 않음
+- `/aeko-check-source domain_id=<uuid> source_id=<uuid>` — 검증된 브랜드·프롬프트/Context·공식 상품 근거와 인용 페이지를 비교해 주장별 수정안과 선택적 연락 초안을 만드는 읽기 전용 점검
 - `/aeko-publish-content <item_id>` — Publisher. 저장된 콘텐츠 변형본을 명시 확인 후 게시; aeko.shop은 라이브 게시 가능, 자사몰 블로그는 AEKO 소유 초안으로 저장
 
 **리서치 + 디스커버리:**
@@ -354,7 +356,7 @@ AEKO는 매 실행마다 무엇을 확인하는지, 왜 중요한지, 읽기 전
 
 **유지보수 + 리포팅:**
 
-- `/aeko-refresh-jsonld <product_id>` — 평점과 리뷰 수처럼 AI가 읽는 리뷰 사실을 주기적으로 새로고침. `/schedule`용으로 설계
+- `/aeko-refresh-jsonld <product_id> [integration_id]` — 평점과 리뷰 수처럼 AI가 읽는 리뷰 사실을 주기적으로 새로고침. `json_ld` 작업을 점유한 뒤 한 번의 감사 가능한 스토어 업데이트로 처리하며 `/schedule`용으로 설계
 - `/aeko-visibility-report [domain_id] [window] [depth]` — 온디맨드 리포트. `window=7d|14d|30d|90d`, `depth=summary|full`
 - `/aeo-audit <url> [shopping]` — 모든 URL에 대한 일반 AEO 준비도 감사, 선택적으로 상품 단위 AI 쇼핑 준비도 모드 지원 (Claude의 추론 사용; AEKO 데이터 의존성 없음)
 

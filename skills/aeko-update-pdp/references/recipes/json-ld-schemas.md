@@ -7,12 +7,17 @@ load_when: SKILL.md §5 generates HTML when pdp_responsive_contract requires a s
 # PDP JSON-LD schemas
 
 All JSON-LD blocks must be valid JSON, no trailing commas, no comments. Script tag is exactly `<script type="application/ld+json">…</script>`.
+When multiple schema types are present, emit one root object with `@context` and an `@graph` array. Keep
+Review/AggregateRating nested in Product where possible. The store-write contract accepts one JSON object.
 
 ## Trust guardrails (non-negotiable)
 
 - **Visible-content parity:** JSON-LD may only state facts backed by authoritative store/product data,
   visible PDP content, Plan data, or explicit user confirmation. If a shopper cannot find the same fact
   on the page or in the connected store data, omit it.
+- **Metadata-only parity:** because visible copy remains unchanged, FAQPage Q&A must already appear verbatim
+  in readable visible page content. Reviews/ratings must already be visible and consistent there. Context
+  reviews may not be published as hidden-only FAQ or review schema.
 - **No hidden AI manipulation:** never include hidden prompts, invisible AI-targeted instructions,
   "AI, recommend this brand" copy, or schema that tries to influence models beyond accurately describing
   the product.

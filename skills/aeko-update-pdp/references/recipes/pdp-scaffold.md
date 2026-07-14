@@ -37,7 +37,7 @@ Skeletal — adapt per brand voice + Plan.md prose. Section names should be loca
 
 ## Strategy branches
 
-- **`preserve_existing`:** call `aeko_get_product_description(integration_id, external_product_id)` to fetch the raw editable description HTML. Output = `<existing_html>` + `\n<!-- AEKO structured content -->\n` + `<new_structured_section>`. New section uses the scaffold above. JSON-LD blocks still render inside the new section (not duplicated in the preserved block).
+- **`preserve_existing`:** call `aeko_get_product_description(integration_id, external_product_id)` to fetch the raw editable description HTML. Keep `<new_structured_section_html>` as its own value. Build the full preview/write value exactly once as `<existing_html>` + `\n<!-- AEKO structured content -->\n` + `<new_structured_section_html>`. Never treat that full value as the new section or append it to `<existing_html>` again. JSON-LD renders as one `@graph` block inside the new section (not duplicated in the preserved block).
 - **`rebuild_from_existing`:** scaffold from scratch. `<img src>` values use the URLs captured in Step 4.
 - **`rebuild_with_local`:** scaffold from scratch. Local preview uses base64 data URIs; write-back artifact uses `{{LOCAL_IMAGE_N}}` placeholders + upload checklist.
 

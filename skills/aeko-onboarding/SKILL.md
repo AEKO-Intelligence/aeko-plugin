@@ -61,7 +61,7 @@ Mirror `session_language` for every subsequent prompt and table caption. Code bl
 
 ## Step 2 — Skill catalog
 
-List the 19 skills grouped by marketer journey so the user can see the surface area at a glance. Render as a markdown table; mirror header labels in `session_language`.
+List the 20 skills grouped by marketer journey so the user can see the surface area at a glance. Render as a markdown table; mirror header labels in `session_language`.
 
 | Group | Slash command | One-liner |
 |---|---|---|
@@ -74,6 +74,7 @@ List the 19 skills grouped by marketer journey so the user can see the surface a
 |  | `/aeko-manage-tracked-prompts` | Review quota, segment tracked prompts by angles, and untrack selected prompts. |
 |  | `/aeko-brand-competitor-analysis` | Brand-level positioning vs. competitors in AI answers. |
 |  | `/aeko-product-competitor-analysis` | Product-level matrix: JSON-LD, FAQ, reviews, gaps. |
+|  | `/aeko-check-source` | Checks one AI-cited page against verified brand and official-product evidence. |
 | **Executors (customizable)** | `/aeko-update-pdp` | Product page improvement with shopper copy, review proof, FAQ, and AI-readable facts. |
 |  | `/aeko-create-content` | Multi-channel content grounded in product facts, reviews, tracked prompts, and content context. |
 |  | `/aeko-fix-technical` | Technical health package for crawler access, llms.txt, robots.txt, and site schema. |
@@ -272,7 +273,7 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 
 ### 2단계 — 스킬 카탈로그
 
-19개의 스킬을 마케터 여정 기준으로 묶어 표로 보여줍니다.
+20개의 스킬을 마케터 여정 기준으로 묶어 표로 보여줍니다.
 
 | 그룹 | 슬래시 명령 | 한 줄 설명 |
 |---|---|---|
@@ -285,6 +286,7 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 |  | `/aeko-manage-tracked-prompts` | 쿼터 확인, 각도별 프롬프트 정리, 선택 프롬프트 추적 중단. |
 |  | `/aeko-brand-competitor-analysis` | AI 답변 안에서 브랜드 vs 경쟁사 포지셔닝. |
 |  | `/aeko-product-competitor-analysis` | 제품 단위 매트릭스 (JSON-LD, FAQ, 리뷰, 빈틈). |
+|  | `/aeko-check-source` | AI 인용 페이지 1건을 검증된 브랜드·공식 상품 근거와 비교. |
 | **실행 (커스터마이즈 가능)** | `/aeko-update-pdp` | 구매자 문구, 리뷰 근거, FAQ, AI가 읽는 상품 사실로 상품 페이지 개선. |
 |  | `/aeko-create-content` | 상품 사실, 리뷰, 추적 프롬프트, 콘텐츠 컨텍스트 기반 멀티채널 콘텐츠 생성. |
 |  | `/aeko-fix-technical` | 크롤러 접근, llms.txt, robots.txt, 사이트 스키마를 위한 기술 상태 패키지. |
