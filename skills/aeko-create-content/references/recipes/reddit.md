@@ -1,15 +1,52 @@
 ---
 channel: reddit
 purpose: Reddit thread-reply recipe with affiliation and community-safety rules
-load_when: SKILL.md selects channel=reddit for a thread reply
+load_when: SKILL.md selects channel=reddit for a thread reply or Contextual Review-driven thread discovery
 ---
 
 # `reddit` — Thread reply recipe
 
-Use this recipe only for a reply to the exact Reddit thread in the evidence snapshot or Plan. Reddit renders
-the comment, so return plain markdown. Never post it.
+Use this recipe for either a reply to an exact Reddit thread in the evidence snapshot/Plan or the narrowly
+defined Contextual Review discovery branch below. Reddit renders comments, so return plain markdown. Never
+post anything.
 
-## Required preflight
+## Contextual Review discovery mode
+
+Use this mode only when the frozen handoff says `origin=contextual_review`,
+`rule=reddit_thread_discovery`, `action=prepare_and_find_thread`, and
+`target_status=discovery_required`, with `evidence_basis=context_signal` (or legacy
+`tier=context_signal`) and no sources. AEKO has identified a review-backed shopper question, not a Reddit
+thread.
+
+Return a `Thread search and answer preparation` brief in the user's chat language with:
+
+- three to six manual search phrases based on the supplied prompt and review/Context themes;
+- two to four subreddit categories, not invented subreddit handles;
+- an answer-first framework using only frozen product facts and attributed review themes;
+- unsupported claims, comparisons, and experiences to avoid;
+- a checklist for topical fit, recency, locked/archived state, current subreddit rules, commercial
+  participation, link policy, and usefulness;
+- a plain affiliation disclosure in the likely reply language; and
+- a request for the actual thread URL, pasted thread text, and the user's confirmation that they checked the
+  current state and rules.
+
+Write search phrases and the disclosure in the snapshot's target audience language when supplied. Otherwise
+use the prompt language when it is clear; if neither is clear, use the user's chat language and label that
+choice as provisional.
+
+Do not call `WebSearch`, `WebFetch`, or `aeko_fetch_source_content`. Do not claim a thread was found or read,
+name an unverified subreddit, cite a nonexistent source, or produce a post-ready comment. Do not show citation
+counts or describe the brand as absent from Reddit.
+
+If the user later supplies the URL and actual thread text and confirms the manual checks, a follow-up may
+draft from that text. Label the original evidence `Frozen AEKO grounding` and the pasted text `User-provided
+thread`; do not merge their provenance or claim AEKO verified the thread. A URL alone is insufficient. Never
+fetch or post it.
+
+## Source-identified reply preflight
+
+This section and the reply structure/acceptance gates below apply only to a source-identified Reddit reply.
+They do not require a URL for the discovery preparation brief and do not turn that brief into a reply draft.
 
 The user must open the exact thread URL before posting and confirm that the thread is still relevant, not
 locked or archived, and open to commercial participation. They must also read the current subreddit rules and
@@ -54,6 +91,8 @@ language and level of formality. No hashtags.
 
 ## Acceptance gates
 
+For a source-identified reply draft:
+
 - Direct handoff mode used an owner-verified, matching-crawl body with `body_available=true` and
   `truncated=false` before labeling the result a reply draft; otherwise the output is a preparation brief.
 - Product selection was resolved or not required before adding any product claim or producing a candidate
@@ -64,6 +103,10 @@ language and level of formality. No hashtags.
 - No fabricated experience, hidden promotion, hard CTA, link spam, or unsupported comparison.
 - The result names the exact thread URL separately from the draft, so the user can verify the destination,
   current thread state, and subreddit rules.
+
+For Contextual Review discovery, acceptance instead requires no thread URL claim, no web/source fetch, no
+post-ready reply, manual search phrases, category-only venue guidance, a rules checklist, a disclosure
+template, and an explicit request for user-verified thread text.
 
 ## File output
 

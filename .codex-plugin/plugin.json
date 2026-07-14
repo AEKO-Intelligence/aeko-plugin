@@ -1,6 +1,6 @@
 {
   "name": "aeko-plugin",
-  "version": "0.25.0",
+  "version": "0.26.0",
   "description": "AEKO skills for Codex — first-run onboarding plus AEO workflows for ecommerce visibility, product pages, content, schema, and action items. User-facing steps mirror the user's language. Pair with the AEKO MCP connector for backend tool access.",
   "author": {
     "name": "AEKO",

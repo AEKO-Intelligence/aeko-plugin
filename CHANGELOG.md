@@ -7,6 +7,20 @@ The plugin follows [Semantic Versioning](https://semver.org/). All five manifest
 across `.claude-plugin/`, `.codex-plugin/`, and `gemini-extension.json` are kept in sync so that
 version-keyed host caches refresh on update.
 
+## [0.26.0] — 2026-07-14
+
+### Changed
+
+- `/aeko-create-content handoff=<id>` now accepts the narrowly scoped, source-free
+  `reddit_thread_discovery` handoff created from qualified Contextual Reviews. It prepares manual search
+  phrases, subreddit categories, an answer framework, thread/rules checks, and an affiliation disclosure in
+  the user's language without claiming AEKO found or read a Reddit thread.
+- Context-driven Reddit discovery never searches or fetches the web and never returns a post-ready reply.
+  The user must supply and verify the actual thread URL, pasted text, current state, and community rules before
+  a follow-up can draft from that separately labeled user-provided input. Nothing is posted, published, or
+  stored as an ActionItem.
+- Bumped the Claude, Codex, Gemini, and both marketplace manifests to `0.26.0`.
+
 ## [0.25.0] — 2026-07-14
 
 ### Changed
@@ -278,6 +292,7 @@ schema trick.
 - Publish-pipeline skill fixes: correct publish edit-path, loud product/image warnings, identity-context
   terminology.
 
+[0.26.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.25.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.24.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.23.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main

@@ -20,6 +20,7 @@ user-facing notes in the user's chat language. Do not post, submit, edit, enroll
 
 | Channel or rule | Accepted action | Deliverable |
 |---|---|---|
+| `reddit_thread_discovery` | `prepare_and_find_thread` | Thread-discovery and answer-preparation brief |
 | `reddit`, `community_kr`, `thread_reply` | `reply_on_source` | Reply draft or reply-preparation brief |
 | `naver_blog`, `tistory`, `blog_other`, `blog_post_gap` | `create_post` | Blog post draft |
 | `news`, `media_pitch` | `pitch_media` | Publisher pitch draft |
@@ -29,8 +30,9 @@ user-facing notes in the user's chat language. Do not post, submit, edit, enroll
 | `youtube`, `video_brief` | `create_video_brief` (`create_post` legacy) | Video brief and optional script |
 
 Use a natural action label in the user's language: 답변 초안/reply draft, 답변 준비안/reply preparation,
-글 초안/post draft, 피치 초안/pitch draft, 실행 가이드/action guide, 등록 정보 정리/listing packet,
-편집 요청 초안/edit request, or 영상 기획안/video brief.
+스레드 탐색·답변 준비/thread search and answer preparation, 글 초안/post draft,
+피치 초안/pitch draft, 실행 가이드/action guide, 등록 정보 정리/listing packet, 편집 요청 초안/edit
+request, or 영상 기획안/video brief.
 
 ## Product-selection gate
 
@@ -68,6 +70,41 @@ but match that community's format only when the snapshot supplies it.
   line, unsupported facts to avoid, and the manual preflight. Mark thread-specific wording as pending.
 - If no relevant product or contextual review was included, say so. Use only other grounded facts in the
   snapshot and list the missing evidence needed for a useful response.
+
+## Contextual Review-driven Reddit discovery
+
+Use this branch only for the exact source-free contract
+`origin=contextual_review`, `rule=reddit_thread_discovery`, `action=prepare_and_find_thread`,
+`evidence_basis=context_signal` (or legacy `tier=context_signal`), and
+`target_status=discovery_required`. This is not a thread-reply recommendation. AEKO has surfaced a shopper
+question from qualified Contextual Reviews, but it has not found, opened, or read a Reddit thread.
+
+Return one operator-facing brief in the user's chat language. Write search phrases in the snapshot's target
+audience language when it is known, and label them when that differs from the chat language. If it is absent,
+use the prompt language when clear; otherwise use the user's chat language and mark the search/disclosure
+language as provisional. Include:
+
+1. the shopper question and the Context/review themes that support it, with review counts or product names
+   only when the snapshot supplies them;
+2. three to six manual Reddit search phrases derived from that evidence;
+3. two to four subreddit categories to explore, such as problem-solving, product-category, routine, or
+   market/location communities. Do not invent or assert active subreddit handles;
+4. an answer-first framework: the useful question to answer, snapshot-backed facts or attributed experience
+   themes that may support it, limitations to state, and unsupported claims to avoid;
+5. a thread-selection and rules checklist: topical match, recency, open/archived/locked state, subreddit rules,
+   commercial participation, link policy, and whether an affiliated answer would add value;
+6. a short affiliation-disclosure line in the likely reply language; and
+7. the exact input needed next: the user must supply the actual thread URL and pasted thread text and confirm
+   they checked the current thread state and community rules.
+
+Do not call `WebSearch`, `WebFetch`, or `aeko_fetch_source_content`; do not name a found thread; do not use
+citation counts or brand-absence language; and do not return a post-ready reply. Do not create or complete an
+ActionItem, publish, or save a variation.
+
+If the user later supplies the actual URL and thread text and confirms the checklist, a follow-up may draft a
+candidate reply from that user-provided current input. Keep two explicit evidence labels: `Frozen AEKO
+grounding` for the original snapshot and `User-provided thread` for the pasted text. A URL without pasted
+thread text is not enough. Do not fetch the URL or imply AEKO verified it, and never post the reply.
 
 ## Blog post
 
