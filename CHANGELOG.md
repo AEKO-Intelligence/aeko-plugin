@@ -7,6 +7,39 @@ The plugin follows [Semantic Versioning](https://semver.org/). All five manifest
 across `.claude-plugin/`, `.codex-plugin/`, and `gemini-extension.json` are kept in sync so that
 version-keyed host caches refresh on update.
 
+## [0.24.0] — 2026-07-13
+
+### Added
+
+- `/aeko-check-source domain_id=<uuid> source_id=<uuid>` compares one owner-associated cited page with
+  verified domain data, up to five associated tracked prompts/Contexts, and a paginated official-catalog
+  scan capped at 1,000 products before loading up to five matching descriptions. It produces claim-level
+  corrections or an outreach draft without creating an ActionItem or changing the page.
+- Added a Reddit thread-reply recipe with affiliation disclosure, answer-first structure, community-rule
+  checks, link-spam limits, and a hard ban on fabricated experience.
+
+### Changed
+
+- `/aeko-create-content handoff=<id>` now runs as a single-channel direct handoff. The backend refreshes the
+  same short handoff ID when the user starts/reopens it, and the skill locks the returned snapshot for that run;
+  snapshot fixes the prompt, optional Context, source set, market, language, action, and channel. This mode
+  can expand owner-associated source text only when its crawl ID matches the snapshot; it cannot save a
+  variation, complete an ActionItem, or publish.
+- `/aeko-update-pdp domain_id=<uuid> product_id=<id>` now checks every ActionItem status before execution.
+  It reuses active work or creates one idempotent ActionItem keyed after the latest completed, failed, or
+  dismissed item, then wins an exclusive backend execution claim before fetching the Plan or generating.
+  The returned claim token fences release, the single atomic PDP store request, and completion.
+  Every run opens a local preview first. A private draft appears only when a real store capability supports
+  it, while current-product updates require a second Before/After/Risk/Undo confirmation. A claim conflict
+  is never auto-released; stale-claim recovery requires explicit confirmation that no other run or store
+  mutation exists, followed by a fresh command run.
+- The PDP preview is finalized and written even when there are no pending verification questions.
+  Metadata-only runs skip image downloads/OCR, preserve the visible description, and send JSON-LD plus SEO
+  meta through the one-call audited update.
+- `/aeko-refresh-jsonld` now reuses or creates a `json_ld` ActionItem, claims it, and uses the same token-fenced
+  one-call store update instead of bypassing the execution/audit contract.
+- Bumped the Claude, Codex, Gemini, and both marketplace manifests to `0.24.0`.
+
 ## [0.23.0] — 2026-07-10
 
 ### Changed
@@ -226,6 +259,7 @@ schema trick.
 - Publish-pipeline skill fixes: correct publish edit-path, loud product/image warnings, identity-context
   terminology.
 
+[0.24.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.23.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.22.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.15.12]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main

@@ -1,31 +1,33 @@
 ---
 name: aeko-update-pdp
 description: >
-  PDP executor for Action-tab items with `execution_class=store_write_artifact`.
-  Fetches a Plan.md, asks image strategy, WebFetches the live product page +
-  images, generates responsive HTML with Product/FAQ/Review JSON-LD, writes
-  to the connected Cafe24/Shopify store (shadow product by default), and
-  marks complete with full audit trail. Splits the PDP branch out of the
-  retired `/aeko-run-action`.
-argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_list_store_integrations, aeko_update_product_description, aeko_update_product_tags, aeko_update_product_meta, aeko_revert_store_write, aeko_list_store_writes, aeko_complete_action_item, Read, Write, WebFetch, Bash
+  PDP executor for an Action-tab item or a direct domain-and-product handoff.
+  Reuses or idempotently creates and exclusively claims a `pdp_html` ActionItem,
+  generates responsive HTML plus Product/FAQ/Review JSON-LD, always opens a local
+  preview, and applies it only through an explicitly chosen supported store path.
+argument-hint: "<item-id> | domain_id=<uuid> product_id=<id>"
+allowed-tools: aeko_list_action_items, aeko_create_action_item, aeko_claim_action_item, aeko_release_action_item, aeko_get_action_plan, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_list_store_integrations, aeko_update_product_page, aeko_revert_store_write, aeko_list_store_writes, aeko_complete_action_item, Read, Write, WebFetch, Bash
 ---
 
 # AEKO Update PDP
 
-Executes one Action-tab PDP item end-to-end: fetch Plan.md → parse frontmatter + prose → ask optimization scope → ask image strategy → WebFetch page + images → generate responsive HTML + JSON-LD → write to store (shadow-by-default) → mark complete.
+Executes one Action-tab PDP item end-to-end: claim the item → fetch Plan.md → ask optimization scope and image
+strategy → generate responsive HTML + JSON-LD → show a local preview → ask where it should go → mark complete.
+Nothing reaches a connected store before the preview and the user's delivery choice.
 
 Two optimization scopes the user chooses up front:
 - **`content_and_metadata`** — rewrite the product-page copy to AEO standards AND emit structured data / meta. The full pipeline (image strategy, AEO frameworks, copy generation).
-- **`metadata_only`** — leave the merchant's existing description copy untouched; only generate/optimize the machine-readable layer (Product / FAQPage / Review JSON-LD + `<meta>` tags + semantic heading fixes) so AI engines can parse and cite the page. No copy rewrite, no image work.
+- **`metadata_only`** — leave the merchant's existing description copy untouched; only generate/optimize the machine-readable layer (eligible Product / FAQPage / Review JSON-LD + `<meta>` tags) so AI engines can parse and cite the page. No copy rewrite, no image work. FAQ/review schema is eligible only when the same facts already appear visibly on the unchanged page.
 
-Contract reference: `docs/contracts/action-item-contract.md` §3 (Plan.md), §7 (shadow product), §6 (completion).
+Contract reference: `docs/contracts/action-item-contract.md` §3 (Plan.md), §6 (completion), and the store-write
+audit/revert contract.
 
 ## Marketer-facing output contract
 
-Frame this as "improving a product page so AI shopping/search tools can understand and cite it." Open with what
-will change, why it matters, and whether the run is preview/shadow/live. Before any store write, show Before /
-After / Risk / Undo. Do not show raw Plan frontmatter, `execution_class`, or schema internals unless debugging.
+Frame this as "improving a product page so AI shopping/search tools can understand and cite it." Say up front
+that the first result is a local preview. After the preview, ask one delivery question. Before a live update,
+show Before / After / Risk / Undo and ask for a second explicit confirmation. Do not show raw Plan frontmatter,
+`execution_class`, or schema internals unless debugging.
 
 Language: mirror the user's chat language for user-facing steps, summaries, questions, and risk/undo copy.
 Keep slash commands, IDs, file paths, channel slugs, schema keys, JSON-LD terms, and tool names in English/ASCII.
@@ -33,28 +35,112 @@ When a Plan includes `target_language`, use it for generated PDP content; do not
 
 ## Input
 
-- `item-id` (required) — `$1`. If missing, stop and point user to `/aeko-action-center <domain_id> pdp`.
+- Existing-item mode: `<item-id>` as `$1`.
+- Direct mode: both named arguments `domain_id=<uuid> product_id=<id>` in `$ARGUMENTS`. Treat `product_id`
+  as an opaque external store-product ID; do not normalize or truncate it.
+
+If neither complete form is present, stop and show:
+
+```text
+/aeko-update-pdp <item-id>
+/aeko-update-pdp domain_id=<uuid> product_id=<id>
+```
+
+## Step 0 — Load tools and resolve direct mode
+
+Before any tool call, issue exactly one deferred-tool search for the full run:
+
+```text
+ToolSearch(query="select:aeko_list_action_items,aeko_create_action_item,aeko_claim_action_item,aeko_release_action_item,aeko_get_action_plan,aeko_get_product_description,aeko_list_review_integrations,aeko_get_product_reviews,aeko_list_store_integrations,aeko_update_product_page,aeko_revert_store_write,aeko_list_store_writes,aeko_complete_action_item,WebFetch", max_results=20)
+```
+
+### Existing-item mode
+
+Set `item_id` from `$1` and continue to the atomic claim gate below. Do not list or create ActionItems.
+
+### Direct mode
+
+Direct mode keeps the ActionItem contract because a product-page write needs audit, completion, and rollback
+state. Resolve one item before continuing:
+
+1. Call
+   `aeko_list_action_items(domain_id, status="pending,generating_prose,ready,completed,failed,dismissed", limit=200, offset=0)`
+   exactly with every ActionItem status.
+2. If the response says more rows remain, repeat the same call with `offset += 200` until all pages have
+   been checked. Parse every returned item and retain only exact matches where `artifact_type == "pdp_html"` and
+   `product_id == <input product_id>`. Never match on title or URL. The MCP list includes `product_id` even
+   when `target_url` is also present, plus `created_at`; newest rows appear first.
+3. If any exact match has `status in {pending, generating_prose, ready}`, reuse the newest one. Set its ID as
+   `item_id`. Do not call `aeko_create_action_item`. If it is `pending` or `generating_prose`, stop before
+   claiming it; tell the user to retry the same item when it is ready rather than creating another.
+4. Otherwise, take the newest exact terminal match in `{completed, failed, dismissed}`, if one exists, and set:
+
+   ```text
+   predecessor = <latest terminal item_id> | initial
+   idempotency_key = pdp-direct:<domain_id>:<product_id>:after:<predecessor>
+   ```
+
+   Use that string byte-for-byte. Then call:
+
+   ```text
+   aeko_create_action_item(
+     domain_id=<domain_id>,
+     artifact_type="pdp_html",
+     tab="action",
+     product_id=<product_id>,
+     idempotency_key=<idempotency_key>
+   )
+   ```
+
+   Parse the returned `id` as `item_id`. The stable key makes concurrent/retried calls return the same row.
+
+After reuse or creation, continue to the claim gate below. Never execute a completed, failed, or dismissed
+predecessor directly. Including every terminal status in the predecessor key prevents a failed or dismissed
+idempotent row from trapping later retries on the same row forever.
+
+### Atomic claim gate — required in both modes
+
+Before fetching the Plan or generating anything, call `aeko_claim_action_item(item_id)` exactly once. The
+backend creates a permanent, token-fenced execution claim while the ActionItem itself remains `ready`:
+
+- success → parse the non-empty returned `claim_id`, store it as `execution_claim_id`, set
+  `execution_claimed=true`, and continue. If the response has no claim token, stop before generation; there
+  is no safe way to release, complete, or write without it;
+- 409 → stop before Plan fetch, generation, or writing. Explain that another or stale run may own the claim; never release it automatically.
+  Offer recovery only after explicit confirmation that no other run is active **and** no store mutation occurred.
+  KO: `다른 실행이 진행 중이 아니며 스토어 변경도 없었음을 확인합니다.` EN: `I confirm no other run is active and no store mutation occurred.` Translate naturally for other chat languages.
+  Only that unambiguous confirmation permits one
+  `aeko_release_action_item(item_id, force=true, confirm_no_active_execution=true)` call; then tell the user
+  to rerun the command and end. Do not claim again in the same run.
+- 403/404 → surface the backend message and stop.
+
+Claims do not expire automatically. From this point until successful completion, release the claim with
+`aeko_release_action_item(item_id, claim_id=execution_claim_id)` only
+when failure or cancellation is confirmed to have caused no store mutation. Never release after a successful
+or ambiguously completed store call; that could let another host repeat a live write.
 
 ## Step 1 — Fetch and parse the Plan.md
 
 Call `aeko_get_action_plan(item_id)`. Parse YAML frontmatter + prose body.
 
-**Validate:**
+**Validate. Every failure or redirect below happens before a store mutation: release first with
+`claim_id=execution_claim_id`, then stop:**
 - `contract_version` starts with `2026-04-17.action.v1.` — else stop.
 - Pin this skill to contract minor `v1.2`. Greater minor → print advisory + proceed.
 - `tab == "action"` — else stop.
 - `execution_class == "store_write_artifact"` — else redirect: `technical_artifact` → `/aeko-fix-technical`, `local_content_artifact` → `/aeko-create-content`.
-- `status ∈ {pending, ready}` — else stop with appropriate message.
+- `status == "ready"` — the claim lives separately, so Plan status remains `ready`; any other status means
+  token-matched release and stop.
 - `write_target` consistency: must pair with `write_mode` per contract §3 — `shadow_product ↔ shadow`, `append_below_existing ↔ live`, `preview_only ↔ local`. Mismatch → stop.
+- `write_mode` is legacy Plan routing metadata, not permission to touch a store. The runtime always starts
+  with a local preview and asks the user where to send it in Step 7.
 - `tier_required` is enforced by backend write tools when applicable; do not resolve legacy identity data here.
 
 Print the header in the user's chat language:
 1. Action label — KO: "상품 페이지 개선" / EN: "Product page improvement"
 2. Context: domain, product title (resolve via `target_url` inspection), channels.
-3. Safety: user-language readout of `write_mode` as one of:
-   - `shadow_product` → "Draft/shadow copy first — safest"
-   - `append_below_existing` → "Can affect live store description"
-   - `preview_only` → "Read-only preview file"
+3. Safety — KO: "먼저 로컬 미리보기를 만듭니다. 확인 전에는 스토어가 바뀌지 않습니다." / EN:
+   "I'll create a local preview first. Nothing changes in the store until you review it."
 
 Print prose body verbatim. Never echo raw frontmatter.
 
@@ -76,7 +162,7 @@ keeping the option numbers unchanged.
 이 상품 페이지를 어떻게 최적화할까요?
 
 1. 콘텐츠 + 메타데이터 최적화 — 상품 설명 문구를 AEO 기준으로 다시 쓰고, 구조화 데이터(JSON-LD)·메타태그도 함께 생성
-2. 메타데이터만 최적화 — 기존 상품 설명은 그대로 두고, AI 엔진이 읽을 수 있는 구조화 데이터(JSON-LD)·메타태그·제목 구조만 최적화
+2. 메타데이터만 최적화 — 기존 상품 설명은 그대로 두고, AI 엔진이 읽을 수 있는 구조화 데이터(JSON-LD)와 SEO 메타태그만 최적화
 
 번호를 입력하거나 원하는 방향을 자유롭게 설명해 주세요.
 ```
@@ -86,7 +172,7 @@ keeping the option numbers unchanged.
 How should we optimize this product page?
 
 1. Content + metadata — rewrite the product description copy to AEO standards, and generate structured data (JSON-LD) + meta tags
-2. Metadata only — leave the existing description copy as-is; only optimize the machine-readable layer AI engines read: structured data (JSON-LD), meta tags, and heading structure
+2. Metadata only — leave the existing description copy as-is; only optimize structured data (JSON-LD) and SEO meta tags
 
 Reply with a number or describe the direction you want.
 ```
@@ -95,15 +181,16 @@ Store as `optimization_scope ∈ {content_and_metadata, metadata_only}`.
 
 **How the scope changes the rest of the run:**
 - `content_and_metadata` → proceed normally: ask image strategy (Step 3), run the full AEO copy generation (Step 5.1), honor `must_include` / `sections_required` in the visible body.
-- `metadata_only` → SKIP the image-strategy question (Step 3); force `image_strategy = preserve_existing` internally and never rebuild. In Step 5, do NOT rewrite or reorder the merchant's description copy. Generate only: Product / FAQPage / Review JSON-LD, `<meta>` tags (title/description/OG where the Plan asks), and semantic heading corrections that do not change wording. `must_include` / `forbidden` are validated against the JSON-LD + meta output, not by injecting copy into the visible body. `sections_required` acceptance is waived (no new body sections are authored). The FAQPage / Review JSON-LD may still be built from `context_reviews` (Step 4.5) and on-page reviews, since that is machine-readable structured data, not visible-copy rewriting.
+- `metadata_only` → SKIP the image-strategy question (Step 3); force `image_strategy = preserve_existing` internally and never rebuild. In Step 5, do NOT rewrite or reorder the merchant's description copy or claim to change its headings. Generate Product JSON-LD and SEO meta fields (title/description where the Plan asks). Add FAQPage or Review/AggregateRating only when the exact Q&A/review facts already appear in readable visible content on the unchanged page; Context reviews alone never justify hidden schema. `must_include` / `forbidden` are validated against the eligible JSON-LD + meta output, not by injecting copy into the visible body. `sections_required` acceptance is waived (no new body sections are authored).
 
-**Scope ↔ write_mode note:** `metadata_only` naturally pairs with `append_below_existing` (append a `<script type="application/ld+json">` block + meta below the existing description) or with `aeko_update_product_meta` for `<meta>` fields. It never replaces the existing description body.
+For `metadata_only`, the preview and any later live update must keep the existing description body unchanged.
+Only the approved JSON-LD and meta fields may differ.
 
 ## Step 3 — Image strategy (ask user — content_and_metadata scope only)
 
 **Skip this step when `optimization_scope == metadata_only`** (force `image_strategy = preserve_existing`,
 proceed to Step 4). Otherwise ask in the user's chat language. Use the matching KO/EN template below when
-applicable; for other languages, translate the EN template naturally while keeping `write_mode` and option
+applicable; for other languages, translate the EN template naturally while keeping option
 numbers unchanged.
 
 **KO:**
@@ -130,19 +217,29 @@ Reply with a number or describe the approach you want.
 
 Store as `image_strategy ∈ {preserve_existing, rebuild_from_existing, rebuild_with_local}`.
 
-**Strategy ↔ write_mode consistency:**
-
-| `image_strategy` | Allowed `write_mode` values |
-|---|---|
-| `preserve_existing` | `shadow_product`, `append_below_existing`, `preview_only` |
-| `rebuild_from_existing` | `shadow_product`, `preview_only` |
-| `rebuild_with_local` | `shadow_product`, `preview_only` |
-
-Rebuild on an `append_below_existing` item → stop: "Rebuilding replaces HTML, so appending to the live description doesn't make sense. Pick strategy 1 or ask me to switch to shadow write." Do NOT silently reassign.
+Every strategy produces a local preview. The delivery choice comes later. If the user eventually chooses a
+live update, `preserve_existing` appends the approved layer without deleting existing copy, while either
+rebuild strategy replaces the current description and must say that plainly in the live confirmation.
 
 For `rebuild_with_local` — prompt for up to 10 local image paths (absolute). Read each with native `Read` to verify. Inline as data-URI for local preview; in the final artifact for write-back, emit `{{LOCAL_IMAGE_N}}` placeholders + surface upload checklist.
 
-## Step 4 — Fetch current page + images (skip for rebuild_with_local)
+## Step 4 — Resolve the current page evidence
+
+### `metadata_only`
+
+Do **not** download images, run OCR, inspect image binaries, or apply the all-images-failed gate.
+
+1. Require the Plan's exact `integration_id` and `product_id` (the external store-product ID). Call
+   `aeko_get_product_description(integration_id, product_id)` and store its raw `description_html` as
+   `current_description_html`. This is the source of truth that the preview must preserve.
+2. You may call `WebFetch(frontmatter.target_url)` once for readable page text, existing public metadata, and
+   text-only review evidence. Do not discover or fetch image URLs in this scope. An unavailable or image-only
+   public page does not block metadata generation; continue from the official store description, product
+   facts, and Context reviews.
+3. Build `reviews_payload` only from readable text/structured data returned by that page fetch. Never infer a
+   review or product fact from an uninspected image.
+
+### `content_and_metadata`
 
 If `image_strategy != rebuild_with_local`:
 
@@ -153,7 +250,9 @@ If `image_strategy != rebuild_with_local`:
    - Cap at 12 images per item. Log `skipped_decorative`, `skipped_thumbnail`, `skipped_overflow` counts.
 3. For each remaining image index, fetch the binary via WebFetch (or direct URL save via `Bash(curl -o ...)` if the image content-type isn't handled) and save to `./aeko-artifacts/<domain_id>/<item_id>/img/<idx>.<ext>`. Open each with native `Read` for Claude vision to OCR Korean + English text. Preserve paragraph order.
 4. **Review detection pass:** scan OCR text + raw HTML for review-shaped blocks (customer quotes, star ratings, "리뷰 N개", structured review widgets). Build `reviews_payload = [{author, rating, text, date_if_present}]` capped at top-10 recent/high-rated. Null if nothing review-shaped.
-5. If every image OCR failed → stop. Do NOT hallucinate copy.
+5. If the page exposed candidate product images and every attempted image OCR failed, stop. Do NOT hallucinate
+   copy. If the page exposed no eligible product images, continue from verified product/context facts and log
+   the evidence gap rather than treating zero attempts as an OCR failure.
 
 ## Step 4.5 — Pull product context-reviews (originality source — runs for ALL strategies)
 
@@ -199,12 +298,20 @@ The Step 9 summary must list which reference files were loaded so the user can v
 
 **Scope branch (from Step 2.5):**
 - `metadata_only` → do NOT author or rewrite visible description copy. Preserve the merchant's existing
-  description HTML verbatim. Produce only the machine-readable layer: Product / FAQPage / Review JSON-LD
-  (built from specs + `context_reviews` + on-page reviews) and `<meta>` tags, plus non-destructive semantic
-  heading corrections (e.g. fixing heading levels without changing wording). Skip the BLUF/PREP copy-writing
-  below, skip `sections_required`, and validate `must_include` / `forbidden` against the JSON-LD + meta output.
-  Then continue to Step 5b.
+  description HTML byte-for-byte in `current_description_html`. Produce separate values for the
+  machine-readable layer: `json_ld_payload` (Product / FAQPage / Review, built from specs +
+   existing visible/store facts + text-only on-page reviews), `meta_title`, and `meta_description`. Context
+  reviews may help assess positioning but must not create hidden FAQ/review claims in this scope. Do not insert visible
+  headings or body copy. For the local preview only, render the unchanged description together with a clearly
+  labeled, non-editing inspector block that shows the proposed JSON-LD/meta values; keep the store-write
+  payload separate. Skip the BLUF/PREP copy-writing below, skip `sections_required`, and validate
+  `must_include` / `forbidden` against JSON-LD + meta. Then continue to Step 5b.
 - `content_and_metadata` → run the full generation below.
+
+When emitting more than one schema node, produce one `json_ld_payload` object:
+`{"@context":"https://schema.org","@graph":[<Product>,<FAQPage if visibly matched>]}`.
+Nest eligible `aggregateRating` and `review` data in Product. The store API accepts one JSON object, not a list
+of separate payloads.
 
 Read `prose` and Step 2 content context for voice/structure guidance, `frontmatter.pdp_responsive_contract.*`
 for hard rules, and OCR payload from Step 4. Apply the loaded recipes (§5.0) — citability baseline,
@@ -231,7 +338,8 @@ Keep the draft HTML in memory at this point — do NOT write it to disk yet. Dis
 
 ## Step 5b — Resolve pending verifications with the user
 
-If `pending_verifications` is empty after Step 5, skip this step.
+If `pending_verifications` is empty after Step 5, skip only the question/answer work in this step and continue
+directly to Step 5c.
 
 Otherwise, `Read references/prompts/verification-prompts.md` for the full prompt templates, reply-handling rules, and batch-shortcut behavior. Apply per the user's chat language; keep `frontmatter.target_language` only for the generated PDP content.
 
@@ -239,7 +347,12 @@ After collecting all answers, apply substitutions in-memory. Re-validate `must_i
 
 The final artifact must contain ZERO `[VERIFY: <field>]` badges in visible HTML and ZERO `.aeko-verify`-style decorations. The only acceptable unresolved-state form is HTML comments produced by the explicit `두기` / `leave` reply.
 
-Write the finalized HTML to `./aeko-artifacts/<frontmatter.domain_id>/<frontmatter.item_id>/pdp.html`.
+## Step 5c — Finalize and write the preview artifact
+
+Whether or not there were pending verifications, re-run the scope-specific acceptance checks after Step 5b,
+then **always** write the finalized preview HTML to
+`./aeko-artifacts/<frontmatter.domain_id>/<frontmatter.item_id>/pdp.html`. Skipping the questions when there
+is nothing to verify must never skip this write.
 
 ## Step 6 — Local preview
 
@@ -247,58 +360,143 @@ Open the HTML in the default browser for review:
 - macOS: `Bash(open ./aeko-artifacts/<domain_id>/<item_id>/pdp.html)`
 - Linux: `Bash(xdg-open ./aeko-artifacts/<domain_id>/<item_id>/pdp.html)`
 
-## Step 7 — Write-back per write_mode
+## Step 7 — Ask where the preview should go
 
-Before any write-back call, print a marketer-facing confirmation block:
+First determine whether private-draft creation is genuinely supported. Set `draft_supported=true` only when
+the loaded runtime tool schema exposes an explicit private-draft/shadow creation operation and the selected
+store connection advertises that capability. The standard `aeko_update_product_page` tool updates the current
+product and do not count. Never infer support from Plan `write_mode`, a platform name, or marketing copy. With
+the current standard MCP surface, `draft_supported=false`.
 
+Ask exactly one delivery question in the user's chat language. Do not ask a separate write-mode question
+elsewhere.
+
+When `draft_supported=true`:
+
+**KO**
+```text
+미리보기가 준비되었습니다. 어떻게 진행할까요?
+
+1. 미리보기만 유지
+2. 비공개 초안 상품으로 저장
+3. 현재 상품 페이지에 적용
+
+번호를 하나 선택해 주세요. 3번은 변경 내용과 되돌리기 방법을 먼저 보여드린 뒤 한 번 더 확인합니다.
 ```
-Before
-- Current PDP description stays available through the store audit trail.
 
-After
-- Adds AI-readable product facts, review proof, FAQ content, and shopping facts AEKO can verify.
+**EN**
+```text
+The preview is ready. What would you like to do?
 
-Risk
-- <preview_only: none to live store | shadow_product: low | append_below_existing: live PDP changes>
+1. Keep the preview only
+2. Save it as a private draft product
+3. Apply it to the current product page
 
-Undo
-- <preview_only: delete/ignore the file | write: use aeko_revert_store_write("<audit_id>") after the audit id returns>
+Choose one number. For option 3, I'll show the exact change and undo path before asking you to confirm once more.
 ```
 
-**`shadow_product` (default):** the v0.5.0 MCP surface retains only `aeko_update_product_description`, `aeko_update_product_tags`, `aeko_update_product_meta`, `aeko_list_store_writes`, and `aeko_revert_store_write`. If the backend exposes a distinct shadow-product creation endpoint through one of these calls (e.g. `aeko_update_product_description` with a shadow flag in the payload), follow the prose's instructions for that call. Otherwise surface the constraint to the user: "Shadow-product write is not yet exposed via MCP — I'll write to `preview_only` and you can paste into Cafe24 admin under a new draft product." Do NOT silently downgrade without telling the user.
+When `draft_supported=false`, state naturally that this connection cannot create a private draft product,
+then offer only the safe choices:
 
-**`append_below_existing`:**
-1. `aeko_get_product_description(integration_id, external_product_id)` → existing HTML.
-2. `merged = existing_html + "\n<!-- AEKO appended -->\n" + rendered_html`.
-3. `aeko_update_product_description(integration_id, external_product_id, merged)`.
-4. Parse response for `audit_id` + `admin_url`. If missing, flag in the summary.
+**KO**
+```text
+미리보기가 준비되었습니다. 현재 연결에서는 비공개 초안 상품 저장을 지원하지 않습니다.
 
-**`preview_only`:** no API call. Tell user to paste `pdp.html` into Cafe24 editor themselves.
+1. 미리보기만 유지
+2. 현재 상품 페이지에 적용
+
+번호를 하나 선택해 주세요. 2번은 변경 내용과 되돌리기 방법을 먼저 보여드린 뒤 한 번 더 확인합니다.
+```
+
+**EN**
+```text
+The preview is ready. This store connection cannot create a private draft product.
+
+1. Keep the preview only
+2. Apply it to the current product page
+
+Choose one number. For option 2, I'll show the exact change and undo path before asking you to confirm once more.
+```
+
+For other chat languages, translate the English template naturally. Keep IDs, paths, and tool names unchanged.
+
+### Keep preview only
+
+Set `delivery_mode="preview_only"`. Make no store call. Continue to Step 8.
+
+### Save as a private draft product — only when supported
+
+Call only the explicit draft-creation operation discovered above, following its actual schema. A normal
+product update with a renamed label is not a draft. Require the response to identify a distinct non-public
+draft target. Set `delivery_mode="private_draft"` and retain its ID/admin URL for the summary. If the call
+fails with a confirmed no-write response, keep the local preview, release the claim with
+`claim_id=execution_claim_id`, and stop. Never fall back
+to a live update or claim that a draft was created.
+
+### Apply to the current product page — explicit confirmation required
+
+1. Resolve the exact `integration_id` and external product ID. Call
+   `aeko_get_product_description(integration_id, external_product_id)` immediately before confirmation.
+2. Build the exact proposed payload:
+   - `metadata_only` → omit `description_html` entirely. Send only the approved `json_ld_payload`,
+     `meta_title`, and `meta_description`; the backend uses the current store description as the JSON-LD base,
+     preserving every non-JSON-LD body byte;
+   - `preserve_existing` → keep `new_structured_section_html` separate from the full preview. Build
+     `proposed_description_html = current_description_html + "\n<!-- AEKO appended -->\n" + new_structured_section_html`
+     once, and send that complete proposed value exactly once. Never append `rendered_description_html` when
+     it already contains the current description;
+   - either rebuild strategy → replace the current description with `rendered_description_html`. Local-image placeholders
+     must be resolved to real store-accessible URLs first; otherwise live update is unavailable.
+3. In the user's chat language, show:
+   - **Before**: product, current description length, and what remains unchanged;
+   - **After**: append vs replacement, proposed length, affected sections/meta fields, and preview path;
+   - **Risk**: this changes the public product page; name replacement risk when applicable;
+   - **Undo**: the write returns an audit ID for `aeko_revert_store_write("<audit_id>")`.
+4. Ask a second explicit confirmation. KO: `현재 상품 페이지에 적용` / EN: `Apply to current page`.
+   Translate the confirmation phrase for other chat languages and require that exact affirmative intent.
+   Any cancellation or ambiguous reply sets `delivery_mode="preview_only"`; make no store call and continue
+   to Step 8.
+5. Only after confirmation, call `aeko_update_product_page(...)` **exactly once**, passing the exact
+   `integration_id`, external product ID, `action_item_id=frontmatter.item_id`, and
+   `execution_claim_id=execution_claim_id`, plus every approved description/JSON-LD/tag/meta field in that
+   one request. Never split one PDP update across `aeko_update_product_description`,
+   `aeko_update_product_tags`, or `aeko_update_product_meta`; the single response must yield one `audit_id`
+   and one revert boundary. Parse `audit_id` and `admin_url`, then set `delivery_mode="current_product"`.
+   If the result is ambiguous (timeout/5xx after submission), do not release the claim; the write may have
+   succeeded and the backend blocks automatic duplicate submission. Call `aeko_list_store_writes`, inspect
+   the exact product's latest audit, and compare the store page. If one matching successful audit is confirmed,
+   call `aeko_complete_action_item` with that audit ID and the same claim token. Otherwise stop and require
+   owner-confirmed reconciliation; never repeat the write blindly.
 
 ## Step 8 — Mark complete
 
 ```
 aeko_complete_action_item(
     item_id=frontmatter.item_id,
-    artifact_summary="<one-line: artifact + write mode + audit id if any>",
+    artifact_summary="<one-line: artifact + delivery mode + audit id if any>",
     artifact_paths=[<absolute paths of pdp.html + any image files>],
     write_result={
-        "mode": "<shadow_product | append_below_existing | preview_only>",
+        "mode": "<private_draft | current_product | preview_only>",
         "audit_id": "<from write response; null for preview_only>",
         "admin_url": "<from write response; null otherwise>",
-    } if write performed else None,
+        "draft_id": "<private draft id; null otherwise>",
+    },
+    execution_claim_id=execution_claim_id,
 )
 ```
 
 Only complete if:
 - Artifact written AND (no write-back required OR write-back returned valid response).
+- On successful completion, the backend deletes the separate execution claim.
+- If completion fails before any store mutation, release with `claim_id=execution_claim_id`. If a store mutation succeeded or may have
+  succeeded, do not release it; report the item ID and audit result so another host cannot repeat the write.
 
 ## Step 9 — User-facing summary
 
 ```
 ✔ Product page improvement complete
   Scope:         <content_and_metadata: copy rewritten + structured data | metadata_only: structured data + meta only, copy untouched>
-  Safety:        <preview file | draft/shadow | live PDP updated>
+  Safety:        <preview file | private draft product | current product page updated>
   Audit ID:      <audit_id>         (revert: aeko_revert_store_write("<audit_id>"))
   Admin URL:     <admin_url>
   Artifact:      <pdp.html path>
@@ -325,17 +523,30 @@ Next: /aeko-action-center <domain_id> pdp
 
 ## Error paths
 
-- Plan endpoint unavailable / parse error → stop; surface detail.
-- Contract mismatch → stop.
+- Plan endpoint unavailable / parse error → release with the matching `execution_claim_id`, stop, and surface detail.
+- Contract mismatch → release with the matching `execution_claim_id` and stop.
 - Thin/missing content context → continue with product facts, OCR, and reviews; do not block write-back.
-- All image OCR failed → stop; do NOT fabricate copy.
-- Write-back 4xx → stop; do NOT mark complete; surface backend error verbatim.
-- Shadow-product endpoint unavailable (v0.5.0 transitional) → ask user before downgrading to preview_only.
+- `content_and_metadata` with attempted candidate images whose OCR all failed → stop; do NOT fabricate copy.
+  `metadata_only` never runs image/OCR gates.
+- Claim 409 → stop; leave the claim unless the user gives the two-part recovery confirmation, then release once and ask them to rerun.
+- Failure before any store mutation → release with the matching `execution_claim_id`, then surface the error.
+- Write-back 4xx with confirmed no mutation → release with the matching `execution_claim_id`; do NOT mark complete; surface the backend error.
+- Ambiguous store response after submission → keep the claim and inspect the audit trail before retrying.
+- Private-draft capability unavailable → say so before the delivery question; never fake it or silently switch modes.
 
 ## What this skill never does
 
-- Never writes to the live PDP by default; default is shadow/preview.
-- In `metadata_only` scope, never rewrites, reorders, or deletes the merchant's existing description copy — only adds the machine-readable layer (JSON-LD + meta + non-destructive heading fixes).
+- Never creates a second direct PDP item while an exact product match is pending, generating prose, or ready;
+  active items are reused, and concurrent execution is resolved only by atomic claim success or 409.
+- Never generates without first winning the atomic claim.
+- Never relies on claim expiry: claims are permanent until token-matched completion/release or explicitly
+  confirmed forced recovery.
+- Never writes to a store before showing the local preview.
+- Never updates the current product page without the delivery choice plus a second Before/After/Risk/Undo confirmation.
+- Never splits one confirmed current-page update into multiple store calls; description, JSON-LD, tags, and
+  SEO meta share one audit/revert boundary.
+- Never calls a live update a private draft, and never silently downgrades an unavailable draft path.
+- In `metadata_only` scope, never rewrites, reorders, or deletes the merchant's existing description copy — only adds the machine-readable layer (JSON-LD + meta).
 - Never handles Technical or Content items (redirect to sibling executors).
 - Never hallucinates product copy from blank OCR.
 - Never omits alt text on an `<img>`.
