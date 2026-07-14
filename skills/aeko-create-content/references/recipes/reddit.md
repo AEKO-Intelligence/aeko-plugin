@@ -9,6 +9,26 @@ load_when: SKILL.md selects channel=reddit for a thread reply
 Use this recipe only for a reply to the exact Reddit thread in the evidence snapshot or Plan. Reddit renders
 the comment, so return plain markdown. Never post it.
 
+## Required preflight
+
+The user must open the exact thread URL before posting and confirm that the thread is still relevant, not
+locked or archived, and open to commercial participation. They must also read the current subreddit rules and
+keep the affiliation disclosure. A snapshot title, prompt, citation count, or subreddit name does not prove
+the thread body or current posting state.
+
+In direct handoff mode, a post-ready candidate requires an owner-verified matching-crawl stored thread body from
+`aeko_fetch_source_content`, an exact snapshot crawl-ID match, `body_available=true`, and `truncated=false`.
+Snapshot excerpts and titles never satisfy this gate. When the gate fails, or when
+product selection remains unresolved, do not claim to have read the entire live thread and do not return a
+post-ready comment. Return a `Reply preparation brief` with:
+
+- the known prompt/topic and thread URL;
+- permitted grounding and attributed contextual-review themes from the snapshot. When product selection is
+  unresolved, keep the brief product-neutral and list candidates only as unselected;
+- an answer-first outline and proposed disclosure line;
+- facts or comparisons that remain unsupported;
+- the manual preflight above and a note that thread-specific wording requires verification.
+
 ## Reply structure
 
 1. Open with a plain affiliation disclosure, such as "Disclosure: I'm affiliated with <brand>."
@@ -34,11 +54,16 @@ language and level of formality. No hashtags.
 
 ## Acceptance gates
 
+- Direct handoff mode used an owner-verified, matching-crawl body with `body_available=true` and
+  `truncated=false` before labeling the result a reply draft; otherwise the output is a preparation brief.
+- Product selection was resolved or not required before adding any product claim or producing a candidate
+  reply.
 - Affiliation is clear in the first two lines.
 - The first paragraph answers the question.
 - Every product or brand claim traces to the supplied snapshot, fetched source, or official product evidence.
 - No fabricated experience, hidden promotion, hard CTA, link spam, or unsupported comparison.
-- The result names the exact thread URL separately from the draft, so the user can verify the destination.
+- The result names the exact thread URL separately from the draft, so the user can verify the destination,
+  current thread state, and subreddit rules.
 
 ## File output
 

@@ -7,6 +7,25 @@ The plugin follows [Semantic Versioning](https://semver.org/). All five manifest
 across `.claude-plugin/`, `.codex-plugin/`, and `gemini-extension.json` are kept in sync so that
 version-keyed host caches refresh on update.
 
+## [0.25.0] — 2026-07-14
+
+### Changed
+
+- `/aeko-create-content handoff=<id>` now consumes snapshot product and contextual-review grounding and
+  produces one action-specific deliverable for thread, blog, media, review-platform, ingredient-database,
+  Wikipedia, or YouTube recommendations.
+- Thread replies are post-ready only after a matching-crawl owner-verified stored-body fetch; this does not
+  claim the crawl captured the entire live page. Other cases produce a preparation brief with manual
+  thread/rules checks. When a snapshot requires product selection, the handoff asks one bounded product
+  question; unselected candidates never become product claims. Publisher pitches reject aggregator-only
+  targets.
+- Wikipedia handoffs prepare a disclosed talk-page request or Articles for Creation draft instead of directing
+  affiliated users to edit. Namu Wiki and other wiki targets use their own explicit snapshot policy or a
+  manual-policy/source-readiness brief.
+- Review-platform guidance permits only genuine customer feedback workflows; ingredient databases use a
+  separate listing-accuracy workflow.
+- Bumped the Claude, Codex, Gemini, and both marketplace manifests to `0.25.0`.
+
 ## [0.24.0] — 2026-07-13
 
 ### Added
@@ -259,6 +278,7 @@ schema trick.
 - Publish-pipeline skill fixes: correct publish edit-path, loud product/image warnings, identity-context
   terminology.
 
+[0.25.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.24.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.23.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.22.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
