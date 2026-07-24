@@ -154,6 +154,7 @@ AEKO will describe each run in plain business language: what it checks, why it m
 - `/aeko-compose-ads [domain_id] [min_score]` — compose paused, review-grounded OpenAI Ads groups from contextual reviews
 - `/aeko-ad-report [domain_id] [days]` — report on OpenAI Ads efficiency using CTR, CPC, spend, and clicks
 - `/aeko-optimize-budget [domain_id] [days]` — dry-run and confirm guarded campaign budget optimization
+- `/aeko-ad-guardrails [domain_id]` — set up an automated pacing rule that pauses overspending campaigns, ad groups, or ads; created disabled, previewed, and armed only after explicit confirmation
 
 **Maintenance + reporting:**
 
@@ -353,6 +354,7 @@ AEKO는 매 실행마다 무엇을 확인하는지, 왜 중요한지, 읽기 전
 - `/aeko-compose-ads [domain_id] [min_score]` — 컨텍스트 리뷰 기반의 일시중지 상태 OpenAI Ads 그룹 구성
 - `/aeko-ad-report [domain_id] [days]` — CTR, CPC, 지출, 클릭 기준 OpenAI Ads 효율 리포트
 - `/aeko-optimize-budget [domain_id] [days]` — 확인 후 실행되는 예산 최적화 드라이런
+- `/aeko-ad-guardrails [domain_id]` — 과지출 캠페인·광고 그룹·광고를 자동 일시중지하는 페이싱 규칙 설정; 비활성 상태로 생성하고 영향 범위 미리보기 후 명시적 확인을 받아야 작동
 
 **유지보수 + 리포팅:**
 

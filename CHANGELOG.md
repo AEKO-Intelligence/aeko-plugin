@@ -7,6 +7,25 @@ The plugin follows [Semantic Versioning](https://semver.org/). All five manifest
 across `.claude-plugin/`, `.codex-plugin/`, and `gemini-extension.json` are kept in sync so that
 version-keyed host caches refresh on update.
 
+## [0.27.0] — 2026-07-24
+
+### Added
+
+- `/aeko-ad-guardrails [domain-id]` walks a merchant through setting up an automated OpenAI Ads
+  pacing rule that pauses campaigns, ad groups, or ads when spend runs too fast or CPM/CPC crosses a
+  threshold. Thresholds are anchored on the merchant's observed numbers via `aeko_get_ad_insights`;
+  the offered metric × window × scope combinations come from `aeko_get_ad_rule_capabilities` (spend
+  over `last_n_hours`; CPM/CPC only over `rolling_24h`/`daily`; no conversion/ROAS rules). The rule
+  is created disabled, its blast radius is shown with `aeko_preview_ad_rule`, and it is armed only
+  after explicit confirmation — including a second confirmation before `acknowledge_broad_match=True`
+  on broad-scope rules. `aeko_list_ad_rule_executions` / `aeko_list_ad_rule_runs` answer "what did
+  automation do while I was away." Reaction time is bounded by OpenAI's hourly reporting data, and
+  resuming paused spend is always a manual step. Pairs with the ad-rule tools shipping in `aeko-mcp`.
+
+### Changed
+
+- Bumped the Claude, Codex, Gemini, and both marketplace manifests to `0.27.0`.
+
 ## [0.26.0] — 2026-07-14
 
 ### Changed
@@ -292,6 +311,7 @@ schema trick.
 - Publish-pipeline skill fixes: correct publish edit-path, loud product/image warnings, identity-context
   terminology.
 
+[0.27.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.26.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.25.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
 [0.24.0]: https://github.com/AEKO-Intelligence/aeko-plugin/commits/main
