@@ -9,7 +9,7 @@
     {
       "name": "aeko-plugin",
       "description": "AEKO skills for Claude — onboarding, visibility, PDP, content, schema, action center, and user-language guidance.",
-      "version": "0.26.0",
+      "version": "0.27.0",
       "source": "./"
     }
   ]

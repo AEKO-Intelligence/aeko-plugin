@@ -82,6 +82,7 @@ List the 20 skills grouped by marketer journey so the user can see the surface a
 |  | `/aeko-compose-ads` | Compose paused, review-grounded OpenAI Ads groups from contextual reviews. |
 |  | `/aeko-ad-report` | Produce a paid-ad performance report from OpenAI Ads metrics. |
 |  | `/aeko-optimize-budget` | Dry-run and confirm guarded campaign budget optimization. |
+|  | `/aeko-ad-guardrails` | Auto-pause rule for runaway ad spend; created disabled, armed only after preview and confirmation. |
 | **Publish** | `/aeko-publish-content` | Publish saved content variations only after explicit confirmation. |
 | **Maintenance** | `/aeko-refresh-jsonld` | Refresh review facts AI can read, such as rating and review count. |
 |  | `/aeo-audit` | Generic AEO audit; add `shopping` for product-level AI shopping readiness. |
@@ -294,6 +295,7 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 |  | `/aeko-compose-ads` | 컨텍스트 리뷰 기반의 일시중지 상태 OpenAI Ads 그룹 구성. |
 |  | `/aeko-ad-report` | OpenAI Ads 성과 리포트 생성. |
 |  | `/aeko-optimize-budget` | 확인 후 실행되는 예산 최적화 드라이런. |
+|  | `/aeko-ad-guardrails` | 광고비 폭주를 자동 일시중지하는 규칙. 비활성 생성 후 미리보기와 확인을 거쳐야 작동. |
 | **게시** | `/aeko-publish-content` | 저장된 콘텐츠 변형본을 명시 확인 후 게시. |
 | **유지보수** | `/aeko-refresh-jsonld` | 평점과 리뷰 수처럼 AI가 읽는 리뷰 사실 새로고침. |
 |  | `/aeo-audit` | 일반 AEO 진단; `shopping`을 붙이면 상품 단위 AI 쇼핑 준비도 진단. |
