@@ -50,9 +50,10 @@ Most skills read files, write artifacts (HTML, markdown, JSON), or shell out to 
 
 1. Settings → Connectors → **Add custom connector**
 2. Server URL: `https://aeko-intelligence.com/mcp`
-3. Advanced → Client ID: `aeko-mcp-v1`
-4. Advanced → Client Secret: leave blank
-5. Connect — complete browser OAuth
+3. Connect — complete browser OAuth
+
+Leave **Advanced settings** alone. The OAuth Client ID and Secret are optional and not
+needed: AEKO supports Dynamic Client Registration, so Claude Desktop registers itself.
 
 **Step 2 — Install this plugin** (for skills / slash commands):
 
@@ -66,7 +67,7 @@ After both steps, `/aeko-plugin:aeko-onboarding`, `/aeko-plugin:aeko-action-cent
 
 ```bash
 /plugin marketplace add AEKO-Intelligence/aeko-plugin
-/plugin install aeko-plugin@AEKO-Intelligence
+/plugin install aeko-plugin@aeko-plugin
 ```
 
 Then set up the MCP connection separately:
@@ -252,9 +253,10 @@ AI 가시성은 스키마 트릭이나 비밀 키워드가 아닙니다. Google�
 
 1. Settings → Connectors → **Add custom connector**
 2. Server URL: `https://aeko-intelligence.com/mcp`
-3. Advanced → Client ID: `aeko-mcp-v1`
-4. Advanced → Client Secret: 비워두기
-5. Connect — 브라우저 OAuth 완료
+3. Connect — 브라우저 OAuth 완료
+
+**Advanced settings**는 건드리지 마세요. OAuth Client ID와 Secret은 선택 항목이며 입력할
+필요가 없습니다. AEKO는 동적 클라이언트 등록을 지원하므로 Claude Desktop이 스스로 등록합니다.
 
 **2단계 — 이 플러그인 설치** (스킬 / 슬래시 커맨드용):
 
@@ -268,7 +270,7 @@ AI 가시성은 스키마 트릭이나 비밀 키워드가 아닙니다. Google�
 
 ```bash
 /plugin marketplace add AEKO-Intelligence/aeko-plugin
-/plugin install aeko-plugin@AEKO-Intelligence
+/plugin install aeko-plugin@aeko-plugin
 ```
 
 그런 다음 MCP 연결을 별도로 설정:
