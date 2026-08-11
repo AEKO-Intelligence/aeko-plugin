@@ -7,6 +7,87 @@ The plugin follows [Semantic Versioning](https://semver.org/). All five manifest
 across `.claude-plugin/`, `.codex-plugin/`, and `gemini-extension.json` are kept in sync so that
 version-keyed host caches refresh on update.
 
+## [0.29.0] — 2026-08-11
+
+### Added
+
+- `/aeko-connect` provides a zero-account capability slot board for AEKO, ads, analytics, store,
+  docs/Notion, chat/Slack, and calendar without hardcoding install-specific MCP names.
+- `/aeko-ga4` adds a free path through the customer's own official GA4 connector and an optional AEKO path
+  through the five GA4 join tools.
+- `/aeko-weekly-report` composes provenance-carrying normalized rows from simple skills without calling an
+  MCP tool directly, and always reports what could not be seen.
+- `/aeko-create-loop` interactively writes a durable Notion configuration, composes the host-specific schedule,
+  and dry-runs it in the foreground; `/aeko-run-loop` is the approvals-first scheduled entry point and is
+  explicitly read-and-propose only.
+- `/aeko-content-ideas` defines the intended content-idea list/start/dismiss flow and stops honestly when its
+  backend capabilities are absent.
+- `/aeko-openai-ads-reporting` restores the account-gated client/CMO OpenAI Ads depth report: top and bottom
+  campaigns, ad groups, ads, and products by efficiency, with an optional organic AI-visibility fold.
+
+### Consolidated and renamed
+
+- `/aeko-start` replaces `/aeko-onboarding` and removes account-only domain probes from the first-run path.
+- `/aeko-ai-visibility` replaces `/aeko-visibility-report` and absorbs Share of Voice and answer drift.
+- `/aeko-source-analysis` merges `/aeko-prompt-deep-dive` and `/aeko-check-source`.
+- `/aeko-competitor-analysis scope=brand|product` merges `/aeko-brand-competitor-analysis` and
+  `/aeko-product-competitor-analysis` while preserving the free public-research stage.
+- `/aeko-manage-prompts mode=discover|review` merges `/aeko-find-prompts-to-track` and
+  `/aeko-manage-tracked-prompts`, and adds suggested-prompt and Context curation paths.
+- `/aeko-store mode=setup|reviews` merges `/aeko-setup-store` and `/aeko-inject-reviews`.
+- `/aeko-ads-review` is now the genuine four-platform glance: Meta, TikTok, and Google Ads use customer-owned
+  connectors for free; OpenAI Ads uses AEKO and contributes spend/efficiency while its un-ingested
+  conversion/ROAS cells remain dashed. `/aeko-ad-report` routes to `/aeko-openai-ads-reporting` for depth.
+- `/aeko-openai-compose-ads` replaces `/aeko-compose-ads`, preserving paused-by-default review-grounded
+  OpenAI Ads creation and its preview, confirmation, and idempotency paths.
+- `/aeko-openai-budget-shift` replaces the unreleased `/aeko-budget-shift`; the shipped
+  `/aeko-optimize-budget` router now points to the OpenAI-scoped name and the workflow still covers campaign,
+  ad-group, and ad state.
+- `/aeko-openai-guardrails` replaces `/aeko-ad-guardrails`, preserving preview-before-arm, broad-match
+  confirmation, activity history, and the account-wide emergency stop.
+- `/aeko-update-pdp mode=refresh` absorbs `/aeko-refresh-jsonld` with patch-only HTML byte preservation.
+- Every previously shipped retired slug above remains a compatibility router with a cross-host command
+  fallback. The unreleased `/aeko-budget-shift` has no stub.
+
+### Safety and release contracts
+
+- `/aeko-openai-guardrails` documents an account-wide emergency stop and requires fresh confirmation to
+  re-enable automation.
+- `/aeko-run-loop` no longer claims install-variable bare MCP names are an enforced deny boundary. It lists
+  no marketing write tool in `allowed-tools`, never calls one, and relies on the honest current product
+  limit: server-side executable staging does not exist.
+- `scripts/lint-release-contracts.sh` now verifies all retired routing stubs and rejects prohibited
+  source-analysis terminology in shipped skills, in addition to checking versions and shared audit policy.
+
+### Known external blockers
+
+- The content-idea wrappers `aeko_list_content_ideas`, `aeko_start_content_idea`, and
+  `aeko_dismiss_content_idea` do not yet exist in `aeko-mcp`, so `/aeko-content-ideas` is present but blocked.
+- Server-side staging does not yet exist, so scheduled marketing writes are unsupported; the weekly loop
+  can read evidence and approvals, deliver reports, and propose changes, but cannot execute them.
+
+## [0.28.0] — 2026-08-11
+
+### Added
+
+- `/aeko-site-audit` checks whether a public site is readable by AI, and `/aeko-pdp-audit` checks whether
+  one product page is citation-ready. Both are read-only, work without an AEKO account, preserve unknown
+  states when evidence is unavailable, and share a byte-identical severity policy.
+- `/aeko-pdp-build` turns verified product-page evidence into responsive, paste-ready HTML plus matching
+  Product and FAQPage JSON-LD without writing to a store.
+- `/aeko-ads-review` compares Meta, TikTok, and Google Ads claims from the customer's own official
+  connectors or manual exports, leads with comparable one-day click results, and reconciles claimed totals
+  against user-supplied store orders. Its OpenAI Ads row is present but AEKO-account-gated.
+- `scripts/lint-release-contracts.sh` verifies that the shared audit severity references are byte-identical
+  and that all five manifest version declarations agree.
+
+### Changed
+
+- Split the former combined `/aeo-audit` into `/aeko-site-audit` and `/aeko-pdp-audit`; the old
+  `/aeo-audit` slug remains available as a compatibility router to the appropriate successor.
+- Repositioned the Claude, Codex, and Gemini manifests around the four zero-account workflows, and bumped
+  the Claude, Codex, Gemini, and both marketplace manifest versions to `0.28.0`.
+
 ## [0.27.0] — 2026-07-24
 
 ### Added

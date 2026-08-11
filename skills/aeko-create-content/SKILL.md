@@ -39,8 +39,8 @@ reporting so marketers can verify customization, and clarified `press_release` /
 anti-manipulation guardrails across content + JSON-LD recipes. Updated completion summaries to explain
 source material, publish safety, revision path, and next step in marketer-facing language.
 
-**Changelog v0.14.0** — Re-architected from forensics-mimicry to **framework-driven AEO**. Removed the
-Phase 3A/3B citation-forensics crawl engine (`aeko_crawl_url`, recrawl budgets, `cited_url_allowlist`,
+**Changelog v0.14.0** — Re-architected from citation mimicry to **framework-driven AEO**. Removed the
+Phase 3A/3B citation-reconstruction crawl engine (`aeko_crawl_url`, recrawl budgets, `cited_url_allowlist`,
 structural-target mimicry, crawl-based channel detection). Content substance now comes from **product
 info + page-level evidence + context-reviews + the prompt + content context**; quality comes from the **AEO frameworks** in
 `references/aeo-frameworks.md` (BLUF, PREP, Informational Gain, E-E-A-T). Per-channel drafting now **fans
@@ -76,9 +76,8 @@ Frame this as "drafting content AI can cite." Open with channels, source materia
 anything can publish live. Default copy should avoid internal terms like `execution_class` and raw frontmatter.
 Before saving variations, show what will be saved, where it can appear, risk, and how to revise/undo.
 
-**Plain words, not jargon.** Never surface "forensics" / 포렌식 in user-facing copy (it reads as crime-lab
-jargon to marketers). In English say **source analysis**; in Korean say **AI 답변 참고 출처** (the sources AI
-references in its answers). "Forensics" elsewhere in this doc is an internal label only.
+**Plain words, not jargon.** Use **source analysis** in English and **AI 답변 참고 출처** in Korean (the
+sources AI references in its answers). Avoid crime-lab language in marketer-facing copy.
 
 **Only these interactive prompts exist in standard ActionItem mode:** the Step 2.5 mode question, the Step 4 channel +
 owned-example form, and the Step 4 media form. Do **not** invent extra decision forms — most importantly,
@@ -727,7 +726,7 @@ phonetic-gibberish 404 bug). For an already-English title, reusing the §A.3 slu
 - Plan unavailable / parse error / contract mismatch → stop with detail.
 - Content context thin/missing → continue with neutral evidence-first voice; do not block save or publish handoff.
 - No prompts resolve in Step 3b → continue on prompt text + product/review substance (do NOT hard-stop;
-  this is no longer forensics-gated).
+  citation evidence is not a gate).
 - `aeko_get_product_reviews` / `aeko_get_product_description` unavailable → degrade per Step 3.
 - A drafter subagent errors/skips → record the channel as failed, continue with the rest.
 - Citability hard-gate fails after the fix iteration → leave item `pending`; surface failed channels + dimensions.

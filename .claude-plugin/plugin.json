@@ -1,7 +1,7 @@
 {
   "name": "aeko-plugin",
-  "version": "0.27.0",
-  "description": "AEKO skills for Claude — first-run onboarding plus AEO workflows for ecommerce visibility, product pages, content, schema, and action items. User-facing steps mirror the user's language. Pair with the AEKO MCP connector at https://aeko-intelligence.com/mcp for backend tool access.",
+  "version": "0.29.0",
+  "description": "AEKO skills for Claude: zero-account site and PDP audits, PDP HTML builds, connector-aware ads and GA4 measurement, connection setup, and weekly read-and-propose reporting; optional AEKO workflows add AI visibility, prompt, content, store, and guarded OpenAI Ads operations. Content ideas await backend wrappers, and scheduled marketing writes are unsupported.",
   "author": {
     "name": "AEKO",
     "url": "https://aeko-intelligence.com"
@@ -9,6 +9,13 @@
   "homepage": "https://aeko-intelligence.com",
   "license": "MIT",
   "keywords": [
+    "site-audit",
+    "product-page-audit",
+    "pdp-html",
+    "ads-review",
+    "ga4",
+    "weekly-report",
+    "schedule",
     "aeo",
     "ai-visibility",
     "ecommerce",

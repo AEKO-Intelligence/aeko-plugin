@@ -7,7 +7,7 @@ description: >
   `/aeko-fix-technical`, `/aeko-update-pdp`, or `/aeko-create-content`.
   Pure dispatcher — never executes items itself.
 argument-hint: "[domain-id] [category]"
-allowed-tools: aeko_list_action_items, aeko_list_technical_items, aeko_get_domain_info, aeko_list_domains
+allowed-tools: aeko_list_action_items, aeko_list_technical_items, aeko_get_domain_info, aeko_list_domains, Read
 ---
 
 # AEKO Action Center
@@ -121,6 +121,22 @@ After printing, ask which one the user wants to tackle. They copy the command bl
 ## Step 6 — If asked to "run them all"
 
 Refuse: tell the user to run each executor one item at a time so they can review the output between runs. Writes to the store and content artifacts should not batch.
+
+## Weekly-report normalized rows
+
+When invoked with `report_mode=weekly`, read
+`../aeko-weekly-report/references/arow-contract.md` completely. Emit one `action_item` `arow/1` block for
+each Action-tab item and one `technical_item` block for each Technical-tab item as the machine handoff
+instead of rendering a second user-facing command list. Normal interactive mode is unchanged. Use
+`source.slot: actions`, `source.provider: aeko`, rung `1`, the exact list tool, actual fetch time, and
+`window: null`. Preserve exact IDs in `entity.aeko_item_id`; keep priority, category, status, artifact type,
+and write/preview risk in `dimensions`; use metrics only for factual counts.
+
+When a domain/account/permission/list endpoint is unavailable, emit one unavailable row for **each expected
+kind**, with empty metrics, exact reason, and `next_action` pointing to `/aeko-connect slot=aeko` or the
+failed source's retry. Cap each kind at 50 and declare truncation. Rows are read-only queue evidence, never
+permission to execute or batch an item. When a list succeeds with zero items, emit one `status: ok` summary
+row for that kind with `metrics: {item_count: 0}`; do not omit the kind.
 
 ## Error paths
 

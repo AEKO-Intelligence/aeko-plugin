@@ -1,15 +1,26 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "aeko-plugin",
-  "description": "AEKO skills for Claude — first-run onboarding and AEO workflows for ecommerce. Pair with the AEKO custom connector for backend tool access.",
+  "description": "AEKO marketing skills for zero-account audits, PDP builds, connector-aware measurement, and weekly read-and-propose reporting, plus optional account-backed visibility, content, store, and guarded OpenAI Ads workflows.",
   "owner": {
     "name": "AEKO"
   },
   "plugins": [
     {
       "name": "aeko-plugin",
-      "description": "AEKO skills for Claude — onboarding, visibility, PDP, content, schema, action center, and user-language guidance.",
-      "version": "0.27.0",
+      "description": "Audit sites and PDPs, build PDP HTML, review ads through the customer's own connectors, connect sources, measure GA4 and AI visibility, and compose weekly read-and-propose reports; AEKO-backed actions are optional, content ideas await wrappers, and scheduled marketing writes are unsupported.",
+      "version": "0.29.0",
+      "keywords": [
+        "site-audit",
+        "product-page-audit",
+        "pdp-html",
+        "ads-review",
+        "ga4",
+        "weekly-report",
+        "schedule",
+        "aeo",
+        "ecommerce"
+      ],
       "source": "./"
     }
   ]

@@ -1,15 +1,29 @@
 ---
 name: aeko-update-pdp
 description: >
-  PDP executor for an Action-tab item or a direct domain-and-product handoff.
-  Reuses or idempotently creates and exclusively claims a `pdp_html` ActionItem,
-  generates responsive HTML plus Product/FAQ/Review JSON-LD, always opens a local
-  preview, and applies it only through an explicitly chosen supported store path.
-argument-hint: "<item-id> | domain_id=<uuid> product_id=<id>"
+  PDP executor for an Action-tab item or a direct domain-and-product handoff,
+  plus mode=refresh for surgical review JSON-LD maintenance. Normal mode builds
+  previewed responsive HTML and schema; refresh mode patches only ratingValue,
+  reviewCount, and review[] while preserving all non-JSON-LD HTML bytes.
+argument-hint: "<item-id> | domain_id=<uuid> product_id=<id> | mode=refresh <product-id> [integration-id]"
 allowed-tools: aeko_list_action_items, aeko_create_action_item, aeko_claim_action_item, aeko_release_action_item, aeko_get_action_plan, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_list_store_integrations, aeko_update_product_page, aeko_revert_store_write, aeko_list_store_writes, aeko_complete_action_item, Read, Write, WebFetch, Bash
 ---
 
 # AEKO Update PDP
+
+## Mode routing
+
+If `$ARGUMENTS` contains `mode=refresh`, remove only that mode token, then read
+`references/refresh-mode.md` completely and execute it as the authoritative workflow. Do not enter the
+normal PDP rewrite/metadata flow below.
+
+Refresh mode surgically patches **ONLY** `AggregateRating.ratingValue`,
+`AggregateRating.reviewCount`, and `review[]`; it preserves every byte of HTML outside the existing
+JSON-LD blocks. It never rewrites visible PDP copy, price, availability, shipping, returns, or any sibling
+schema field.
+
+Without `mode=refresh`, continue with the normal executor below. Normal PDP output remains AEO content,
+never CTA voice; the store owns purchase actions.
 
 Executes one Action-tab PDP item end-to-end: claim the item → fetch Plan.md → ask optimization scope and image
 strategy → generate responsive HTML + JSON-LD → show a local preview → ask where it should go → mark complete.

@@ -1,7 +1,7 @@
 {
   "name": "aeko-plugin",
-  "version": "0.27.0",
-  "description": "AEKO skills for Codex — first-run onboarding plus AEO workflows for ecommerce visibility, product pages, content, schema, and action items. User-facing steps mirror the user's language. Pair with the AEKO MCP connector for backend tool access.",
+  "version": "0.29.0",
+  "description": "AEKO skills for Codex: zero-account site and PDP audits, PDP HTML builds, connector-aware ads and GA4 measurement, connection setup, and weekly read-and-propose reporting; optional AEKO workflows add AI visibility, prompt, content, store, and guarded OpenAI Ads operations. Content ideas await backend wrappers, and scheduled marketing writes are unsupported.",
   "author": {
     "name": "AEKO",
     "url": "https://aeko-intelligence.com"
@@ -9,12 +9,12 @@
   "homepage": "https://aeko-intelligence.com",
   "repository": "https://github.com/AEKO-Intelligence/aeko-plugin",
   "license": "MIT",
-  "keywords": ["aeo", "ai-visibility", "ecommerce", "codex", "skills"],
+  "keywords": ["site-audit", "product-page-audit", "pdp-html", "ads-review", "ga4", "weekly-report", "schedule", "aeo", "ai-visibility", "ecommerce", "codex", "skills"],
   "skills": "./skills/",
   "interface": {
     "displayName": "AEKO",
-    "shortDescription": "AEO skills for ecommerce — onboarding, visibility, PDP, content, schema",
-    "longDescription": "AEKO skills guide Codex through AEO (AI Engine Optimization) workflows for cross-border ecommerce. After install, run /aeko-onboarding to confirm setup, tour the skills, and choose the right next step. User-facing steps mirror the user's language while stable commands, file paths, slugs, and schema keys stay in English/ASCII. Then measure AI visibility, improve product pages for ChatGPT/Claude/Gemini/Perplexity citations, draft citation-ready content, and execute action items. Requires the AEKO MCP connector for backend access.",
+    "shortDescription": "Audits, PDP builds, measurement, and read-and-propose weekly reporting",
+    "longDescription": "Start without an AEKO account: audit a public site or PDP, turn verified facts into responsive PDP HTML and JSON-LD, review advertising through your own connectors or exports, inspect GA4 through your own connector, map connected capability slots, and compose weekly reports and schedules. Optional AEKO workflows add AI-answer visibility, tracked evidence, content, store, action, and guarded OpenAI Ads operations. Content ideas are present but await backend wrappers; scheduled marketing writes are not supported, so loop runs only read and propose.",
     "developerName": "AEKO",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],
@@ -22,9 +22,10 @@
     "privacyPolicyURL": "https://aeko-intelligence.com/en/privacy",
     "termsOfServiceURL": "https://aeko-intelligence.com/en/terms",
     "defaultPrompt": [
-      "Run /aeko-onboarding and show me where to start.",
-      "Show me my AEKO action items.",
-      "Create an AI visibility report for my domain."
+      "Run /aeko-site-audit for my website.",
+      "Audit this product page, then rebuild its HTML.",
+      "Review last week's ads across my connected platforms.",
+      "Compose my weekly read-and-propose marketing report."
     ],
     "brandColor": "#0F766E"
   }

@@ -1,0 +1,166 @@
+# Prompt mode — one tracked prompt
+
+Walks a user through one tracked prompt's full citation footprint. Output: a clear picture of which pages / brands win this prompt across AI engines, plus one concrete action the user could take.
+
+## Marketer-facing output contract
+
+Explain the prompt as a real customer question. Keep the report focused on: who AI mentions, which pages AI cites,
+what facts AI appears to reuse, and the one best action. Label fact reuse as inferred absorption, not measured fact.
+
+In English say **source analysis**; in Korean say **AI 답변 참고 출처** (the sources AI references in
+its answers).
+
+Language: mirror the user's chat language for user-facing steps, summaries, questions, and next actions.
+Keep slash commands, IDs, file paths, citation URLs, schema keys, and tool names in English/ASCII.
+
+## Input
+
+- `prompt-id` (required) — `$1`. UUID of a tracked prompt (must have a `UserPrompts` row for the current user).
+- `window` (optional) — `$2`. `latest` (default), `7d`, `30d`, or `90d`.
+
+If `prompt-id` is missing, tell user to get one from `/aeko-manage-prompts mode=review` or
+`/aeko-action-center`.
+
+## Step 1 — Fetch the source-analysis payload
+
+Call `aeko_get_tracked_prompt(prompt_id, window=<from $2 or "latest">)`.
+
+On 404 → the user isn't tracking this prompt (or never did). Tell them and suggest
+`/aeko-manage-prompts mode=discover` to discover and track candidates.
+
+On success, the payload includes:
+- `prompt`: text, language, country, industry, vertical, query_type, funnel_stage, context.
+- `responses`: array of per-platform responses (`ai_platform`, `response_date`, `full_response`, `mention_count`, `citation_count`, `source_count`, `sentiment`, `observed_intent`, `mentions`, `citations[]`, `citations_truncated`).
+- Each citation: `source_url`, `domain`, `source_type`, `mention_name`, `position_in_response`, `context_snippet`, `crawl` (or null).
+- Each crawl (when non-null): `extracted_text` (may be truncated to 5000 chars, flagged), `meta`, `json_ld[]`, `source_analysis`.
+
+Keep every response body and every citation object available for the report. Do not replace response bodies
+with totals. Preserve `citations_truncated`, crawl/extracted-text truncation flags, missing values, and the
+backend ordering. For each citation retain `domain`, `source_url`, `position_in_response`,
+`context_snippet`, crawl JSON-LD `@type` values, citability/source-analysis signals, and cited-page text.
+
+## Step 2 — Summarize per-platform behavior
+
+Print a header block:
+
+```
+# Deep-dive: <prompt text, truncated to 100 chars>
+- ID:        <prompt_id>
+- Window:    <window>
+- Prompt context: <country> · <industry> · <query_type> · <context>
+```
+
+Then a per-platform summary table:
+
+```
+| Platform | Date | Mentions | Citations | Sentiment | Brand present |
+|----------|------|----------|-----------|-----------|---------------|
+| Claude   | ...  | 3        | 2         | neutral   | No            |
+| GPT      | ...  | 2        | 2         | positive  | Yes (pos 3)   |
+| Gemini   | ...  | 1        | 0         | —         | No            |
+```
+
+"Brand present" checks whether the user's brand appears in `mentions` (compare against the domain name,
+base URL host, domain keywords, and names surfaced in `aeko_get_domain_info`). If yes, show position if
+derivable from context_snippet.
+
+Follow the table with `## Response evidence`. For every returned platform/date, reproduce the available
+`full_response` under a labeled block (respecting the backend-provided body and truncation marker) and list
+all citations in backend order with URL, domain, position, context snippet, crawl availability, JSON-LD
+types, citability, and extracted-text availability. This evidence section is what lets a marketer inspect
+the answer rather than trust aggregate counts.
+
+## Step 3 — Rank cited sources
+
+Aggregate across all platforms in the window. For each unique `domain + canonical_url` pair:
+- `total_citations` = sum across responses.
+- `avg_position` = mean `position_in_response` (ignore nulls).
+- `platforms` = set of AI platforms that cited this source.
+
+Sort by `total_citations` desc, then `avg_position` asc (lower = earlier in AI output = more prominent).
+
+Print top 5-10:
+
+```
+## Top cited sources
+
+1. **<domain>** · <source_type> · cited <N>× across {Claude, GPT} · avg pos 2.5
+   URL: <source_url>
+   Mentioned alongside: <brand names from context_snippet, comma-separated>
+   → Why AI cites it: <one-line hypothesis based on crawl data below>
+
+2. ...
+```
+
+## Step 4 — Structural analysis of each top source
+
+For each top source with non-null `crawl`, analyze:
+- **JSON-LD types present** (from `crawl.json_ld[]` — look at `@type` field). Call out `FAQPage`, `Product`, `Review`, `AggregateRating`, `Article`, `BreadcrumbList`.
+- **Source analysis signals** (from `crawl.source_analysis`): citability score if present, heading depth, structural patterns.
+- **Content shape** (from first ~500 chars of `crawl.extracted_text`): Q&A format, first-person review, comparison table, listicle, news article, etc.
+- **Framework read** — *why* does this source get cited? Name it in the plugin's AEO vocabulary (BLUF /
+  PREP / Informational Gain / E-E-A-T — see `skills/aeko-create-content/references/aeo-frameworks.md`): does
+  it lead with the answer (BLUF)? give self-contained Point·Reason·Example blocks (PREP)? carry lived,
+  specific detail a generic page lacks (Informational Gain)? show experience in its FAQ (E-E-A-T)? This is
+  what makes the takeaway *actionable* — it maps straight to a fix the executor skills apply.
+- **Inferred absorption** — compare `response.full_response`, `citations[].context_snippet`, and
+  `crawl.extracted_text` for overlapping facts, phrasing, numbers, and claims. Label this as inference:
+  "AI appears to use..." Never present it as a measured metric.
+
+Print under each top source:
+
+```
+   Structure:  <content shape>
+   JSON-LD:    <types present, or "none">
+   Citability: <score if known, else "N/A">
+   Wins via:   <framework(s) it exploits — e.g. "BLUF + E-E-A-T FAQ">
+   AI appears to use: <inferred facts/phrasing, or "not enough evidence">
+   Takeaway:   <one sentence: the framework gap to close on the user's page>
+```
+
+If `crawl` is null (source never crawled) and the URL is public, do a light `WebFetch` to get a rough structural read — mark the analysis as "live-fetched, not cached" so the user knows the difference.
+
+## Step 5 — Competitor callout
+
+From the aggregated `mentions` field across responses, build a frequency table of brand names. Flag the user's own brand using domain info + the top 3-5 competitors by total mention count:
+
+```
+## Who's winning this prompt
+
+- **<competitor>**: mentioned <N>×, cited <M>× — appears in {Claude, GPT}
+- **<competitor>**: ...
+- **<user's brand>**: mentioned <N>× (target: grow this)
+```
+
+If the user's brand is absent, say so plainly: "Your brand isn't surfacing for this prompt yet. That's the gap to close."
+
+## Step 6 — One concrete action
+
+Based on the analysis, propose exactly ONE action the user could take. **Name the framework gap** behind it
+(from Step 4's "Wins via") so the action is unambiguous — e.g. "the cited winner leads with a BLUF answer;
+your PDP buries it under specs" or "winners show Informational Gain from real usage; yours reads generic."
+Pick from:
+
+- **Mirror a winning PDP structure** — "Three top cited sources are retailer PDPs with FAQPage JSON-LD. Your matching PDP <url> doesn't have FAQPage markup. Run `/aeko-action-center <domain_id> pdp` to see if there's a pending PDP action for this product."
+- **Write content to match a winning format** — "The top cited source is a Naver 블로그 first-person review. AEKO doesn't have an action item for this, but drafting your own review-style piece could help. Run `/aeko-action-center <domain_id> content` to see pending content items, or tell me to draft one standalone."
+- **Close a technical gap** — "Top cited sources all have Organization JSON-LD with `sameAs` pointing to Wikipedia/Wikidata. Your domain's JSON-LD is missing. Run `/aeko-action-center <domain_id> technical` for the matching fix."
+- **Track a related prompt** — "This prompt is awareness-stage. The brands winning it also win comparable consideration-stage prompts (e.g. '<related query>'). Run `/aeko-manage-prompts mode=discover` to add related prompts to your watchlist."
+
+Pick the most specific, load-bearing action. If none fits, pick "run the visibility report for context"
+(`/aeko-ai-visibility <domain_id>`).
+
+## Step 7 — Save the analysis
+
+Write the full analysis markdown to `./aeko-artifacts/<domain_id>/prompt-deep-dives/<prompt_id>-<window>.md` so the user can revisit without re-running. Tell them the path.
+
+## Error paths
+
+- 404 from `aeko_get_tracked_prompt` → suggest `/aeko-manage-prompts mode=discover`.
+- Zero responses in the window → tell user AEKO hasn't collected data for this prompt yet; suggest checking back in 1-3 days OR widening window to `90d`.
+- All citations have null crawl → analysis falls back to WebFetch for top 3 sources only; cap to avoid flooding the skill.
+
+## What this skill never does
+
+- Never modifies tracking state (use `/aeko-manage-prompts` for adding or typed-confirmation untracking).
+- Never fabricates citation data — if a source URL returns 404 on live fetch, note it and move on.
+- Never creates an action item — only suggests commands the user runs.
