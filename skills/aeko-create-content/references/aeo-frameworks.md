@@ -2,7 +2,7 @@
 name: aeo-frameworks
 purpose: The quality core for AEKO content — the AEO writing frameworks that make content citable by AI engines (BLUF, PREP, Informational Gain, E-E-A-T). Replaces the old "crawl-the-winners-and-mimic-their-shape" approach.
 load_when: Read once per run and pass to every drafter. The drafter applies these to the substance (product info + context-reviews + prompt) it was handed.
-canonical: This is the plugin's single source of truth for the AEO frameworks. It is also consumed by /aeko-update-pdp (PDP description + FAQ) and cited by /aeo-audit (scoring rubric). Edit the frameworks HERE — don't fork copies into other skills.
+canonical: This is the plugin's single source of truth for the AEO frameworks. It is also consumed by /aeko-update-pdp for PDP descriptions and FAQs. Edit the frameworks HERE — don't fork copies into other skills.
 ---
 
 # AEO writing frameworks — what makes content get cited

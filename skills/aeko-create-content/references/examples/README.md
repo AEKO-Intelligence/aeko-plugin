@@ -2,7 +2,7 @@
 
 Drop a real winning post from your brand into one of these files and `/aeko-create-content` will mimic its tone and structure on the next run. **No forking the plugin. No editing SKILL.md.**
 
-If you skipped `/aeko-onboarding`, `/aeko-create-content` also asks during channel selection whether you
+If you skipped `/aeko-start`, `/aeko-create-content` also asks during channel selection whether you
 have owned channels or existing content examples to reference. You can paste URLs, paste raw examples, or
 skip. If you choose to save them, the skill writes a non-overwriting `<channel>-<slug>-example.md` file into
 this folder so future runs pick it up automatically.

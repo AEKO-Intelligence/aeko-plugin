@@ -30,7 +30,7 @@ After installing the AEKO plugin, the files you'll edit are at:
 | Codex Desktop | `~/.codex/plugins/aeko-plugin/skills/` |
 
 Open the folder for the skill you want to customize, for example `aeko-create-content/` or
-`aeko-update-pdp/`. If you're not sure where it is, run `/aeko-onboarding` and choose the customization
+`aeko-update-pdp/`. If you're not sure where it is, run `/aeko-start` and choose the customization
 step; it locates the local plugin install for you.
 
 ## 2. Quick-start — make Instagram (or any channel) sound like you
@@ -351,7 +351,7 @@ AEKO 플러그인 설치 후 편집할 파일은 다음 경로에 있습니다:
 | Codex Desktop | `~/.codex/plugins/aeko-plugin/skills/` |
 
 커스터마이즈하려는 스킬 폴더를 여세요. 예: `aeko-create-content/`, `aeko-update-pdp/`.
-경로를 모르겠다면 `/aeko-onboarding`을 실행하고 커스터마이즈 단계를 선택하세요. 로컬 플러그인 설치 위치를 찾아줍니다.
+경로를 모르겠다면 `/aeko-start`를 실행하고 커스터마이즈 단계를 선택하세요. 로컬 플러그인 설치 위치를 찾아줍니다.
 
 ## 2. 빠른 시작 — Instagram(또는 어떤 채널이든)이 우리 브랜드처럼 들리게 만들기
 

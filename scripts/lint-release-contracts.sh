@@ -68,35 +68,42 @@ if [ "$unique_version_count" -ne 1 ]; then
   exit 1
 fi
 
-retired_slugs='aeko-onboarding
-aeko-visibility-report
-aeko-prompt-deep-dive
-aeko-check-source
-aeko-brand-competitor-analysis
-aeko-product-competitor-analysis
-aeko-find-prompts-to-track
-aeko-manage-tracked-prompts
-aeko-setup-store
-aeko-inject-reviews
-aeko-ad-report
-aeko-ad-guardrails
-aeko-compose-ads
-aeko-optimize-budget
-aeko-refresh-jsonld'
+compatibility_router_hits=$(
+  find "$repo_root/skills" -type f -name SKILL.md \
+    ! -path "$repo_root/skills/*-workspace/*" \
+    -exec grep -HniE 'compatibility[[:space:]-]+router|This host cannot delegate to another skill' {} + || true
+)
+if [ -n "$compatibility_router_hits" ]; then
+  printf '%s\n' "$compatibility_router_hits" >&2
+  printf '%s\n' 'ERROR: unreleased catalog contains a compatibility routing stub.' >&2
+  exit 1
+fi
 
-for slug in $retired_slugs; do
-  stub="$repo_root/skills/$slug/SKILL.md"
-  if [ ! -f "$stub" ]; then
-    printf 'ERROR: retired slug is missing its routing stub: %s\n' "$slug" >&2
-    exit 1
-  fi
-  if ! grep -q 'Compatibility Router' "$stub" || \
-     ! grep -q '^allowed-tools:.*Skill' "$stub" || \
-     ! grep -q 'This host cannot delegate to another skill. Run this command:' "$stub"; then
-    printf 'ERROR: retired slug is not a complete compatibility routing stub: %s\n' "$slug" >&2
-    exit 1
-  fi
-done
+# Shipped-surface check only. outputs/ is dated research evidence and skills/*-workspace/ contains
+# gitignored evaluation artifacts; neither is release content, so both are deliberately excluded.
+deleted_slug_pattern='aeo''-audit|aeko''-onboarding|aeko''-visibility-report|aeko''-prompt-deep-dive|aeko''-check-source|aeko''-brand-competitor-analysis|aeko''-product-competitor-analysis|aeko''-find-prompts-to-track|aeko''-manage-tracked-prompts|aeko''-setup-store|aeko''-inject-reviews|aeko''-optimize-budget|aeko''-refresh-jsonld|aeko''-ad-report|aeko''-ad-guardrails|aeko''-compose-ads'
+deleted_slug_hits=$(
+  {
+    find \
+      "$repo_root/skills" \
+      "$repo_root/scripts" \
+      "$repo_root/.claude-plugin" \
+      "$repo_root/.codex-plugin" \
+      -type f ! -path "$repo_root/skills/*-workspace/*" -print
+    printf '%s\n' \
+      "$repo_root/gemini-extension.json" \
+      "$repo_root/README.md" \
+      "$repo_root/CHANGELOG.md" \
+      "$repo_root/CUSTOMIZATION.md"
+  } | while IFS= read -r shipped_file; do
+    grep -HnE "$deleted_slug_pattern" "$shipped_file" || true
+  done
+)
+if [ -n "$deleted_slug_hits" ]; then
+  printf '%s\n' "$deleted_slug_hits" >&2
+  printf '%s\n' 'ERROR: shipped release content references a deleted pre-release slug.' >&2
+  exit 1
+fi
 
 prohibited_hits=$(
   find "$repo_root/skills" -type f -name SKILL.md \

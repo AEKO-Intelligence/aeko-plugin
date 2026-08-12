@@ -73,13 +73,15 @@ This is advisory and never changes the structural status. Let `product_copy_char
 character count of the normalized `product_copy_text` segment printed in the text-only box, and let
 `detail_image_count` be the number of positioned detail-image components. Never use
 `total_character_count`, `merchandising_widget_character_count`, `platform_boilerplate_character_count`, or
-`chrome_character_count` as the text basis for this determination.
+`chrome_character_count`, `reviews_character_count`, `qna_character_count`, or `support_character_count` as
+the text basis for this determination.
 
 Build `product_copy_text` by positively identifying text that describes the current item, using the page
 title, product heading, Product JSON-LD `name`, module context, and product-specific facts as evidence. It is
 not the remainder after exclusions. Tag every other included block as a named non-product segment, and
-exclude in-root tab/navigation/review-summary chrome, merchandising widgets for other products, and
-platform-appended commerce boilerplate from the count.
+exclude in-root tab/navigation chrome, merchandising widgets for other products, platform-appended commerce
+boilerplate, reviews, Q&A, and support from the count. For URL input, trust the fetcher's raw semantic
+boundary and seven-way segment inventory over recovered HTMLParser parentage.
 
 Detect a merchandising widget by three independent signals: an other-products offer heading; a dense run
 of currency/price tokens with little prose; and repeated product names that differ from the current page's
@@ -87,8 +89,9 @@ title and Product JSON-LD `name`. One signal is weak, while any two are decisive
 heading examples in `SKILL.md` are illustrative rather than a fixed string list. Detect boilerplate from
 semantic section headings and their common variants—payment, shipping/delivery,
 exchanges/returns/refunds, and customer service/support—not exact bytes, one platform name, or a CSS
-selector. After the first recognized commerce heading, treat the remaining included detail-root blocks as
-boilerplate unless positive product identity or unique product facts establish a clearly interleaved
+selector. After the first recognized commerce heading, treat the remaining blocks in that semantic policy
+section as boilerplate until a raw landmark starts a separately classified review, Q&A, support, or product
+section, unless positive product identity or unique product facts establish a clearly interleaved
 product-content block. The full bot-view output still shows all non-product text in separately labeled
 verbatim sections.
 
@@ -156,19 +159,23 @@ The `image_dependency` golden cases are:
 
 ### Real commerce-platform regression cases
 
-| Live page | Total characters | Chrome | Merchandising widget | Platform boilerplate | Product-copy characters | Detail images | Naive answer | Correct answer |
-|---|---:|---:|---:|---:|---:|---:|---|---|
-| `https://grafen.co.kr/product/볼륨업-그루밍-휘핑-토닉/794/category/1/display/40/` | 2,685 | 0 | 426 | 2,258 | 0 | 40 | `image_heavy` from 426 widget characters | `image_only` |
-| `https://collectmoments.kr/product/detail.html?product_no=924&cate_no=1&display_group=2` | 1,539 | 34 | 0 | 1,179 | 325 | 9 | `text_ok` from all 1,539 characters | `image_heavy` |
+| Live page | Total | Chrome | Widget | Boilerplate | Reviews | Q&A | Support | Product copy | Image components | Naive answer | Correct answer |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|
+| `https://grafen.co.kr/product/볼륨업-그루밍-휘핑-토닉/794/category/1/display/40/` | 3,669 | 0 | 353 | 2,283 | 734 | 296 | 0 | 0 | 27 | `text_ok` from all 3,669 characters | `image_only` |
+| `https://collectmoments.kr/product/detail.html?product_no=924&cate_no=1&display_group=2` | 1,999 | 135 | 0 | 1,179 | 364 | 26 | 0 | 291 | 9 | `text_ok` from all 1,999 characters | `image_heavy` |
 
-On Grafen, the 426-character `함께 구매하면 좋아요` module satisfies all three merchandising signals:
-an other-products heading, 24 price tokens with almost no prose, and repeated product names that differ
-from `볼륨업 그루밍 휘핑 토닉`. Counting the widget would return `image_heavy`; the positive-definition
-rule finds 0 product-copy characters against 40 images and returns `image_only`. A non-empty Product JSON-LD
-`description` does not change that result: it triggers the separate schema/body mismatch finding instead.
+On Grafen, the current 353-character `함께 구매하면 좋아요` module satisfies all three merchandising
+signals: an other-products heading, a dense price run with almost no prose, and repeated product names that
+differ from `볼륨업 그루밍 휘핑 토닉`. The corrected raw-bounded script returns 27 live image components:
+15 product-media components and 12 merchandising-widget components. A naive raw regex also matches 13
+commented/template `<img>` strings, producing the obsolete count of 40; comments are not rendered image
+components. The positive-definition rule finds 0 product-copy characters against 27 components and returns
+`image_only`. A non-empty Product JSON-LD `description` does not change that result: it triggers the separate
+schema/body mismatch finding instead.
 
-On Collect Moments, the naive rule compares 1,539 to `9 * 100` and passes. That is the documented wrong
-answer: 1,179 characters come from the Cafe24 payment/shipping/returns/support module, not the product. The
-corrected rule compares 325 product-copy characters to `9 * 100` and returns `image_heavy`. Segment counts
-are direct counts of their independently normalized strings; an inter-segment DOM newline belongs to the
-full stream rather than product copy.
+On Collect Moments, the naive rule compares all 1,999 bounded-region characters to `9 * 100` and passes.
+That is the documented wrong answer: 1,179 characters are Cafe24 payment/shipping/returns boilerplate, 364
+are reviews, 26 are Q&A, and 135 are repeated tab chrome. The corrected rule compares 291 product-copy
+characters to `9 * 100` and returns `image_heavy`. Segment counts are direct counts of their independently
+normalized strings; inter-segment newlines belong to the relevant grouped string and full stream rather
+than product copy.

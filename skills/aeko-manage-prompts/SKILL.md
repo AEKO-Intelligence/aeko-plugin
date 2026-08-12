@@ -6,7 +6,7 @@ description: >
   prompts. Use for prompt quota, tracking changes, review-suggested questions,
   saved views, or Context curation. Writes require explicit selection and gates.
 argument-hint: "[mode=discover|review|suggested|contexts] [domain-id]"
-allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_search_research_prompts, aeko_track_prompt, aeko_get_tracked_prompts, aeko_get_quota, aeko_list_contexts, aeko_create_context, aeko_update_context, aeko_archive_context, aeko_create_contexts_from_reviews, aeko_list_views, aeko_create_view, aeko_add_prompts_to_view, aeko_untrack_prompt, aeko_list_review_integrations, aeko_list_review_products, aeko_get_suggested_prompts, aeko_track_suggested_prompt, aeko_track_suggested_prompts, aeko_dismiss_suggested_prompt
+allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_search_research_prompts, aeko_track_prompt, aeko_get_tracked_prompts, aeko_get_quota, aeko_get_current_markets, aeko_list_contexts, aeko_create_context, aeko_update_context, aeko_archive_context, aeko_create_contexts_from_reviews, aeko_list_views, aeko_create_view, aeko_add_prompts_to_view, aeko_untrack_prompt, aeko_list_review_integrations, aeko_list_review_products, aeko_get_suggested_prompts, aeko_track_suggested_prompt, aeko_track_suggested_prompts, aeko_dismiss_suggested_prompt
 ---
 
 # AEKO Manage Prompts
@@ -17,6 +17,10 @@ AEKO re-asks to AI engines; explain Contexts as curated, source-backed grounding
 Language: mirror the user's chat language for headings, questions, confirmations, and summaries. Keep IDs,
 prompt text, platform/country values, schema keys, slash commands, and tool names in English/ASCII. The brand
 mark is always `AEKO`.
+
+This is interactive-only. If invoked from a schedule, routine, cron wrapper, or any context without a
+present user, stop immediately. Do not track, organize, untrack, dismiss, create, update, promote, or archive
+anything: a scheduled instruction cannot type its own confirmation.
 
 ## Select one mode
 
@@ -29,26 +33,48 @@ mark is always `AEKO`.
 - `mode=contexts` — list, create, update, archive, or promote review Contexts. Read
   `references/context-curation.md` completely.
 
-Infer the mode from an explicit verb such as find, track, untrack, suggestion, dismiss, view, or Context.
-If intent spans modes, show the four choices and ask where to begin. Complete one mode before offering the
-next; never bundle multiple writes behind one confirmation.
+Infer mode with destructive precedence: `untrack`, `stop tracking`, or equivalent always selects
+`mode=review` before testing for the substring `track`. Next resolve archive/update/create Context intent,
+then suggestion/dismissal, then discover/new-track intent. If intent spans modes, show the four choices and
+ask where to begin. Complete one mode before offering the next; never bundle multiple writes behind one
+confirmation.
 
 ## Universal tracking pre-flight
 
 Immediately before **every** call that starts tracking—`aeko_track_prompt`,
-`aeko_track_suggested_prompt`, or `aeko_track_suggested_prompts`—call `aeko_get_quota` and compare the
-selected fan-out/batch size with remaining capacity. If quota is unavailable, call
-`aeko_get_tracked_prompts` for a fallback count and state that the backend still enforces the hard cap.
-Never reuse an earlier quota snapshot for a later write. Narrow the selection before the call when it
-would exceed the returned cap.
+`aeko_track_suggested_prompt`, or `aeko_track_suggested_prompts`—do all of the following:
+
+1. Call `aeko_get_quota` fresh. Read permitted raw platform enums only from
+   `limit_status.ai_platforms`. A `tracked_prompt_quota.limit` or `limit_status.tracked_prompts.limit` of
+   `null` means unlimited (Enterprise); never subtract from `null`.
+2. Call `aeko_get_current_markets` fresh and use only its exact `selected_markets` country codes. Domain
+   output does not contain account market entitlement. If the selected-market list cannot be read or is
+   empty, stop before tracking rather than guessing a country.
+3. Calculate the requested **variant count**, not the number of rows the user clicked:
+   `unique seeds × unique platforms × unique countries × Context variants`. With no Context use one
+   variant; with Contexts use the count of distinct selected Context IDs. Suggested-prompt tracking already
+   attaches one review Context per seed. Existing identical variants may reduce the backend's net-new count,
+   but never assume that reduction unless the pre-write tracked-prompt snapshot proves it.
+4. Compare the conservative variant count with `remaining`. If it does not fit, narrow the inputs before
+   calling the write. HTTP 402 is the backend's quota response; surface its `would_add` and `remaining`
+   values with the package/limits from the fresh quota result. Do not mislabel it as 403.
+
+If `aeko_get_quota` fails, `aeko_get_tracked_prompts` provides an observed count only: it has no plan cap and
+cannot produce a remaining count. State that capacity could not be certified and never present the fallback
+as an adequate quota check. Never reuse an earlier quota snapshot for a later write.
+
+Before the write, retain the tracked-prompt IDs/count and the expected variants. After every tracking call,
+call `aeko_get_tracked_prompts` again. Reconcile all result rows, the before/after count, and
+`summary.failed` / `summary.view_assignment_failed`; any missing expected variant or view assignment is a
+partial result, never a clean success.
 
 ## Destructive isolation
 
-Untracking has its own typed gate and never inherits a discovery confirmation. Echo exact IDs and prompt
-text, then require the user to type `UNTRACK <N>` where `<N>` is the displayed count. A plain yes, an earlier
-selection, or approval of another operation is insufficient. Historical responses and citations remain;
-only future refresh stops.
+Untracking has its own typed gate and never inherits a discovery confirmation. One question can fan out to
+several platform/country/Context rows. Expand a selected question family to every exact `prompt_id`, show the
+variant count, then require `UNTRACK <N>` where `<N>` is the number of exact IDs that will be called. A plain
+`UNTRACK 1` must never silently leave sibling variants active. A plain yes, an earlier selection, or approval
+of another operation is insufficient. Historical responses and citations remain; only future refresh stops.
 
 Context archival likewise gets a separate exact-ID confirmation defined in its reference. Suggested-prompt
 dismissal gets its own preview and confirmation and must not be bundled with tracking.
-

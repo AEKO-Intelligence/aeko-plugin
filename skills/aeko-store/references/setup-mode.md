@@ -1,168 +1,111 @@
 # Store setup mode
 
-Use this when a user wants to onboard AEKO end-to-end through the agent, including custom/AWS-built stores that do not have a Cafe24 or Shopify connector.
+Use this for AEKO domain setup, a dashboard-connected store sync, or a credential-less manual catalog.
+Mirror the user's language; keep tool names, IDs, country codes, platform values, and JSON keys ASCII.
 
-Language: mirror the user's chat language for user-facing questions and summaries. Keep tool names, IDs, country codes, product keys, and JSON field names in English/ASCII.
+## Tier and safety contract
 
-## Tier Contract
+Starter may add a domain, maintain a manual catalog, select one market, and accept prompts within quota.
+Pro+ is required for review injection/integrations, Context, content recommendations, OpenAI Ads, and
+aeko.shop publishing. Backend errors remain authoritative.
 
-Starter can:
-- add domains within the Starter domain cap
-- add/track prompts within the Starter prompt cap
-- use one selected market
-- use OpenAI as the allowed AI platform
-- connect/sync a store or inject products for a manual/custom store
-- list products and perform store-write workflows that the backend allows for active subscriptions
+This is foreground-only. Stop if invoked from a schedule, routine, cron wrapper, or without a present user.
+Never ask for an OAuth/access/refresh token: Cafe24/Shopify connection is dashboard-only because secrets must
+not traverse an agent transcript. Store sync is not a private import. It republishes the active catalog and
+eligible reviews to the merchant's public aeko.shop storefront and revalidates public discovery surfaces.
 
-Pro+ is required for:
-- Context Reviews / review integrations (connect cre.ma/Judge.me/Cafe24 in the AEKO dashboard — review-source
-  credentials are deliberately not accepted by the agent; the only agent-side intake is real-review
-  injection through `/aeko-store mode=reviews`)
-- Context library grounding
-- content recommendations/content-plan generation
-- OpenAI Ads marketing workspace
-- aeko.shop publishing
+## Step 1 — resolve or add the domain
 
-If the user asks why a core setup action is blocked for Starter, treat that as a bug or quota issue unless the backend error explicitly says the feature is Pro+.
+Call `aeko_list_domains`. Resolve an exact existing ID, or ask for the URL and call `aeko_add_domain` after a
+fresh same-turn confirmation. Then call `aeko_get_domain_info(domain_id)` and show the selected domain.
 
-## Step 1 - Resolve or Add Domain
+## Step 2 — select the store path
 
-Call `aeko_list_domains`.
+Ask whether the store is Cafe24, Shopify, or custom/manual.
 
-If the user passed `$1` and it looks like a URL, add it with:
+### Cafe24 or Shopify
 
+Never request or accept credentials in chat and never call `aeko_connect_store`. Direct the merchant to AEKO
+dashboard → Settings → Store Integrations to complete OAuth. After they say it is connected, call
+`aeko_list_store_integrations`, match both exact `domain_id` and platform/store identifier, and show the
+integration. If none matches, stop with the dashboard connection step.
+
+Before `aeko_sync_store`, show this risk block:
+
+```text
+Public sync
+  Integration: <integration_id> · <platform/store_identifier>
+  Becomes public: every active product (name, price, image, availability, outbound URL)
+                  and every eligible review, including agent-injected reviews
+  Public surfaces: aeko.shop brand/catalog pages, sitemap.xml, llms.txt, and feed.rss
+  Replacement risk: this is a full public snapshot replacement. If the upstream fetch is partial,
+                    products omitted from that response can be deleted from the live public catalog.
 ```
-aeko_add_domain(base_url=<url>, display_name=<optional>, scope=<optional>, ko_name=<optional>)
-```
 
-If no domains exist, ask for the store/domain URL and then call `aeko_add_domain`.
+Require the exact fresh phrase `SYNC PUBLIC STOREFRONT <integration_id>` or the natural Korean equivalent
+retaining the exact ASCII integration ID. No earlier request or general setup confirmation counts. Then call
+`aeko_sync_store(integration_id)` once.
 
-If multiple domains exist, show the IDs and ask which one to configure. If one domain exists, auto-select it unless the user supplied a different URL.
+Immediately call `aeko_list_store_integrations` again. Require `last_sync_status` and inspect
+`last_sync_error_message`:
 
-After selecting/adding, call `aeko_get_domain_info(domain_id)` and summarize the chosen domain.
+- success/complete → continue;
+- `partial_failure`, partial, failed, missing, or unknown → stop. State that the public catalog may already be incomplete,
+  quote the error, tell the merchant to inspect aeko.shop, and reconnect/escalate the upstream store before
+  another sync. Never print “Setup complete.”
 
-## Step 2 - Select Store Path
+### Custom/manual
 
-Ask which path applies:
+Ask for a pasted CSV/table with `external_product_id`, `title`, `product_url`, and `public_url`; optional
+fields are `description`, `price`, `currency`, `image_url`, and `status`. Never fabricate a row. Preview exact
+insert/update counts and require same-turn confirmation before `aeko_inject_products`. Read the returned
+`errors` and `batches_completed`; a partial batch result is not complete setup.
 
-- Cafe24
-- Shopify
-- Custom/manual store
-
-For Cafe24/Shopify:
-- Ask for `store_identifier` and credentials/tokens only if the user already has them available.
-- Call `aeko_connect_store(domain_id, platform, store_identifier, access_token, ...)`.
-- Then call `aeko_sync_store(integration_id)` from the returned store.
-- If the user does not have credentials, say browser OAuth/dashboard connection is required for now and stop store sync cleanly.
-
-For custom/manual:
-- Ask the user for product data or a CSV/table they can paste.
-- Never fabricate products.
-- Require each product to have:
-  - `external_product_id`
-  - `title`
-  - `product_url`
-  - `public_url`
-- Recommended optional fields:
-  - `description`
-  - `price`
-  - `currency`
-  - `image_url`
-  - `status` (`selling` by default)
-- Call `aeko_inject_products(domain_id, products)`; the backend creates the manual store internally.
-
-## Step 3 - Verify Products
+## Step 3 — verify products without inventing a total
 
 Call:
 
-```
-aeko_list_store_products(domain_id=<domain_id>, include_citability=false, limit=50)
-```
-
-Show product count and a compact table:
-
-```
-| external_product_id | title | status | public URL |
-|---|---|---|---|
+```text
+aeko_list_store_products(domain_id=<domain_id>, include_citability=false, limit=500, offset=0)
 ```
 
-If zero products return after a sync/inject, stop and explain the likely reason from the tool output.
+The endpoint returns a bare capped list, not a total. Do not page indefinitely. If fewer than 500 rows
+return, report that observed count. If 500 return, report `500+ visible (listing capped; total unavailable)`.
+Show a compact exact-ID table. Zero rows stops setup; a partial sync stops even when rows are nonzero.
 
-## Step 4 - Markets
+## Step 4 — replace account markets only after a diff
 
-Ask which target markets to monitor.
+Markets are account-wide, not domain-scoped, and `aeko_update_markets` replaces the whole list. Call
+`aeko_get_current_markets`, then show:
 
-Starter: choose one market. Pro/Enterprise: multiple markets are allowed within backend limits.
-
-Call:
-
-```
-aeko_update_markets(["US"])
-```
-
-If the backend rejects the market count, surface that message and ask for a smaller set.
-
-## Step 5 - Quota
-
-Call `aeko_get_quota`.
-
-Summarize:
-- tracked prompts used
-- remaining tracked prompt slots
-- domain/market limits if returned
-
-Do not attempt starter prompt acceptance if quota is already full.
-
-## Step 6 - Starter Prompts
-
-Call:
-
-```
-aeko_generate_starter_prompts(domain_id)
+```text
+Account markets
+  Before: <exact selected_markets>
+  After:  <complete proposed list>
+  Removed: <values removed or none>
+  Added:   <values added or none>
+  Effect: prompt fan-out for every domain uses this account list
 ```
 
-Show the generated prompts with reason/grade if present. Ask which prompts to accept.
+Require `REPLACE ACCOUNT MARKETS <comma-separated-complete-list>` or a Korean equivalent retaining the
+complete ASCII list. Never send only a newly requested market unless it is intentionally the full final
+list. Re-fetch with `aeko_get_current_markets` and verify after the update.
 
-After explicit selection, call `aeko_get_quota` again immediately before acceptance. Reconcile the selected
-platform/country fan-out with the fresh remaining capacity; narrow the selection if it no longer fits. Then
-call:
+## Step 5 — quota and starter prompts
 
-```
-aeko_accept_starter_prompts(domain_id, selections)
-```
+Call `aeko_get_quota`; do not offer acceptance when full. Generate starter prompts, show the proposals, and
+ask which to accept. The generate response uses `prompt_text`; map `prompt_text` to `raw_prompt` **verbatim**
+for `aeko_accept_starter_prompts`, while preserving `prompt_kind`, `target_market`, and optional fields.
 
-Selections must preserve the generated prompt fields the backend expects:
-- `raw_prompt`
-- `prompt_kind`
-- `target_market`
-- optional `prompt_en`
-- optional score/grade fields
-- optional `ai_platforms` / `countries`
+Immediately re-fetch quota, reconcile platform/country fan-out, show the exact selection, and require a
+same-turn confirmation. After acceptance, read the response's `limit_blocked`, `failed`, accepted/tracked
+aggregates, and per-row errors. Never infer accepted count from the requested selection count.
 
-For Starter, use one allowed market and OpenAI unless the backend/domain data says otherwise.
+## Summary and error paths
 
-## Step 7 - Summary
+Print `Setup complete` only when every requested stage is verified. A capped catalog count carries `+`; a
+partial store sync or batch injection is explicitly incomplete. Include the exact domain, integration/path,
+observed product count, account market before/after, and verified starter-prompt aggregates.
 
-Print:
-
-```
-Setup complete
-  Domain: <domain_id> · <base_url>
-  Store:  <manual/cafe24/shopify> · <integration_id if known>
-  Products available: <count>
-  Markets: <markets>
-  Starter prompts accepted: <count>
-
-Next:
-  /aeko-ai-visibility <domain_id>
-  /aeko-manage-prompts mode=discover <domain_id>
-```
-
-If the user is Pro+, optionally mention review/Context/ads follow-ups. For Starter, do not pitch Pro+ unless they attempted a Pro+ feature and received a backend gate.
-
-## Never
-
-- Never create fake products or reviews.
-- Never ask Starter users to use Context Reviews, Context library, ads, content recommendations, or aeko.shop publishing as a setup prerequisite.
-- Never publish content.
-- Never store credentials outside the MCP call.
+Never create fake products/reviews, accept secrets, hide public-sync effects, call a token connect tool,
+describe a partial sync as success, or claim this mode never publishes.

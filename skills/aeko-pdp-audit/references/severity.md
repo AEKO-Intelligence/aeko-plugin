@@ -17,6 +17,7 @@ Use only these keys and copy the wording exactly into the report's severity lege
 - Classify the observed impact, not the effort required to fix it.
 - Use `critical` only when the observed failure prevents retrieval or useful interpretation of the audited target as a whole.
 - Use `high` for a failed required structural signal or a crawler block that affects the audited target.
+- For site audits, an observed origin-wide 401/403 for any named agent is `critical`: the agent is blocked on the target plus `/robots.txt`, or on the target plus at least two fixed root discovery resources, while the browser reaches those same URLs. A path-scoped 401/403 affecting only the audited target is `high`. Resource-only failures keep their artifact-specific severity.
 - Use `medium` for incomplete or conflicting evidence that leaves the target readable but less verifiable.
 - Use `low` for optional signals and limited-scope cleanup. A missing `llms.txt` is `low` because it is an optional curated index, not a requirement for AI search.
 - An unavailable or unevaluated check is `not_assessed`, not a severity. State what evidence was unavailable and do not infer a pass or failure.

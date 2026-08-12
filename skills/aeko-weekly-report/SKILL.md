@@ -70,7 +70,8 @@ provider · rung · source window · fetched_at
 
 Never calculate or display a summed cross-source or cross-provider total. Do not merge rows merely because
 their metric keys match. Keep currencies, attribution windows, and confidence classes separate. Reuse the
-ads-review table and its claimed-versus-actual wording; do not recompute its totals from other rows.
+ads-review table and its claimed-versus-actual wording. Repeat only the `ad_reconciliation` row already
+derived by `/aeko-ads-review`; do not recompute its totals from platform rows.
 
 Render in this order:
 
@@ -87,7 +88,7 @@ Render in this order:
 <pdp_finding rows; no CTA voice>
 
 ## Ads
-<ads-review table from ad_metric rows, every declared platform retained>
+<four provider ad_metric rows plus the source-produced ad_reconciliation row; every platform retained>
 
 ## Traffic and impact
 <traffic_metric and impact_metric rows, official and AEKO rungs kept separate>

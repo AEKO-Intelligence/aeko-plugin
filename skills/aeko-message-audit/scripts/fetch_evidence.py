@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Read-only raw web evidence fetcher. Usage: fetch_evidence.py [--mode page|site] <URL>"""
+"""Bounded web evidence fetcher. Usage: fetch_evidence.py [--mode page|site] [--content-only] [--image-dir DIR] <URL>"""
 
 from __future__ import annotations
 
 import gzip
 import hashlib
 import json
+import mimetypes
 import os
 import re
 import ssl
@@ -27,6 +28,9 @@ from urllib.request import (
 SCHEMA = "aeko_fetch_evidence/v2"
 MAX_BODY_BYTES = 6_000_000
 MAX_SITE_RESOURCE_BYTES = 2_000_000
+MAX_ASSET_BYTES = 8_000_000
+MAX_ASSET_TOTAL_BYTES = 48_000_000
+MAX_ASSET_COUNT = 50
 PER_REQUEST_SECONDS = 6.0
 TOTAL_SECONDS = 90.0
 MAX_REDIRECTS = 5
@@ -55,6 +59,42 @@ IMAGE_EXCLUDED_TOKENS = {
 }
 IMAGE_EXCLUDED_EXACT = {"bottom_bottom", "scroll_sns_icon", "top_top"}
 LAZY_ATTRIBUTES = ("ec-data-src", "data-src", "data-original", "data-lazy")
+DETAIL_SECTION_IDS = {
+    "prddetail": "detail",
+    "prdinfo": "platform_boilerplate",
+    "prdreview": "reviews",
+    "p_review": "reviews",
+    "prdqna": "qna",
+}
+GLOBAL_BOUNDARY_IDS = {
+    "footer", "progresspaybar", "progresspaybarbackground", "progresspaybarview",
+    "layoutdimmed", "multi_option",
+}
+START_TAG_RE = re.compile(r"<(?:div|section|article|main|footer)\b[^>]*>", re.IGNORECASE)
+ATTR_RE = re.compile(
+    r"([:\w-]+)\s*=\s*(?:\"([^\"]*)\"|'([^']*)'|([^\s>]+))",
+    re.IGNORECASE,
+)
+WIDGET_HEADING_RE = re.compile(
+    r"(?:함께\s*구매|관련\s*상품|이\s*상품과\s*함께|frequently\s+bought|you\s+may\s+also\s+like|recently\s+viewed)",
+    re.IGNORECASE,
+)
+PRICE_TOKEN_RE = re.compile(
+    r"(?:[$€£¥₩]\s?\d[\d,.]*|\d[\d,.]*\s?(?:원|krw|usd|eur|jpy))",
+    re.IGNORECASE,
+)
+POLICY_HEADING_RE = re.compile(
+    r"(?:상품\s*결제\s*(?:정보|안내)|결제\s*(?:정보|안내)|배송\s*(?:정보|안내)|상품\s*배송\s*정보|"
+    r"교환\s*(?:및|/)\s*반품|반품\s*(?:및|/)\s*교환|환불\s*안내|서비스\s*문의|고객\s*지원|"
+    r"payment\s*(?:information|details)|shipping\s*(?:information|delivery|policy)|delivery\s*information|"
+    r"exchanges?\s*(?:&|and)\s*returns?|returns?\s*(?:and|&)\s*refunds?|return\s*policy|refund\s*policy|"
+    r"customer\s*service|service\s*inquir(?:y|ies)|support|contact\s*us)",
+    re.IGNORECASE,
+)
+CHROME_RE = re.compile(
+    r"(?:상품\s*정보|구매\s*정보|상품\s*후기|상품\s*문의|product\s*info|reviews?|q\s*&\s*a)",
+    re.IGNORECASE,
+)
 PROMO_RE = re.compile(
     r"(?:membership|installment|coupon|benefit|promotion|promo|event|banner|무이자|할부|멤버십|쿠폰|혜택)",
     re.IGNORECASE,
@@ -116,6 +156,59 @@ def compact_text(value: str) -> str:
     return " ".join(value.split())
 
 
+def tag_attrs(raw_tag: str) -> dict[str, str]:
+    return {
+        match.group(1).lower(): next(
+            (value for value in match.groups()[1:] if value is not None), ""
+        )
+        for match in ATTR_RE.finditer(raw_tag)
+    }
+
+
+def classify_text_segment(
+    section_kind: str,
+    module_name: str,
+    text: str,
+    product_name: str,
+) -> tuple[str, dict[str, Any]]:
+    lowered_module = module_name.lower()
+    price_tokens = PRICE_TOKEN_RE.findall(text)
+    widget_heading = bool(WIDGET_HEADING_RE.search(text))
+    dense_price_run = len(price_tokens) >= 3 and len(text) / max(1, len(price_tokens)) < 100
+    other_product_run = bool(
+        len(price_tokens) >= 3
+        and product_name
+        and compact_text(product_name).lower() not in text.lower()
+    )
+    signals: dict[str, Any] = {
+        "widget_heading": widget_heading,
+        "dense_price_run": dense_price_run,
+        "other_product_run": other_product_run,
+        "price_token_count": len(price_tokens),
+    }
+
+    chrome_matches = CHROME_RE.findall(text)
+    if any(token in lowered_module for token in ("tab", "tap", "nav", "menu", "pagination")):
+        signals["chrome_label_count"] = len(chrome_matches)
+        return "chrome", signals
+    if any(token in lowered_module for token in ("review", "snap_widget")):
+        return "reviews", signals
+    if any(token in lowered_module for token in ("qna", "question")):
+        return "qna", signals
+    if any(token in lowered_module for token in ("customer", "service", "support", "cscenter")):
+        return "support", signals
+    if section_kind in {"platform_boilerplate", "reviews", "qna", "support"}:
+        return section_kind, signals
+    if sum((widget_heading, dense_price_run, other_product_run)) >= 2:
+        return "merchandising_widget", signals
+    if POLICY_HEADING_RE.search(text):
+        return "platform_boilerplate", signals
+    if len(chrome_matches) >= 3 and len(text) < 300:
+        signals["chrome_label_count"] = len(chrome_matches)
+        return "chrome", signals
+    return "product_copy", signals
+
+
 def node_text(node: Node, limit: int | None = None) -> str:
     parts: list[str] = []
 
@@ -135,7 +228,12 @@ def node_text(node: Node, limit: int | None = None) -> str:
     return joined if limit is None else joined[:limit]
 
 
-def positional_text_segments(root: Node) -> list[dict[str, Any]]:
+def positional_text_segments(
+    root: Node,
+    section_kind: str,
+    product_name: str,
+    start_index: int = 1,
+) -> list[dict[str, Any]]:
     raw: list[tuple[str, str, str]] = []
 
     def section(node: Node) -> str:
@@ -175,12 +273,21 @@ def positional_text_segments(root: Node) -> list[dict[str, Any]]:
         else:
             output.append(
                 {
-                    "source_id": f"text_segment_{len(output) + 1:03d}",
+                    "source_id": f"text_segment_{start_index + len(output):03d}",
                     "section": section_name,
                     "module": module_name,
                     "text": text,
                 }
             )
+    for segment in output:
+        classification, signals = classify_text_segment(
+            section_kind,
+            segment["module"],
+            segment["text"],
+            product_name,
+        )
+        segment["classification"] = classification
+        segment["classification_signals"] = signals
     return output
 
 
@@ -242,6 +349,118 @@ def choose_detail_root(parser: PDPParser) -> tuple[Node, str, bool]:
             if node.tag == tag:
                 return node, tag, True
     return parser.root, "document", True
+
+
+def bounded_detail_region(html: str) -> dict[str, Any] | None:
+    landmarks: list[dict[str, Any]] = []
+    for match in START_TAG_RE.finditer(html):
+        raw_tag = match.group(0)
+        attrs = tag_attrs(raw_tag)
+        tag_name_match = re.match(r"<\s*([a-z0-9]+)", raw_tag, re.IGNORECASE)
+        landmarks.append(
+            {
+                "start": match.start(),
+                "end": match.end(),
+                "tag": tag_name_match.group(1).lower() if tag_name_match else "",
+                "id": attrs.get("id", ""),
+                "class": attrs.get("class", ""),
+            }
+        )
+
+    start_landmark = next(
+        (item for item in landmarks if item["id"].lower() == "prddetail"),
+        None,
+    )
+    if not start_landmark:
+        return None
+
+    boundary = next(
+        (
+            item
+            for item in landmarks
+            if item["start"] > start_landmark["start"]
+            and (
+                item["tag"] == "footer"
+                or item["id"].lower() in GLOBAL_BOUNDARY_IDS
+                or item["id"].lower().startswith("footer")
+            )
+        ),
+        None,
+    )
+    region_end = boundary["start"] if boundary else len(html)
+    section_landmarks = [
+        item
+        for item in landmarks
+        if start_landmark["start"] <= item["start"] < region_end
+        and item["id"].lower() in DETAIL_SECTION_IDS
+    ]
+    if not section_landmarks or section_landmarks[0]["id"].lower() != "prddetail":
+        section_landmarks.insert(0, start_landmark)
+
+    sections: list[dict[str, Any]] = []
+    for index, item in enumerate(section_landmarks):
+        end = section_landmarks[index + 1]["start"] if index + 1 < len(section_landmarks) else region_end
+        sections.append(
+            {
+                "id": item["id"],
+                "kind": DETAIL_SECTION_IDS.get(item["id"].lower(), "detail"),
+                "start": item["start"],
+                "end": end,
+                "html": html[item["start"]:end],
+            }
+        )
+    return {
+        "start": start_landmark["start"],
+        "end": region_end,
+        "html": html[start_landmark["start"]:region_end],
+        "end_marker": (
+            f"{boundary['tag']}#{boundary['id']}" if boundary and boundary["id"] else boundary["tag"]
+            if boundary
+            else "end_of_document"
+        ),
+        "sections": sections,
+    }
+
+
+def parse_fragment_root(fragment: str, wanted_id: str = "") -> Node:
+    parser = PDPParser()
+    parser.feed(fragment)
+    if wanted_id:
+        matched = next(
+            (node for node in parser.nodes if node.attrs.get("id", "").lower() == wanted_id.lower()),
+            None,
+        )
+        if matched:
+            return matched
+    return parser.nodes[0] if parser.nodes else parser.root
+
+
+def parse_fragment_document(fragment: str) -> Node:
+    parser = PDPParser()
+    parser.feed(fragment)
+    return parser.root
+
+
+def detail_slice_text_segments(
+    fragment: str,
+    product_name: str,
+    start_index: int,
+) -> list[dict[str, Any]]:
+    parser = PDPParser()
+    parser.feed(fragment)
+    output: list[dict[str, Any]] = []
+    for item in parser.root.items:
+        if not isinstance(item, Node):
+            continue
+        output.extend(
+            positional_text_segments(
+                item,
+                "detail",
+                product_name,
+                start_index + len(output),
+            )
+        )
+    return output
 
 
 def parse_srcset(raw: str) -> list[str]:
@@ -331,12 +550,34 @@ def nearest_context(node: Node, root: Node) -> str:
     return ""
 
 
+def image_context_classification(node: Node, root: Node) -> str:
+    current: Node | None = node.parent
+    while current and current is not root:
+        tokens = attr_tokens(current)
+        joined = " ".join(tokens)
+        if any(token in joined for token in ("recommend", "related", "relation", "cross-sell", "recent")):
+            return "merchandising_widget"
+        if any(token in joined for token in ("review", "snap_widget")):
+            return "reviews"
+        if any(token in joined for token in ("qna", "question")):
+            return "qna"
+        if any(token in joined for token in ("support", "service", "cscenter")):
+            return "support"
+        if any(token in joined for token in ("nav", "menu")):
+            return "chrome"
+        current = current.parent
+    context = nearest_context(node, root)
+    widget_signals = (
+        bool(WIDGET_HEADING_RE.search(context)),
+        len(PRICE_TOKEN_RE.findall(context)) >= 3,
+    )
+    return "merchandising_widget" if all(widget_signals) else "product_media"
+
+
 def enumerate_images(root: Node, base_url: str, product_name: str) -> list[dict[str, Any]]:
     components: list[Node] = []
     picture_nodes: set[int] = set()
     for node in descendants(root):
-        if has_excluded_ancestor(node, root):
-            continue
         if node.tag == "picture":
             components.append(node)
             picture_nodes.add(id(node))
@@ -383,9 +624,14 @@ def enumerate_images(root: Node, base_url: str, product_name: str) -> list[dict[
                 "resolution": resolution,
                 "alt": alt,
                 "context_text": context,
+                "classification": image_context_classification(node, root),
                 "promo_signals": promo_signals,
                 "promo_banner_candidate": all(promo_signals.values()),
             }
+        )
+        output[-1]["eligible_for_product_facts"] = bool(
+            output[-1]["classification"] == "product_media"
+            and not output[-1]["promo_banner_candidate"]
         )
     return output
 
@@ -411,7 +657,24 @@ def extract_product_name(jsonld: list[dict[str, Any]]) -> str:
     return ""
 
 
-def parse_document(html: str, final_url: str, x_robots: list[str]) -> dict[str, Any]:
+def link_evidence(node: Node, final_url: str) -> dict[str, Any]:
+    """Preserve a link element's complete ordered attributes plus resolved href."""
+    return {
+        "source_id": f"head:link:{node.order}",
+        "href": urljoin(final_url, node.attrs.get("href", "")),
+        "rel_tokens": node.attrs.get("rel", "").lower().split(),
+        "attributes": [
+            {"name": name, "value": value} for name, value in node.attrs_list
+        ],
+    }
+
+
+def parse_document(
+    html: str,
+    final_url: str,
+    x_robots: list[str],
+    include_detail_root: bool = True,
+) -> dict[str, Any]:
     parser = PDPParser()
     parser.feed(html)
     head = next((node for node in parser.nodes if node.tag == "head"), None)
@@ -433,17 +696,12 @@ def parse_document(html: str, final_url: str, x_robots: list[str]) -> dict[str, 
                     {"source_id": f"head:meta:{node.order}", "property": prop, "content": node.attrs.get("content", "")}
                 )
         if node.tag == "link" and "canonical" in node.attrs.get("rel", "").lower().split():
-            canonical.append(
-                {"source_id": f"head:link:{node.order}", "href": urljoin(final_url, node.attrs.get("href", ""))}
-            )
+            canonical.append(link_evidence(node, final_url))
         if node.tag == "link" and "alternate" in node.attrs.get("rel", "").lower().split():
-            alternates.append(
-                {
-                    "source_id": f"head:link:{node.order}",
-                    "hreflang": node.attrs.get("hreflang", ""),
-                    "href": urljoin(final_url, node.attrs.get("href", "")),
-                }
-            )
+            alternate = link_evidence(node, final_url)
+            alternate["hreflang"] = node.attrs.get("hreflang", "")
+            alternate["media"] = node.attrs.get("media", "")
+            alternates.append(alternate)
 
     jsonld: list[dict[str, Any]] = []
     for node in parser.nodes:
@@ -457,9 +715,83 @@ def parse_document(html: str, final_url: str, x_robots: list[str]) -> dict[str, 
             )
 
     product_name = extract_product_name(jsonld)
-    detail_root, selector, fallback = choose_detail_root(parser)
-    images = enumerate_images(detail_root, final_url, product_name)
-    detail_html = raw_contents(detail_root)
+    if not include_detail_root:
+        return {
+            "head": {
+                "title": node_text(title_node) if title_node else "",
+                "meta_robots": meta_robots,
+                "x_robots_tag": x_robots,
+                "canonical": canonical,
+                "alternates": alternates,
+                "og_tags": og_tags,
+            },
+            "jsonld_blocks": jsonld,
+            "product_identity": {"jsonld_name": product_name},
+            "detail_root": None,
+        }
+    bounded = bounded_detail_region(html)
+    if bounded:
+        detail_section = bounded["sections"][0]
+        detail_root = parse_fragment_document(detail_section["html"])
+        selector = f"#{detail_section['id']}"
+        fallback = False
+        images = enumerate_images(detail_root, final_url, product_name)
+        text_segments: list[dict[str, Any]] = []
+        for section_data in bounded["sections"]:
+            if section_data["kind"] == "detail":
+                text_segments.extend(
+                    detail_slice_text_segments(
+                        section_data["html"],
+                        product_name,
+                        len(text_segments) + 1,
+                    )
+                )
+            else:
+                section_root = parse_fragment_root(section_data["html"], section_data["id"])
+                text_segments.extend(
+                    positional_text_segments(
+                        section_root,
+                        section_data["kind"],
+                        product_name,
+                        len(text_segments) + 1,
+                    )
+                )
+        detail_html = bounded["html"]
+        boundary = {
+            "method": "raw_semantic_landmarks",
+            "start_marker": selector,
+            "end_marker": bounded["end_marker"],
+            "start_byte": bounded["start"],
+            "end_byte": bounded["end"],
+        }
+    else:
+        detail_root, selector, fallback = choose_detail_root(parser)
+        images = enumerate_images(detail_root, final_url, product_name)
+        text_segments = positional_text_segments(detail_root, "detail", product_name)
+        detail_html = raw_contents(detail_root)
+        boundary = {
+            "method": "parsed_dom_fallback",
+            "start_marker": selector,
+            "end_marker": None,
+            "start_byte": None,
+            "end_byte": None,
+        }
+    classification_counts: dict[str, int] = {}
+    for image in images:
+        classification = image["classification"]
+        classification_counts[classification] = classification_counts.get(classification, 0) + 1
+    text_classes = (
+        "product_copy", "platform_boilerplate", "merchandising_widget", "chrome",
+        "reviews", "qna", "support",
+    )
+    classified_text = {
+        classification: "\n".join(
+            segment["text"]
+            for segment in text_segments
+            if segment["classification"] == classification
+        )
+        for classification in text_classes
+    }
     return {
         "head": {
             "title": node_text(title_node) if title_node else "",
@@ -476,9 +808,21 @@ def parse_document(html: str, final_url: str, x_robots: list[str]) -> dict[str, 
             "fallback": fallback,
             "tag": detail_root.tag,
             "dom_order": detail_root.order,
+            "boundary": boundary,
             "html_sha256": hashlib.sha256(detail_html.encode("utf-8")).hexdigest(),
-            "text_segments": positional_text_segments(detail_root),
+            "text_segments": text_segments,
+            "machine_readable_character_count": len(
+                "\n".join(segment["text"] for segment in text_segments)
+            ),
+            "text_classification_character_counts": {
+                classification: len(value)
+                for classification, value in classified_text.items()
+            },
             "image_component_count": len(images),
+            "image_classification_counts": classification_counts,
+            "product_fact_eligible_image_count": sum(
+                1 for image in images if image["eligible_for_product_facts"]
+            ),
             "image_components": images,
         },
     }
@@ -616,6 +960,217 @@ def fetch(
         response.close()
 
 
+def validate_image_dir(raw: str) -> str:
+    if not os.path.isabs(raw):
+        raise ValueError("--image-dir must be an absolute caller-supplied temporary directory")
+    if os.path.islink(raw) or not os.path.isdir(raw):
+        raise ValueError("--image-dir must already exist as a non-symlink directory")
+    if os.listdir(raw):
+        raise ValueError("--image-dir must be empty so no existing file can be overwritten")
+    return os.path.realpath(raw)
+
+
+def asset_extension(url: str, content_type: str) -> str:
+    mime = content_type.split(";", 1)[0].strip().lower()
+    guessed = mimetypes.guess_extension(mime) if mime.startswith("image/") else None
+    if guessed:
+        return ".jpg" if guessed in {".jpe", ".jpeg"} else guessed
+    suffix = os.path.splitext(urlsplit(url).path)[1].lower()
+    return suffix if re.fullmatch(r"\.[a-z0-9]{1,5}", suffix) else ".img"
+
+
+def fetch_asset(
+    url: str,
+    source_id: str,
+    allowed_host: str,
+    image_dir: str,
+    deadline: float,
+    remaining_total_bytes: int,
+) -> dict[str, Any]:
+    parsed = urlsplit(url)
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.hostname.lower().rstrip(".") != allowed_host
+        or parsed.username
+        or parsed.password
+    ):
+        return {
+            "status": "skipped",
+            "local_path": None,
+            "error": "asset is not on the exact page host",
+            "bytes_written": 0,
+        }
+    if remaining_total_bytes <= 0:
+        return {
+            "status": "skipped",
+            "local_path": None,
+            "error": "total asset byte cap reached",
+            "bytes_written": 0,
+        }
+    remaining_time = deadline - time.monotonic()
+    if remaining_time <= 0:
+        return {
+            "status": "skipped",
+            "local_path": None,
+            "error": "total time cap exceeded",
+            "bytes_written": 0,
+        }
+
+    redirector = SameHostRedirects(allowed_host)
+    opener = build_opener(ProxyHandler({}), redirector, HTTPSHandler(context=ssl_context()))
+    request = Request(
+        url,
+        headers={
+            "User-Agent": BROWSER_UA,
+            "Accept": "image/avif,image/webp,image/png,image/jpeg,image/gif,image/*;q=0.8,*/*;q=0.1",
+            "Accept-Encoding": "identity",
+            "Cache-Control": "no-cache",
+        },
+        method="GET",
+    )
+    started = time.monotonic()
+    response: Any = None
+    try:
+        response = opener.open(
+            request,
+            timeout=max(0.25, min(PER_REQUEST_SECONDS, remaining_time)),
+        )
+    except HTTPError as error:
+        response = error
+    except (OSError, URLError, ValueError) as error:
+        return {
+            "status": "failed",
+            "http_status": None,
+            "local_path": None,
+            "error": str(error),
+            "bytes_written": 0,
+            "elapsed_ms": round((time.monotonic() - started) * 1000),
+        }
+
+    try:
+        http_status = int(response.status)
+        content_type = response.headers.get("Content-Type", "")
+        if http_status < 200 or http_status >= 300:
+            return {
+                "status": "failed",
+                "http_status": http_status,
+                "local_path": None,
+                "error": f"HTTP {http_status}",
+                "bytes_written": 0,
+                "elapsed_ms": round((time.monotonic() - started) * 1000),
+            }
+        if not content_type.lower().startswith("image/"):
+            return {
+                "status": "failed",
+                "http_status": http_status,
+                "local_path": None,
+                "error": f"non-image Content-Type: {content_type or 'missing'}",
+                "bytes_written": 0,
+                "elapsed_ms": round((time.monotonic() - started) * 1000),
+            }
+        cap = min(MAX_ASSET_BYTES, remaining_total_bytes)
+        raw = response.read(cap + 1)
+        if len(raw) > cap:
+            return {
+                "status": "failed",
+                "http_status": http_status,
+                "local_path": None,
+                "error": "asset byte cap exceeded",
+                "bytes_written": 0,
+                "elapsed_ms": round((time.monotonic() - started) * 1000),
+            }
+        extension = asset_extension(response.geturl(), content_type)
+        local_path = os.path.join(image_dir, source_id + extension)
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        descriptor = os.open(local_path, flags, 0o600)
+        with os.fdopen(descriptor, "wb") as output:
+            output.write(raw)
+        return {
+            "status": "fetched",
+            "http_status": http_status,
+            "final_url": response.geturl(),
+            "content_type": content_type,
+            "local_path": local_path,
+            "error": None,
+            "bytes_written": len(raw),
+            "sha256": hashlib.sha256(raw).hexdigest(),
+            "elapsed_ms": round((time.monotonic() - started) * 1000),
+        }
+    except (OSError, ValueError) as error:
+        return {
+            "status": "failed",
+            "http_status": int(response.status),
+            "local_path": None,
+            "error": str(error),
+            "bytes_written": 0,
+            "elapsed_ms": round((time.monotonic() - started) * 1000),
+        }
+    finally:
+        response.close()
+
+
+def fetch_product_images(
+    images: list[dict[str, Any]],
+    host: str,
+    image_dir: str,
+    deadline: float,
+) -> dict[str, Any]:
+    fetched = 0
+    bytes_written = 0
+    attempted = 0
+    for image in images:
+        if not image.get("eligible_for_product_facts"):
+            image["asset_fetch"] = {
+                "status": "skipped",
+                "local_path": None,
+                "error": "non-product or store-wide promotional component",
+                "bytes_written": 0,
+            }
+            continue
+        if attempted >= MAX_ASSET_COUNT:
+            image["asset_fetch"] = {
+                "status": "skipped",
+                "local_path": None,
+                "error": "asset count cap reached",
+                "bytes_written": 0,
+            }
+            continue
+        resolved = image.get("resolved_url")
+        if not resolved or resolved.lower().startswith("data:"):
+            image["asset_fetch"] = {
+                "status": "skipped",
+                "local_path": None,
+                "error": "no fetchable resolved URL",
+                "bytes_written": 0,
+            }
+            continue
+        attempted += 1
+        result = fetch_asset(
+            resolved,
+            image["source_id"],
+            host,
+            image_dir,
+            deadline,
+            MAX_ASSET_TOTAL_BYTES - bytes_written,
+        )
+        image["asset_fetch"] = result
+        if result["status"] == "fetched":
+            fetched += 1
+            bytes_written += result["bytes_written"]
+    return {
+        "requested": True,
+        "directory": image_dir,
+        "attempted_count": attempted,
+        "fetched_count": fetched,
+        "bytes_written": bytes_written,
+        "eligible_count": sum(1 for image in images if image.get("eligible_for_product_facts")),
+        "skipped_or_failed_count": len(images) - fetched,
+    }
+
+
 def validate_url(raw: str) -> tuple[str, str]:
     parsed = urlsplit(raw)
     if parsed.scheme not in {"http", "https"}:
@@ -665,7 +1220,12 @@ def probe_resources(
     return probes
 
 
-def base_payload(mode: str, input_url: str) -> dict[str, Any]:
+def base_payload(
+    mode: str,
+    input_url: str,
+    image_dir: str | None = None,
+    content_only: bool = False,
+) -> dict[str, Any]:
     return {
         "schema": SCHEMA,
         "mode": mode,
@@ -673,17 +1233,26 @@ def base_payload(mode: str, input_url: str) -> dict[str, Any]:
         "limits": {
             "max_body_bytes": MAX_BODY_BYTES,
             "max_site_resource_bytes": MAX_SITE_RESOURCE_BYTES,
+            "max_asset_bytes": MAX_ASSET_BYTES,
+            "max_asset_total_bytes": MAX_ASSET_TOTAL_BYTES,
+            "max_asset_count": MAX_ASSET_COUNT,
             "per_request_seconds": PER_REQUEST_SECONDS,
             "total_seconds": TOTAL_SECONDS,
             "max_redirects": MAX_REDIRECTS,
         },
         "safety": {
-            "read_only": True,
+            "network_read_only": True,
+            "temporary_local_writes": bool(image_dir),
+            "temporary_write_directory": image_dir,
             "cookies": False,
             "credentials": False,
             "cross_host_redirects": False,
-            "discovered_url_fetches": False,
-            "asset_fetches": False,
+            "discovered_url_fetches": bool(image_dir),
+            "asset_fetches": bool(image_dir),
+            "asset_scope": "resolved product-image components on the exact page host only" if image_dir else None,
+            "overwrites_existing_files": False,
+            "content_only": content_only,
+            "crawler_probes_suppressed": content_only,
         },
     }
 
@@ -697,23 +1266,54 @@ def main() -> None:
     started = time.monotonic()
     args = sys.argv[1:]
     mode = "page"
-    if len(args) == 3 and args[0] == "--mode" and args[1] in {"page", "site"}:
-        mode = args[1]
-        raw_url = args[2]
-    elif len(args) == 1:
-        raw_url = args[0]
-    else:
+    image_dir_raw: str | None = None
+    content_only = False
+    positional: list[str] = []
+    index = 0
+    while index < len(args):
+        if args[index] == "--mode" and index + 1 < len(args):
+            mode = args[index + 1]
+            index += 2
+        elif args[index] == "--image-dir" and index + 1 < len(args):
+            image_dir_raw = args[index + 1]
+            index += 2
+        elif args[index] == "--content-only":
+            content_only = True
+            index += 1
+        elif args[index].startswith("--"):
+            positional = []
+            break
+        else:
+            positional.append(args[index])
+            index += 1
+    if (
+        mode not in {"page", "site"}
+        or len(positional) != 1
+        or (image_dir_raw and mode != "page")
+        or (content_only and mode != "page")
+    ):
         emit(
             {
                 "schema": SCHEMA,
-                "fatal_error": "usage: fetch_evidence.py [--mode page|site] <http-or-https-url>",
+                "fatal_error": (
+                    "usage: fetch_evidence.py [--mode page|site] [--content-only] "
+                    "[--image-dir EXISTING_EMPTY_ABSOLUTE_DIR] <http-or-https-url>; "
+                    "--content-only and --image-dir are page-mode only"
+                ),
             },
             2,
         )
+    raw_url = positional[0]
     try:
         target_url, host = validate_url(raw_url)
     except ValueError as error:
         emit({"schema": SCHEMA, "mode": mode, "fatal_error": str(error)}, 2)
+    image_dir: str | None = None
+    if image_dir_raw:
+        try:
+            image_dir = validate_image_dir(image_dir_raw)
+        except ValueError as error:
+            emit({"schema": SCHEMA, "mode": mode, "fatal_error": str(error)}, 2)
 
     deadline = started + TOTAL_SECONDS
     robots_url = origin_resource(target_url, "/robots.txt")
@@ -740,7 +1340,12 @@ def main() -> None:
             if header["name"].lower() == "x-robots-tag"
         ]
         parsed = (
-            parse_document(raw_bodies["target"], target_response.get("final_url") or target_url, x_robots)
+            parse_document(
+                raw_bodies["target"],
+                target_response.get("final_url") or target_url,
+                x_robots,
+                include_detail_root=False,
+            )
             if raw_bodies["target"]
             else {
                 "head": {
@@ -760,7 +1365,7 @@ def main() -> None:
             name: {
                 "url": resources[name],
                 "response": browser_responses[name],
-                **({"raw": raw_bodies[name]} if name != "target" else {}),
+                "raw": raw_bodies[name],
                 "crawler_probes": {
                     crawler: result["resources"][name] for crawler, result in probes.items()
                 },
@@ -776,11 +1381,25 @@ def main() -> None:
         }
         emit(payload)
 
-    resources = {"target": target_url, "robots_txt": robots_url}
+    resources = {"target": target_url} if content_only else {"target": target_url, "robots_txt": robots_url}
     document_response = fetch(target_url, BROWSER_UA, host, deadline, MAX_BODY_BYTES)
-    robots_response = fetch(robots_url, BROWSER_UA, host, deadline, MAX_SITE_RESOURCE_BYTES)
-    browser_responses = {"target": document_response, "robots_txt": robots_response}
-    probes = probe_resources(resources, browser_responses, host, deadline)
+    robots_response = (
+        {
+            "status": None,
+            "final_url": None,
+            "headers": [],
+            "redirects": [],
+            "error": None,
+            "body": "",
+            "skipped": "content-only mode",
+        }
+        if content_only
+        else fetch(robots_url, BROWSER_UA, host, deadline, MAX_SITE_RESOURCE_BYTES)
+    )
+    browser_responses = {"target": document_response}
+    if not content_only:
+        browser_responses["robots_txt"] = robots_response
+    probes = {} if content_only else probe_resources(resources, browser_responses, host, deadline)
 
     document_response, html = response_without_body(document_response)
     robots_response, robots_text = response_without_body(robots_response)
@@ -802,12 +1421,33 @@ def main() -> None:
         "product_identity": {"jsonld_name": ""},
         "detail_root": None,
     }
+    asset_fetch = {
+        "requested": False,
+        "directory": None,
+        "attempted_count": 0,
+        "fetched_count": 0,
+        "bytes_written": 0,
+        "eligible_count": (
+            parsed["detail_root"].get("product_fact_eligible_image_count", 0)
+            if parsed.get("detail_root")
+            else 0
+        ),
+        "skipped_or_failed_count": 0,
+    }
+    if image_dir and parsed.get("detail_root"):
+        asset_fetch = fetch_product_images(
+            parsed["detail_root"]["image_components"],
+            host,
+            image_dir,
+            deadline,
+        )
     payload = {
-        **base_payload(mode, target_url),
+        **base_payload(mode, target_url, image_dir, content_only),
         "robots_url": robots_url,
         "document": {"response": document_response},
         "robots_txt": {"response": robots_response, "text": robots_text},
         **parsed,
+        "asset_fetch": asset_fetch,
         "crawler_probes": probes,
         "elapsed_ms": round((time.monotonic() - started) * 1000),
     }

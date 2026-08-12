@@ -127,7 +127,9 @@ labels, schema keys, JSON-LD terms, and the brand mark `AEKO` stay in English/AS
 
 ## Skill catalog by job
 
-Each folder under [`skills/`](skills/) contains one `SKILL.md`.
+The shipped catalog contains 26 active skills. Each active folder under [`skills/`](skills/) contains one
+`SKILL.md`; compatibility-only command stubs are intentionally not shipped because this is the catalog's
+first release.
 
 ### Start and connect
 
@@ -150,6 +152,7 @@ Each folder under [`skills/`](skills/) contains one `SKILL.md`.
 - `/aeko-ga4` — customer-owned GA4 connector or optional AEKO GA4 join.
 - `/aeko-ai-visibility [domain_id] [window] [depth]` — AI visibility, Share of Voice, and answer drift.
 - `/aeko-source-analysis` — tracked-answer or cited-page source analysis with full AEKO evidence when connected.
+- `/aeko-message-audit` — spend-ranked paid-message claims, with optional owned-backing and AI-answer checks.
 - `/aeko-weekly-report [window]` — provenance-carrying composite report with no direct MCP calls.
 
 ### Research and control
@@ -174,32 +177,6 @@ Each folder under [`skills/`](skills/) contains one `SKILL.md`.
 
 - `/aeko-create-loop` — interview, durable Notion config, host-specific schedule composition, and foreground dry run.
 - `/aeko-run-loop config=<notion-page-id>` — approvals-first scheduled read-and-propose entry point.
-
-### Compatibility commands
-
-These shipped stubs attempt delegation and print the exact successor command on hosts that cannot invoke
-another skill:
-
-| Existing command | Successor |
-|---|---|
-| `/aeo-audit` | `/aeko-site-audit` or `/aeko-pdp-audit`, based on the request |
-| `/aeko-onboarding` | `/aeko-start` |
-| `/aeko-visibility-report` | `/aeko-ai-visibility` |
-| `/aeko-prompt-deep-dive` | `/aeko-source-analysis` |
-| `/aeko-check-source` | `/aeko-source-analysis` |
-| `/aeko-brand-competitor-analysis` | `/aeko-competitor-analysis scope=brand` |
-| `/aeko-product-competitor-analysis` | `/aeko-competitor-analysis scope=product` |
-| `/aeko-find-prompts-to-track` | `/aeko-manage-prompts mode=discover` |
-| `/aeko-manage-tracked-prompts` | `/aeko-manage-prompts mode=review` |
-| `/aeko-setup-store` | `/aeko-store mode=setup` |
-| `/aeko-inject-reviews` | `/aeko-store mode=reviews` |
-| `/aeko-ad-report` | `/aeko-openai-ads-reporting` |
-| `/aeko-ad-guardrails` | `/aeko-openai-guardrails` |
-| `/aeko-compose-ads` | `/aeko-openai-compose-ads` |
-| `/aeko-optimize-budget` | `/aeko-openai-budget-shift` |
-| `/aeko-refresh-jsonld` | `/aeko-update-pdp mode=refresh` |
-
-Earlier removed commands are recorded in [CHANGELOG.md](CHANGELOG.md).
 
 ## Customizing skills
 
@@ -344,7 +321,8 @@ schema key, JSON-LD 용어, 브랜드 표기 `AEKO`는 영어/ASCII로 유지합
 
 ## 작업별 스킬 카탈로그
 
-[`skills/`](skills/) 아래 각 폴더에는 하나의 `SKILL.md`가 있습니다.
+배포 카탈로그에는 26개의 활성 스킬이 있습니다. [`skills/`](skills/) 아래 각 활성 폴더에는 하나의
+`SKILL.md`가 있으며, 이번 카탈로그가 첫 릴리스이므로 호환 전용 명령 stub은 배포하지 않습니다.
 
 ### 시작과 연결
 
@@ -367,6 +345,7 @@ schema key, JSON-LD 용어, 브랜드 표기 `AEKO`는 영어/ASCII로 유지합
 - `/aeko-ga4` — 사용자 소유 GA4 커넥터 또는 선택형 AEKO GA4 join.
 - `/aeko-ai-visibility [domain_id] [window] [depth]` — AI 가시성, Share of Voice, answer drift.
 - `/aeko-source-analysis` — 연결 시 완전한 AEKO 근거를 사용하는 추적 답변 또는 인용 페이지 출처 분석.
+- `/aeko-message-audit` — 지출순 paid-message claim과 선택형 owned backing 및 AI 답변 확인.
 - `/aeko-weekly-report [window]` — MCP를 직접 호출하지 않는 provenance 포함 composite 리포트.
 
 ### 리서치와 제어
@@ -391,32 +370,6 @@ schema key, JSON-LD 용어, 브랜드 표기 `AEKO`는 영어/ASCII로 유지합
 
 - `/aeko-create-loop` — 인터뷰, 지속 가능한 Notion config, 호스트별 schedule 구성, foreground dry run.
 - `/aeko-run-loop config=<notion-page-id>` — approval-first 예약 읽기·제안 진입점.
-
-### 호환 명령어
-
-다음 배포된 stub은 delegation을 시도하고, 다른 스킬을 호출할 수 없는 호스트에서는 정확한 후속 명령을
-출력합니다:
-
-| 기존 명령어 | 후속 명령어 |
-|---|---|
-| `/aeo-audit` | 요청에 따라 `/aeko-site-audit` 또는 `/aeko-pdp-audit` |
-| `/aeko-onboarding` | `/aeko-start` |
-| `/aeko-visibility-report` | `/aeko-ai-visibility` |
-| `/aeko-prompt-deep-dive` | `/aeko-source-analysis` |
-| `/aeko-check-source` | `/aeko-source-analysis` |
-| `/aeko-brand-competitor-analysis` | `/aeko-competitor-analysis scope=brand` |
-| `/aeko-product-competitor-analysis` | `/aeko-competitor-analysis scope=product` |
-| `/aeko-find-prompts-to-track` | `/aeko-manage-prompts mode=discover` |
-| `/aeko-manage-tracked-prompts` | `/aeko-manage-prompts mode=review` |
-| `/aeko-setup-store` | `/aeko-store mode=setup` |
-| `/aeko-inject-reviews` | `/aeko-store mode=reviews` |
-| `/aeko-ad-report` | `/aeko-openai-ads-reporting` |
-| `/aeko-ad-guardrails` | `/aeko-openai-guardrails` |
-| `/aeko-compose-ads` | `/aeko-openai-compose-ads` |
-| `/aeko-optimize-budget` | `/aeko-openai-budget-shift` |
-| `/aeko-refresh-jsonld` | `/aeko-update-pdp mode=refresh` |
-
-더 이전에 제거된 명령어는 [CHANGELOG.md](CHANGELOG.md)에 기록되어 있습니다.
 
 ## 스킬 커스터마이징
 

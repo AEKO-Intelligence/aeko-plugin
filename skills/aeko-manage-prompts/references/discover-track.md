@@ -20,9 +20,24 @@ Keep slash commands, IDs, file paths, prompt metadata keys, and tool names in En
 2. Else → `aeko_list_domains`. If one domain: auto-pick. If multiple: show list and ask.
 3. Call `aeko_get_domain_info(domain_id)`.
 4. Call `aeko_list_views(domain_id=...)`.
-5. Call `aeko_list_contexts(domain_id=...)` only if the user explicitly wants Context grounding, or if the domain info/tool output indicates Context is available. Context library is Pro+; a Starter 403 is not a blocker for basic prompt tracking.
-6. Use domain fields plus the available IDs to seed sensible defaults:
-   - `country` = first entry in domain's `selected_markets` / `target_country` if available, else ask.
+5. Call `aeko_get_quota` now to discover `limit_status.ai_platforms`. This discovery snapshot does not
+   replace the fresh pre-write call. Offer only the returned raw enums, rendered with this exact mapping:
+
+   | Display | API enum |
+   |---|---|
+   | GPT-4 | `openai` |
+   | Claude | `anthropic` |
+   | Gemini | `google` |
+   | Perplexity | `perplexity` |
+
+   Starter normally returns only `openai`; Pro adds `google` and `perplexity`; offer Claude only when
+   `anthropic` is actually returned (Enterprise). Never send a display label such as `GPT-4` to a tool.
+6. Call `aeko_get_current_markets`. Its `selected_markets` list—not the domain record—is the source of
+   valid tracking countries. If it is empty or unavailable, explain that account markets must be selected
+   in AEKO and stop before tracking rather than guessing `KR`, `US`, or any other country.
+7. Call `aeko_list_contexts(domain_id=...)` only if the user explicitly wants Context grounding, or if the domain info/tool output indicates Context is available. Context library is Pro+; a Starter 403 is not a blocker for basic prompt tracking.
+8. Use domain fields plus the entitlement and available IDs to seed sensible defaults:
+   - `country` = a real code from `aeko_get_current_markets`; ask which one if several are returned.
    - `scope` = domain's `industry` / `vertical` / `scope` field if set.
    - `context_ids[]` = real Context ids from `aeko_list_contexts` when Pro+ Context is available.
    - `view_id` = a real saved view id from `aeko_list_views`.
@@ -38,8 +53,8 @@ languages, translate the EN template naturally while keeping platform/country/qu
 ```
 어떤 연구 프롬프트를 찾을까요? 비워두면 브랜드 기본값으로 검색할게요.
 
-- 플랫폼: [claude / openai / google / perplexity / all]
-- 국가: [KR / US / JP / ... / all]
+- 플랫폼: [only the permitted API enums returned by `limit_status.ai_platforms` / all]
+- 국가: [only the codes returned by `selected_markets` / all]
 - 컨텍스트 (저장된 Context 선택 또는 새 Context 저장)
 - 저장할 View (선택)
 - 키워드 (예: "이불 추천", "민감성 피부")
@@ -52,8 +67,8 @@ languages, translate the EN template naturally while keeping platform/country/qu
 ```
 What research prompts should I look for? Leave fields blank to use your brand defaults.
 
-- Platform: [claude / openai / google / perplexity / all]
-- Country: [KR / US / JP / ... / all]
+- Platform: [only the permitted API enums returned by `limit_status.ai_platforms` / all]
+- Country: [only the codes returned by `selected_markets` / all]
 - Context (choose saved Context IDs, or save a new Context)
 - Saved view (optional)
 - Keyword (e.g. "bedding recommendation", "sensitive skin")
@@ -62,7 +77,11 @@ What research prompts should I look for? Leave fields blank to use your brand de
 Describe the combination you want.
 ```
 
-Parse the user's response into search filters and tracking angles. `all` / blank → omit that filter (no param to the tool).
+Parse the user's response into search filters and tracking angles. For search, `all` / blank may omit the
+filter, but discard any returned row whose raw `ai_platform` enum is outside the user's entitlement before
+showing a trackable pick-list. The search tool uses exact enums; `claude` is not an enum and must never be
+sent. For tracking, `all` means the exact permitted platform or selected-market list already read, never an
+unbounded omission.
 
 Tracking angles are only:
 - `ai_platforms[]`
@@ -71,7 +90,8 @@ Tracking angles are only:
 - `context_ids[]` (Pro+ Context library only)
 
 Do not promise direct tag/funnel/query-type writes. Tags, funnel stage, and query type are derived by AEKO after tracking.
-For Starter users, use `ai_platforms=["openai"]` and one allowed country unless the backend/domain data says otherwise.
+Never derive package/platform/market permissions from a domain or from assumed package defaults. Use the
+fresh account surfaces above.
 
 ## Step 3 — Search
 
@@ -98,7 +118,9 @@ Show top 10-15 sorted by score, in a compact table:
 | 1 | ...    | Claude   | KR      | sensitive skin | 필리, 모노랩스  |
 ```
 
-Include the prompt ID as a monospace UUID column so the user can reference specific rows.
+Include the prompt ID as a monospace UUID column so the user can reference specific rows. The human-facing
+heading may be truncated, but retain each result's full `Track-safe fields` JSON. Its `raw_prompt` is the
+only prompt text safe to send back to tracking; never track the 100-character display heading.
 
 ## Step 5 — Pick-list
 
@@ -111,11 +133,12 @@ Parse response into a list of row indices → prompt payloads.
 
 ## Step 6 — Pre-flight package limits
 
-Immediately before tracking, call `aeko_get_quota` to see the tracked-prompt cap and remaining capacity. If
-quota data is unavailable, call `aeko_get_tracked_prompts` as a fallback count and let the backend enforce
-the hard cap. This fresh call is required even if quota appeared earlier in the run.
-
-If the user's selection would exceed their package cap → warn, show how many they can track, ask them to narrow.
+Run the complete universal pre-flight in `SKILL.md`, including a fresh market read and a pre-write tracked
+snapshot. The selected count is not the required capacity. For each selected seed calculate
+`platforms × countries × max(1, distinct context_ids)`; sum the requested variants across seeds. If the cap
+is finite and the conservative total exceeds `remaining`, show the arithmetic and ask the user to narrow.
+If the cap is `null`, label it unlimited. If quota failed, the fallback tracked count has no denominator and
+does not certify capacity.
 
 ## Step 7 — Track each selected prompt
 
@@ -123,22 +146,35 @@ For each selected row, call:
 
 ```
 aeko_track_prompt(
-    raw_prompt=row.raw_prompt,
-    prompt_en=row.prompt_en,
-    ai_platforms=[row.ai_platform] or selected_ai_platforms,
+    raw_prompt=row.track_safe_fields.raw_prompt,
+    prompt_en=row.track_safe_fields.prompt_en,
+    ai_platforms=[row.track_safe_fields.ai_platform] or selected_ai_platforms,
     countries=[row.country] or selected_countries,
     view_id=selected_view_id,        # only a real ID from aeko_list_views / aeko_create_view
     context_ids=selected_context_ids # only real IDs from aeko_list_contexts / aeko_create_context
 )
 ```
 
-Never pass search-row-only fields such as `prompt_ko`, `model`, `language`, `industry`, `vertical`, `tags`, `query_type`, or `funnel_stage` to `aeko_track_prompt`; AEKO derives them server-side.
+`row.track_safe_fields.ai_platform` is a raw enum (`openai`, `anthropic`, `google`, or `perplexity`), never
+its display label. `countries` contains only exact codes from `aeko_get_current_markets`. Never pass
+search-row-only fields such as `prompt_ko`, `model`, `language`, `industry`, `vertical`, `tags`,
+`query_type`, or `funnel_stage` to `aeko_track_prompt`; AEKO derives them server-side.
 
-Handle tool output:
+The MCP result now contains every fan-out result plus the complete summary. Handle all rows, not just the
+first:
 - `tracked` / `associated` → note the tracked prompt ID.
 - `already_tracked` → skip, note "already tracked". The backend returns HTTP 201 with this status, not 409.
 - `reactivated` → note "reactivated". The backend returns HTTP 201 with this status.
-- `failed` / `limit_blocked` / backend 403 → stop loop if it is a package cap; tell user how many succeeded before cap.
+- `failed` / `limit_blocked` → report each reason and stop the remaining loop if capacity is exhausted.
+- HTTP 402 with `{would_add, remaining, blocked}` → quota, not authorization; show the fresh package limits
+  and narrow the fan-out.
+- HTTP 403 → platform or Context tier/ownership. Surface the backend detail; never call it a quota error.
+
+Immediately fetch `aeko_get_tracked_prompts` again. Confirm every successful returned `tracked_prompt_id`
+is present and compare the before/after tracked count with the pre-flight expectation, adjusted only for
+explicit `already_tracked` rows. If `summary.failed > 0`, `summary.view_assignment_failed=true`, an ID is
+absent, or the count is short, label the operation **partial**, enumerate what landed, and do not replay the
+whole request.
 
 ## Step 8 — Summary
 
@@ -165,10 +201,16 @@ Next: AEKO will re-query these on cadence; check back in 1-3 days.
 - No domains connected → tell user to add one at the AEKO dashboard; stop.
 - Search returned zero even after widening → suggest manual prompt creation via AEKO dashboard; stop.
 - User picks nothing → exit cleanly, no writes.
-- Backend 403 on track → surface the upgrade pitch from the error verbatim (backend includes the package-cap reason and pitch message).
+- Backend 403 on track → surface the authorization/tier detail verbatim; it may identify a platform or
+  Context entitlement and is not the tracked-prompt cap response.
+- Backend 402 on track → quota; show `would_add` and `remaining` plus the package limit from the fresh quota
+  output. Do not call it 403 or invent an upgrade pitch absent from the response.
+- Market 400 → stop. Re-read `aeko_get_current_markets`; never retry with a guessed country.
 
 ## What this skill never does
 
 - Never tracks a prompt without explicit user selection.
 - Never calls `aeko_track_prompt` with non-settable metadata fields, even if a search row contains them.
 - Never untracks as part of discovery; use `/aeko-manage-prompts mode=review` and its separate typed gate.
+- Never turns `GPT-4`, `Claude`, `Gemini`, or `Perplexity` display text into `ai_platforms` without the
+  explicit mapping above.

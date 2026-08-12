@@ -1,223 +1,219 @@
 ---
 name: aeko-openai-guardrails
 description: >
-  Account-gated AEKO workflow that sets up an automated pacing rule for OpenAI Ads that pauses campaigns, ad groups,
-  or ads when spend runs too fast or CPM/CPC crosses a threshold. Anchors every
-  threshold on the merchant's own observed numbers, creates the rule disabled,
-  previews exactly what would pause right now, and arms it only after explicit
-  confirmation. Also provides the account-wide emergency stop and confirm-gated
-  restart. Bounded by hourly reporting; entity resume is always manual.
+  Interactive, account-gated AEKO workflow for OpenAI Ads pacing rules. Anchors
+  thresholds on observed merchant data, creates rules disabled, requires a
+  successful blast-radius preview before arming, safely edits enabled rules by
+  disarming first, and confirm-gates both directions of the account-wide switch.
+  Bounded by hourly reporting; entity resume is always a separate server-gated action.
 argument-hint: "[domain-id]"
 allowed-tools: aeko_list_domains, aeko_list_campaigns, aeko_list_ad_groups, aeko_list_ads, aeko_get_ad_insights, aeko_list_ad_rules, aeko_get_ad_rule, aeko_get_ad_rule_capabilities, aeko_validate_ad_rule, aeko_create_ad_rule, aeko_update_ad_rule, aeko_delete_ad_rule, aeko_preview_ad_rule, aeko_set_ad_rule_enabled, aeko_set_ad_automation_enabled, aeko_list_ad_rule_executions, aeko_list_ad_rule_runs
 ---
 
 # AEKO OpenAI Guardrails
 
-Set up a rule that watches your OpenAI Ads spend and pauses things automatically when a limit is
-crossed — so a runaway campaign can't burn through budget overnight. **An armed rule pauses real
-campaigns**, so this skill is deliberately slow to arm one: thresholds come from the merchant's own
-numbers, the rule is created disabled, and it goes live only after the merchant sees exactly what it
-would pause and says yes.
+Set up or manage rules that automatically pause OpenAI Ads entities when merchant-defined pacing or cost
+limits are crossed. This skill never operates Meta, TikTok, or Google Ads.
 
-This operates OpenAI Ads through AEKO only. It never inspects or changes Meta, TikTok, or Google Ads.
-
-## Honesty contract (read first, repeat to the user)
-
-- **Reaction time is bounded by OpenAI's reporting.** Ad metrics arrive with roughly hourly
-  freshness. A rule reacts within about an hour of the data showing a breach — not the second it
-  happens. Never promise real-time or sub-hourly protection.
-- **Pause is automatic; resume is manual.** A triggered rule pauses the matched entities and stops
-  there. Nothing un-pauses automatically — the merchant restarts spend themselves (dashboard, or the
-  explicit spend-restart confirmation in `/aeko-openai-budget-shift`). Say this up front so nobody
-  expects the ads to come back on their own.
-- **There is an account-wide emergency stop.** `enabled=False` on the global automation switch stops all
-  scheduled rule evaluation/actions without deleting rules or changing their individual enabled states.
-  Re-enabling can resume every individually enabled rule, so `enabled=True` always requires a fresh,
-  dedicated confirmation.
-- **No conversion or ROAS rules.** Conversion/revenue data is not ingested, so rules can only watch
-  spend, CPM, and CPC. If the merchant asks for "pause when ROAS drops," explain that isn't
-  measurable yet and offer the closest supported guard instead.
-- **CPM/CPC rules use a day of data, not an hour.** One hour of CPM is noise — a handful of
-  impressions can double it. Cost-efficiency rules only run on `rolling_24h` or `daily` windows.
-  Only spend (a cumulative number) makes sense over `last_n_hours`.
-
-Language: mirror the user's chat language for explanations, previews, and confirmations. Keep
-IDs/tool names ASCII. Money values arrive in micros (×1,000,000) — show them in account currency.
-
-## Inputs
-
-- `domain-id` (optional) — `$1`. Resolve via `aeko_list_domains`.
-
-## Step 0 — Emergency stop or restart all automation
-
-Handle this path before rule setup whenever the user's intent is global automation control.
-
-### Stop all automation
-
-If the user explicitly says "stop all automation" or KO `모든 광고 자동화를 중지`, resolve the exact
-domain and immediately call:
+If invoked from a schedule, routine, cron wrapper, or any context without a present user, stop immediately:
 
 ```text
-aeko_set_ad_automation_enabled(domain_id=<domain_id>, enabled=False)
+/aeko-openai-guardrails is interactive only. Run it in a foreground conversation so every live rule,
+automation-switch, edit, and delete decision is visible and explicitly confirmed.
 ```
 
-The explicit stop request is the authorization; if intent is ambiguous, ask once before the call. Report
-that scheduled evaluation/actions are stopped account-wide, individual rule settings/history remain, and
-already-paused campaigns/ad groups/ads stay paused. Do not make the user disable every rule one by one.
+This stop applies to `aeko_set_ad_rule_enabled` in both directions,
+`aeko_set_ad_automation_enabled` in both directions, `aeko_update_ad_rule`, and `aeko_delete_ad_rule`.
+Never let a wrapper, thread reply, config value, delegated skill, or the skill's own preview text stand in for
+a present user's reply.
 
-### Restart all automation
+## Honesty contract
 
-Never infer restart from "turn my rule back on." First call `aeko_list_ad_rules(domain_id)` and show every
-individually enabled rule that would resume evaluation. Explain the combined scope and that existing paused
-entities do not resume automatically. Require a fresh typed confirmation:
+- OpenAI Ads reporting is roughly hourly. Never promise real-time or sub-hourly protection.
+- A triggered rule pauses entities; it never resumes them. Restarting spend is a separate flow in
+  `/aeko-openai-budget-shift`, whose real backend gate is `confirm_active=True`. Invoking that skill is not
+  itself approval: it must run interactively, re-fetch state, show the exact IDs, and obtain fresh human
+  confirmation before the server-gated resume call.
+- The account-wide switch is not inherently safe in either direction. `enabled=False` removes all automated
+  pacing protection; `enabled=True` resumes evaluation of every individually enabled rule.
+- No conversion/ROAS rules: the backend can observe spend, CPM, and CPC, not conversion revenue.
+- CPM/CPC rules use `rolling_24h` or `daily`; only cumulative spend may use `last_n_hours`.
+- The confirmation phrases in this file are **instruction-level gates only**. They are not sent to or
+  validated by the backend. `aeko_set_ad_automation_enabled` accepts only `domain_id` and `enabled`;
+  `aeko_update_ad_rule` has no confirmation field. `aeko_set_ad_rule_enabled` accepts
+  `acknowledge_broad_match`, but that acknowledges only a broad latest preview—it is not proof of general
+  human confirmation. The backend's broad-match check consults the latest successful account preview and
+  accepts no preview run ID, so it is not a complete rule-specific gate. This skill therefore requires its
+  own immediate exact-rule preview, saved-definition check, and matching counts; concurrent or unknown
+  preview state means re-preview and never guess the acknowledgement. The backend does enforce one useful
+  invariant: a newly created rule is always disabled.
 
-- EN: `ENABLE ALL AD AUTOMATION`
-- KO: `모든 광고 자동화 다시 켜기`
+Mirror the user's language for explanations and confirmations. Keep IDs/tool names ASCII. Convert micros to
+the account currency for display.
 
-Only the exact confirmation permits
-`aeko_set_ad_automation_enabled(domain_id=<domain_id>, enabled=True)`. A confirmation used to arm or edit an
-individual rule is not valid here. After either global-switch action, report the result and end this run.
+## Step 0 — resolve the domain and current automation state
 
-## Step 1 — Anchor on the merchant's real numbers
+Resolve `$1` through `aeko_list_domains`, then call `aeko_get_ad_rule_capabilities(domain_id)` and
+`aeko_list_ad_rules(domain_id, include_disabled=True)`. Build all menus from current capabilities, not fixed
+assumptions. Retain the account-wide switch state and every rule's exact ID, enabled state, version, scope,
+conditions, guards, cooldown, daily cap, and per-run cap.
 
-Never invent a threshold. Before proposing anything:
+## Global switch — both directions require the same class of gate
 
-1. Resolve the domain, then `aeko_list_ad_rules(domain_id)` — if a similar rule already exists,
-   show it and offer to adjust it (`aeko_update_ad_rule`) instead of stacking a duplicate.
-2. Pull observed performance: `aeko_get_ad_insights(scope="account")` over the last ~14 days, plus
-   per-campaign (`scope="campaign"` requires a `scope_id` — loop over `aeko_list_campaigns`).
-3. Compute the baselines the thresholds will hang on: typical daily spend, typical spend per hour,
-   CPM (spend / impressions × 1000), CPC. Present them plainly:
-   "You normally spend about ₩45k/day (~₩1.9k/hour). CPM has stayed between ₩3.2k and ₩4.1k."
-4. Propose thresholds as multiples of those baselines — e.g. hourly-spend guard at 2–3× the normal
-   hourly rate, CPM guard at ~2× the trailing average — and explain the multiple. A threshold too
-   close to normal will fire on ordinary variance; the preview in Step 4 exposes that.
+Handle a global stop/restart request before rule setup. For either direction:
 
-If the account has no meaningful history, say so and anchor on the merchant's stated budget
-instead — a spend cap they name is real data; a CPM guess is not (skip CPM/CPC rules until there
-is history to base them on).
+1. Re-fetch all rules and show every individually enabled rule, its scope, and what changing the global
+   switch means. Explain that existing paused entities do not change state.
+2. Show the direction-specific risk:
+   - stopping removes every rule's runaway-spend protection;
+   - restarting resumes every individually enabled rule.
+3. Require the exact fresh phrase in the current foreground turn:
+   - stop EN: `DISABLE ALL AD AUTOMATION`
+   - stop KO: `모든 광고 자동화 끄기`
+   - restart EN: `ENABLE ALL AD AUTOMATION`
+   - restart KO: `모든 광고 자동화 다시 켜기`
+4. Any ambiguity, missing turn, or non-interactive context means no call. Only the exact phrase permits one
+   `aeko_set_ad_automation_enabled(domain_id=<domain_id>, enabled=<False|True>)` call.
+5. Read the tool result and report success only when the backend confirms it. End the run after this path.
 
-## Step 2 — Offer only what the backend supports
+The text request is not authorization by itself. Both phrases are instruction-level only because the tool
+has no confirmation parameter; state that limitation in the risk block.
 
-Call `aeko_get_ad_rule_capabilities(domain_id)` and build the menu from its metric × window ×
-scope combinations. Do not offer a combination it doesn't list. Map plain language onto them:
+## Step 1 — anchor thresholds on merchant numbers
 
-- "It's spending too fast" → **spend** over `last_n_hours` (pick hours from the baseline).
-- "I'm paying too much per view / per click" → **CPM** or **CPC** over `rolling_24h` or `daily`.
-- Scope: whole account, specific campaigns, ad groups, or ads. Use `aeko_list_campaigns` /
-  `aeko_list_ad_groups` / `aeko_list_ads` to turn ids into names the merchant recognizes. Broad
-  scopes are legitimate ("stop everything if the account doubles its burn rate") but get extra
-  scrutiny in Step 5.
+1. Show similar existing rules first so the merchant can edit instead of stacking duplicates.
+2. Pull account insights over about 14 days and campaign insights by exact campaign ID.
+3. Compute typical daily/hourly spend, CPM, and CPC. Present the baselines in account currency.
+4. Explain proposed multiples: for example, an hourly spend threshold at 2–3× normal or daily CPM around
+   2× trailing average. If history is thin, use only a spend cap the merchant explicitly states; never guess
+   CPM/CPC.
 
-If the merchant asks for something outside the list (ROAS, single-hour CPM, a metric the
-capabilities call doesn't return), say it's not supported and why — don't approximate it silently
-with a different rule shape.
+## Step 2 — construct only supported definitions
 
-## Step 3 — Validate, then create disabled
+Use `aeko_get_ad_rule_capabilities` for the metric × window × scope matrix. Resolve entity names through the
+campaign/ad-group/ad list tools. Never approximate ROAS, conversion, unsupported action, or one-hour CPM/CPC
+with a different rule.
 
-1. `aeko_validate_ad_rule(rule=<draft>)` — fix any rejection by adjusting the draft, not by
-   loosening the intent behind the merchant's back; surface what changed.
-2. `aeko_create_ad_rule(...)` — the rule is created **disabled**. Creation never arms anything.
-   Tell the merchant that explicitly: "The rule exists but is off. Nothing pauses until you arm it."
+## Step 3 — validate and create disabled
 
-## Step 4 — Show the blast radius before arming
+Call `aeko_validate_ad_rule` on the complete definition. Surface every correction instead of silently
+widening scope or weakening intent. After validation, `aeko_create_ad_rule` may create the draft: the backend
+always persists new rules as disabled. Tell the merchant nothing can pause until the separate preview and
+enable flow succeeds.
 
-`aeko_preview_ad_rule(rule_id=<new rule>)` — this evaluates the rule against current data and
-returns what would pause **right now**, with each entity's trigger value vs the threshold. Show it
-as a table:
+Creation is still a state write, so the foreground-only gate applies; however it cannot arm a rule.
 
-```
+## Step 4 — successful preview is an arming precondition
+
+Before every `aeko_set_ad_rule_enabled(rule_id, enabled=True)` call:
+
+1. Fetch the saved rule and retain its exact ID/version/definition.
+2. Call `aeko_preview_ad_rule(rule_id=<rule_id>)` in this run.
+3. Require a successful response for that exact saved rule with `dry_run=true`, `run_id`, `data_through_hour`,
+   `target_count`, `matched_count`, and matched entities. An error, missing field, partial result, stale
+   response, or preview-rate-limit failure blocks arming.
+4. Fetch the rule again. If its version/definition changed after preview, discard the preview and restart.
+5. Show the complete blast-radius table with exact IDs, current metric, threshold, target count, matched
+   count, data-through hour, and warnings.
+
+```text
 If armed right now, this rule would pause:
-Entity                     Current      Threshold    Status
-Campaign "Summer KR"       ₩6.1k/hr     ₩4.0k/hr     WOULD PAUSE
-Campaign "Brand US"        ₩1.2k/hr     ₩4.0k/hr     ok
+Entity / exact ID                Current      Threshold    Status
+Campaign "Summer KR" / <id>      ₩6.1k/hr     ₩4.0k/hr     WOULD PAUSE
+Campaign "Brand US" / <id>       ₩1.2k/hr     ₩4.0k/hr     ok
 ```
 
-Read the result critically with the merchant:
+If the preview matches most of the account, recommend correcting the rule. Never interpret a failed preview
+as zero matches. No successful current preview means no enable call.
 
-- **Pauses nothing** — good default state for a guardrail; it should only fire on abnormal days.
-- **Pauses something** — is that entity genuinely misbehaving, or is the threshold set inside
-  normal range? If the latter, adjust with `aeko_update_ad_rule` and preview again.
-- **Pauses most of the account** — the threshold is almost certainly wrong. Do not proceed to
-  arming until the merchant has seen this and either fixed the threshold or explicitly wants a
-  kill-switch that aggressive.
+## Step 5 — arm only after the preview and fresh confirmation
 
-(`aeko_preview_ad_rule(rule=<draft>)` also works before creation, for comparing candidate
-thresholds without saving anything.)
+After Step 4, require the merchant to confirm the exact rule ID/version and displayed blast radius in the
+current foreground turn with EN `ENABLE RULE <rule_id> VERSION <version>` or the natural KO equivalent that
+retains the exact ASCII ID/version. Record no durable approval token—the backend accepts none. Then call
+`aeko_set_ad_rule_enabled(rule_id, enabled=True, acknowledge_broad_match=False)` exactly once.
 
-## Step 5 — Arm only on explicit confirmation
+If the backend returns `MARKETING_RULE_BROAD_MATCH_ACK_REQUIRED`, do not retry from the error alone. Require
+that its counts correspond to the successful current preview; otherwise re-fetch and re-preview. Show the
+broad match again and obtain a second fresh confirmation naming the exact rule/counts. Only that permits the
+re-call with `acknowledge_broad_match=True`. Use EN
+`ACKNOWLEDGE BROAD MATCH <rule_id> <matched_count>/<target_count>` or the natural KO equivalent retaining
+those exact ASCII values. Never pass it on the first attempt or from model judgment.
 
-After the merchant has seen the preview and confirms in so many words, call
-`aeko_set_ad_rule_enabled(rule_id, enabled=True)`.
-
-If account-wide automation is disabled, explain that enabling this individual rule preserves its ready
-state but it will not evaluate until the user separately follows Step 0's global restart gate. Never turn
-the global switch on as a side effect of arming one rule.
-
-If the call returns a **broad-match acknowledgement error** (the rule matches a wide slice of the
-account), do not retry reflexively. Show the blast radius from Step 4 again, state plainly how much
-of the account this one rule can pause, and only on a fresh confirmation re-call with
-`acknowledge_broad_match=True`. Never pass `acknowledge_broad_match=True` on the first attempt or
-on your own judgment — it exists so a human sees the width of the match first.
-
-Close with what to expect:
-
-```
-✔ Rule armed — "Pause Summer KR if hourly spend passes ₩4.0k"
-  Checks run against OpenAI's hourly reporting data; reaction lag is up to ~1 hour.
-  If it fires, the campaign pauses and STAYS paused until you restart it.
-  See what it did anytime: /aeko-openai-guardrails → "show rule activity"
-```
-
-## Step 6 — "What did automation do while I was away?"
-
-When the merchant comes back and asks:
-
-- `aeko_list_ad_rule_executions(rule_id=...)` — the actions taken: what was paused, when, and the
-  metric value that tripped the threshold. This is the answer to "why is my campaign paused."
-- `aeko_list_ad_rule_runs(rule_id=...)` — the evaluation history: proof the rule was being checked
-  even on days nothing fired. Useful when the merchant wonders whether the guardrail is actually on.
-
-If something was paused and the merchant wants it back, restate that resume is a manual, explicit
-  step — hand off to the spend-restart flow in `/aeko-openai-budget-shift` or the dashboard. This skill
-  never restarts spend.
+If global automation is off, enabling the rule only makes it ready; do not turn the global switch on as a
+side effect. Global restart uses its separate Step 0 gate.
 
 ## Managing existing rules
 
-- `aeko_list_ad_rules` / `aeko_get_ad_rule` — review what's set up and armed.
-- `aeko_update_ad_rule` — change thresholds/scope. If the rule is currently **enabled**, re-run
-  `aeko_preview_ad_rule` after the change and show the new blast radius — an edit can widen a rule
-  as easily as a new one.
-- `aeko_set_ad_rule_enabled(rule_id, enabled=False)` — disarm without deleting (keeps history).
-- `aeko_set_ad_automation_enabled(domain_id, enabled=False)` — emergency stop for all scheduled rules while
-  preserving individual rule states and history. Global `enabled=True` uses Step 0's fresh typed gate.
-- `aeko_delete_ad_rule` — only on explicit request; prefer disarming so the execution history and
-  the tuned thresholds survive.
+Every mutation below is foreground-only and requires an exact before/after display plus a fresh reply.
+
+### Update an enabled rule — disarm before editing
+
+An enabled rule edit is a live re-arm because the backend leaves it enabled and clears per-entity rule state.
+This resets cooldown tracking and can immediately re-pause entities. Never call `aeko_update_ad_rule` on an
+enabled rule.
+
+1. Fetch the exact current rule and merge the requested patch locally into a full create-shaped definition.
+2. Validate that complete proposed definition, then preview it **before any mutation** with
+   `aeko_preview_ad_rule(rule=<full proposed definition>)`.
+3. Require the same successful-preview fields as Step 4. Show old → proposed definition, old/new blast radius,
+   and the cooldown-state-reset risk.
+4. Obtain the fresh phrase `DISARM AND UPDATE RULE <rule_id>` or the natural KO equivalent retaining the
+   exact ID. This confirmation is instruction-level; `aeko_update_ad_rule` has no confirmation parameter.
+5. Call `aeko_set_ad_rule_enabled(rule_id, enabled=False)` and verify disabled. Then call
+   `aeko_update_ad_rule(rule_id, <exact approved patch>)` once. If update fails, leave the rule disabled.
+6. Fetch and verify the saved disabled definition. Run a new successful saved-rule preview.
+7. Re-enabling is a separate armed-state transition: show that new preview and require a second fresh
+   confirmation through Step 5. Without it, leave the edited rule disabled.
+
+This sequence moves the gate to the armed state; it does not trust a post-update preview after a live edit.
+
+### Update a disabled rule
+
+Fetch, merge, validate, and preview the full proposed definition; show the exact diff and state reset. Require
+`UPDATE DISABLED RULE <rule_id>` or the natural KO equivalent retaining the exact ID before
+`aeko_update_ad_rule`. Verify the saved rule remains disabled. Enabling later still requires Steps 4–5.
+
+### Disable one rule
+
+Disabling removes a protection and therefore is not auto-safe. Show the rule, its scope, recent executions,
+and the consequence; require `DISABLE RULE <rule_id>` or the natural KO equivalent retaining the exact ID before
+`aeko_set_ad_rule_enabled(rule_id, enabled=False)`. No thread/config text substitutes for that reply.
+
+### Delete one rule
+
+Show that delete soft-deletes and disables the rule while retaining audit history. Prefer disable when the
+merchant may reuse it. Require `DELETE RULE <rule_id>` or the natural KO equivalent retaining the exact ID before
+`aeko_delete_ad_rule`; the backend accepts no confirmation token.
+
+## “What did automation do while I was away?”
+
+- `aeko_list_ad_rule_executions(domain_id, rule_id=...)` shows actions, exact entities, metric values, and
+  errors.
+- `aeko_list_ad_rule_runs(domain_id)` shows evaluation history, including runs where nothing fired.
+
+If the merchant wants paused spend restarted, explain that this skill never restarts it. Route to the
+foreground `/aeko-openai-budget-shift` flow and cite its server-enforced `confirm_active=True` parameter, not
+a generic claim that a person will handle it.
 
 ## Error paths
 
-- No connected ad account / no campaigns → stop; nothing to guard.
-- No performance history → skip CPM/CPC rules; offer only a spend cap anchored on the merchant's
-  stated budget (Step 1).
-- `aeko_validate_ad_rule` or `aeko_create_ad_rule` rejects the rule → show the reason, adjust with
-  the merchant, retry. Never work around a validation error by changing scope or metric silently.
-- Enable fails with the broad-match error → Step 5 path. Any other enable failure → surface it
-  verbatim; the rule stays disabled, say so.
-- Global emergency stop fails → surface the exact error and do not claim automation stopped.
-- Global restart fails → surface the exact error and do not retry with broader permissions or silently
-  toggle individual rules.
+- No account/campaigns: stop; nothing to guard.
+- No history: skip CPM/CPC and offer only a merchant-stated spend cap.
+- Validation/create/update rejection: surface it; never silently widen scope or weaken guards.
+- Preview failure, partial response, missing counts, or version drift: do not enable or update an enabled
+  rule. Re-preview only after the cause is resolved.
+- A disarm succeeds but update/re-preview fails: leave the rule disabled and report the exact state.
+- Global switch failure: do not claim the direction changed and never compensate by toggling rules.
+- Any mutating result is ambiguous: stop, report uncertainty, and do not retry automatically.
 
 ## What this skill never does
 
-- Never proposes a threshold that isn't derived from the merchant's observed numbers or their
-  explicitly stated budget.
-- Never creates a rule armed, and never enables one without showing the current blast radius and
-  getting explicit confirmation first.
-- Never passes `acknowledge_broad_match=True` except on a re-call the merchant confirmed after
-  seeing what the broad match covers.
-- Never omits the account-wide stop path, and never calls global `enabled=True` without its own fresh typed
-  confirmation after showing every individually enabled rule that can resume.
-- Never offers conversion/ROAS rules or single-hour CPM/CPC rules, and never implies faster than
-  hourly reaction.
-- Never resumes paused campaigns, ad groups, or ads — restarting spend is a separate, explicit,
-  human action.
+- Never mutates rules or the global switch unattended.
+- Never treats its confirmation phrases as backend-enforced; they are instruction-level gates.
+- Never calls `aeko_update_ad_rule` while the rule is enabled.
+- Never enables without a successful current saved-rule preview and fresh foreground confirmation.
+- Never passes `acknowledge_broad_match=True` without the distinct re-confirmation after matching counts.
+- Never assumes disabling a rule or all automation is harmless.
+- Never invents thresholds, conversion/ROAS rules, or faster-than-hourly reaction.
+- Never resumes paused entities; the separate resume surface enforces `confirm_active=True`.

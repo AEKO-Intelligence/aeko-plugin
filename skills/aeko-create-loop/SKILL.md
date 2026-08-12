@@ -116,7 +116,15 @@ Use exact IDs from connector receipts. After creation, delegate one readback and
 timezone, sources, destinations, and page ID. A write receipt without successful readback is not a durable
 config. Print the verified Notion page ID and URL.
 
-Edits happen on this page. The scheduled prompt must never embed a stale copy of the whole config.
+Edits to sources, report questions, cadence, and language happen on this page. Security-sensitive fields are
+different: the page is editable and has no cryptographic integrity proof, so approver IDs and delivery
+destinations must also be frozen into the independently stored scheduled prompt. Changing those fields
+requires recreating the schedule in a foreground run.
+
+Individual approval thread addresses are dynamic and therefore are not frozen into the prompt. Require the
+scheduled run to accept one only when an atomic proposal-creation receipt binds that exact address to its
+proposal ID/hash inside the frozen Slack channel or Notion destination. The editable config is never enough
+to introduce an approval thread.
 
 ## Step 5 — compose the scheduled prompt
 
@@ -125,13 +133,22 @@ Compose a short prompt with both a human-readable summary and the verified point
 ```text
 Run the AEKO weekly marketing loop for <brand/site>.
 Cadence: <cadence in timezone>. Deliver to <destinations>. Report language: <language>.
+AEKO_LOOP_SECURITY_V1
+config_page_id: <exact verified Notion config page ID>
+notion_destination_id: <exact ID or null>
+slack_channel_id: <exact ID or null>
+approver_user_ids: [<exact sorted immutable Slack user IDs>]
+max_ttl_hours: 72
+END_AEKO_LOOP_SECURITY_V1
 Read the current configuration from Notion page <page-id> (<page-url>), then invoke:
 /aeko-run-loop config=<page-id>
 Do not use local files. The loop is read-and-propose only; scheduled marketing writes are unsupported.
 ```
 
-The pointer is load-bearing. Changing sources, destinations, blackout rules, or language on the Notion page
-must change the next run without rebuilding the schedule.
+The pointer is load-bearing for sources, blackout rules, report questions, and language, which change on the
+next run without rebuilding the schedule. The fixed security envelope is load-bearing for destinations and
+approver IDs. `/aeko-run-loop` compares the editable config with it and falls back to conversation-only when
+it is absent or mismatched; never let config-only edits redirect delivery or grant approval authority.
 
 ## Step 6 — install honestly for this host
 

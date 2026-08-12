@@ -97,7 +97,6 @@ as a markdown table; mirror header labels in `session_language`.
 |  | `/aeko-openai-guardrails` | Account-gated auto-pause rule for runaway OpenAI Ads spend; disabled until preview and confirmation. |
 | **Publish** | `/aeko-publish-content` | Publish saved content variations only after explicit confirmation. |
 | **Maintenance** | `/aeko-update-pdp mode=refresh` | Refresh review facts AI can read, such as rating and review count. |
-|  | `/aeo-audit` | Generic AEO audit; add `shopping` for product-level AI shopping readiness. |
 
 Note: for `session_language=ko`, render the One-liner column in Korean; for `session_language=en`, render it in English; for other languages, translate the human-readable group labels and one-liners naturally. Keep slash commands and skill names verbatim.
 
@@ -318,7 +317,6 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 |  | `/aeko-openai-guardrails` | AEKO 계정 기반 OpenAI Ads 자동 일시중지 규칙; 미리보기와 확인 전에는 비활성. |
 | **게시** | `/aeko-publish-content` | 저장된 콘텐츠 변형본을 명시 확인 후 게시. |
 | **유지보수** | `/aeko-update-pdp mode=refresh` | 평점과 리뷰 수처럼 AI가 읽는 리뷰 사실 새로고침. |
-|  | `/aeo-audit` | 일반 AEO 진단; `shopping`을 붙이면 상품 단위 AI 쇼핑 준비도 진단. |
 
 **실행 (커스터마이즈 가능)** 그룹의 3개 스킬은 `references/recipes/`, `references/examples/`, `references/style/` 하위 파일을 통해 브랜드별로 덮어쓸 수 있습니다. 자세한 내용은 4단계에서 안내합니다.
 

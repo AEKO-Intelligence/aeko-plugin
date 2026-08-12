@@ -6,9 +6,13 @@ load_when: SKILL.md §5 generates HTML when pdp_responsive_contract requires a s
 
 # PDP JSON-LD schemas
 
-All JSON-LD blocks must be valid JSON, no trailing commas, no comments. Script tag is exactly `<script type="application/ld+json">…</script>`.
-When multiple schema types are present, emit one root object with `@context` and an `@graph` array. Keep
-Review/AggregateRating nested in Product where possible. The store-write contract accepts one JSON object.
+All newly emitted JSON-LD must be valid JSON, no trailing commas, no comments. Script tag is exactly
+`<script type="application/ld+json">…</script>`. Before a live normal-mode update, parse every existing
+double- or single-quoted JSON-LD block and preserve every node/field not explicitly changed. Any parse
+failure blocks the write. A single-quoted block also blocks the current backend write because it would
+survive beside the replacement. When multiple schema types are present, emit one root object with `@context`
+and an `@graph` array. Keep Review/AggregateRating nested in Product where possible. The store-write contract
+accepts one complete JSON object, not a partial additive node.
 
 ## Trust guardrails (non-negotiable)
 
@@ -50,7 +54,8 @@ Populate when data is available — otherwise omit the key entirely (never `null
 - `shippingDetails` (only from visible shipping policy or store data)
 - `hasMerchantReturnPolicy` (only from visible return policy or store data)
 - `priceValidUntil` (only when the store/product data provides a real date)
-- `aggregateRating` (only when `reviews_payload` non-empty; tie to the AggregateRating block below)
+- `aggregateRating` (only when store-authoritative aggregate totals or explicitly confirmed totals exist;
+  never compute it from `reviews_payload`)
 - `review[]` (top 5 from `reviews_payload`)
 
 ### Merchant-listing field guidance
@@ -94,12 +99,20 @@ Shopping facts AI can verify
 
 ### Thin-input exception
 
-If after all three sources fewer than 3 product-relevant questions surface: treat as a thin-input exception. Omit the FAQPage JSON-LD entirely (do not emit a 1- or 2-question FAQPage), skip the visible FAQ section, **do not fail the `sections_required` acceptance gate for `faq`** (this exception supersedes the gate for the FAQ branch only), and append `prompts_to_rank_on_missing — re-run /aeko-create-plan with keywords or curated prompt IDs` to the **Plan warnings** block in the Step 9 summary (this is a plan-level structural warning, not a field-level pending verification — bypasses Step 5b).
+If after all three sources fewer than 3 product-relevant questions surface: treat as a thin-input exception.
+Do not create or replace FAQPage. Preserve any existing FAQPage node unchanged; when none exists, omit it and
+skip the visible FAQ section. **Do not fail the `sections_required` acceptance gate for `faq`** (this
+exception supersedes the gate for the FAQ branch only), and append
+`prompts_to_rank_on_missing — add product-specific keywords or curated prompt IDs to the Action item, then rerun`
+to the **Plan warnings** block in the Step 9 summary. This is a plan-level structural warning, not a
+field-level pending verification, so it bypasses Step 5b.
 
 ## Review / AggregateRating (when `pdp_responsive_contract.review_jsonld_when_available == true` AND `reviews_payload` non-empty)
 
-- Include `aggregateRating` (`ratingValue`, `reviewCount`, `bestRating: "5"`).
-- Include `review[]` ≤ 5 top entries.
+- Include `aggregateRating` (`ratingValue`, `reviewCount`, `bestRating: "5"`) only from an authoritative
+  aggregate total or explicit user confirmation. A capped or selected review sample is never the total.
+- Include `review[]` ≤ 5 entries selected deterministically by newest `review_created_at`, then stable
+  review/source ID. Do not use a mixed "recent/high-rated" ordering.
 - Tie to Product via `Product.aggregateRating` + `Product.review[]`.
 - Skip silently if reviews are absent or look synthetic — never fabricate.
 

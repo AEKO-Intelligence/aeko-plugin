@@ -4,9 +4,13 @@ purpose: Hard rules for the generated PDP HTML — fail the run if violated
 load_when: SKILL.md §5 generates HTML; Step 5 acceptance gates evaluate
 ---
 
-# Responsive HTML contract (mandatory)
+# Responsive HTML contract for newly authored HTML (mandatory)
 
-Fail the run if any rule below is violated. These are non-negotiable; brand-specific examples cannot relax them.
+Fail the run if newly authored AEKO HTML violates a rule below. These are non-negotiable; brand-specific
+examples cannot relax them. Under `preserve_existing`, validate only `new_structured_section_html`. The
+merchant's byte-preserved prefix is outside this contract: existing links, buttons, scripts, handlers,
+alt-less images, styles, and vocabulary must be reported as preserved, never stripped or rewritten to make
+the combined preview pass.
 
 ## Layout & semantics
 
@@ -19,7 +23,9 @@ Fail the run if any rule below is violated. These are non-negotiable; brand-spec
 
 This skill produces AEO citability content for the PDP description block — not a CTA layer. The host platform (Cafe24, Shopify) already provides the native "구매하기/장바구니" button and every other action UI in the product page.
 
-- Do NOT emit `<a href>` or `<button>` elements anywhere in the rendered HTML, regardless of destination (same product page, size guide, brand story, separate landing page). This rule applies to every section, not just `aeko-cta`.
+- Do NOT emit `<a href>` or `<button>` elements in newly authored HTML, regardless of destination (same
+  product page, size guide, brand story, separate landing page). This rule applies to every new section, not
+  just `aeko-cta`; it is never a license to strip those elements from preserved merchant HTML.
 - Inline anchors that are clearly informational rather than action-driving (e.g. `<a href="mailto:...">` for a contact email, or a phone-number link wrapped in prose) are allowed only when prose explicitly requests them; in doubt, omit.
 - CSS classes like `.aeko-cta-buttons` and any related styling must not be emitted.
 - The `aeko-cta` section heading is "구매 안내" (KO) / "Purchase info" (EN), never "구매하기" / "Buy now".
@@ -34,9 +40,11 @@ This skill produces AEO citability content for the PDP description block — not
 
 ## Frontmatter must_include / forbidden / sections_required
 
-- `must_include` — every string MUST appear in the rendered HTML.
-- `forbidden` — none MAY appear.
-- `sections_required` — every entry maps to a `<section>` heading (case-insensitive, trimmed). Missing → iterate or fail; do NOT call `aeko_complete_action_item`.
+- `must_include` — every string MUST appear in newly authored HTML or approved metadata, according to scope.
+- `forbidden` — none MAY appear in newly authored HTML or approved metadata. A match in preserved merchant
+  HTML is not permission to edit it.
+- `sections_required` — every entry maps to a newly authored `<section>` heading (case-insensitive,
+  trimmed). Missing → iterate or fail; do NOT call `aeko_complete_action_item`.
 
 ## Pending verifications
 

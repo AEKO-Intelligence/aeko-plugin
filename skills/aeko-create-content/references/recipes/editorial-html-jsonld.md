@@ -391,7 +391,7 @@ The `own_store_blog` metadata schema (`OwnStoreBlogMetadata`) is looser than `ae
 
 ## JSON-LD validity rules
 
-**Scope:** `own_store_blog` (the channel that embeds JSON-LD inside its self-contained HTML). Mirrors `aeko-update-pdp` and `aeko-refresh-jsonld`:
+**Scope:** `own_store_blog` (the channel that embeds JSON-LD inside its self-contained HTML). Mirrors `aeko-update-pdp mode=refresh`:
 
 - Valid JSON: parses with `json.loads(block)`.
 - No trailing commas.

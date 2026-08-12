@@ -11,10 +11,15 @@ Language: mirror the user's chat language for user-facing explanations, confirma
 - Untracking preserves historical responses and citations; it only stops future refreshes.
 - Discovery and new tracking use `/aeko-manage-prompts mode=discover`; never carry its permissive selection
   into this mode's destructive gate.
+- If there is no present user, stop before any untrack call. A routine cannot supply `UNTRACK <N>` for the
+  user.
 
 ## Step 1 - Resolve optional domain
 
-If `$1` is set, keep it as `domain_id`. If not set and context grouping is needed, call `aeko_list_domains` and let the user choose. Domain is optional because `aeko_get_tracked_prompts` lists the account's tracked prompts.
+If `$1` is set, keep it as `domain_id`. Domain is optional for account-wide prompt review because
+`aeko_get_tracked_prompts` lists the account's tracked prompts. A domain is **required** for saved-view or
+Context operations: if the user requests either and no domain is known, call `aeko_list_domains` and have
+them choose before calling `aeko_list_views` or `aeko_create_view`.
 
 ## Step 2 - Quota snapshot
 
@@ -26,7 +31,9 @@ Report:
 - remaining slots
 - package/tier if present
 
-If quota is unavailable, continue with `aeko_get_tracked_prompts` and say that the backend will enforce hard limits.
+If the returned limit is `null`, report unlimited. If quota is unavailable, continue with
+`aeko_get_tracked_prompts`, but label its count as an observation only: that tool exposes no cap, so no
+remaining value can be calculated.
 
 ## Step 3 - Pull prompts and angle catalogs
 
@@ -43,10 +50,12 @@ Use those catalogs only to make IDs human-readable. The tracked-prompt list is a
 Render a compact grouped view. Prefer these groups in order when the data exists:
 
 1. Context: `context_title` / `context_id`
-2. Saved view: `view_id`
-3. Platform + country
-4. Funnel stage + query type
-5. Tags
+2. Platform + country
+3. Funnel stage + query type
+4. Tags
+
+Do not group or label a row by `view_id`: `aeko_get_tracked_prompts` does not emit that field. A separate
+`aeko_list_views(domain_id)` result is a catalog, not proof of prompt membership.
 
 Show a table with:
 
@@ -56,6 +65,10 @@ Show a table with:
 ```
 
 Keep prompt text to about 80 characters. Include exact `prompt_id` values in monospace.
+
+Also group identical full question text into a **question family** only for selection convenience. Under
+each family show every platform/country/Context variant and its exact `prompt_id`. Do not collapse the IDs:
+the backend untracks one variant row per call.
 
 ## Step 5 - Ask for action
 
@@ -81,9 +94,12 @@ If they choose "find new prompts", route to `/aeko-manage-prompts mode=discover`
 
 When the user selects prompts to untrack:
 
-1. Resolve row numbers to exact `prompt_id` values from the displayed table.
-2. Echo the exact prompt IDs and first 80 characters of each prompt.
-3. Require the user to type `UNTRACK <N>` exactly, where `<N>` is the displayed number of prompts. Do not
+1. Resolve row numbers or a selected question family to exact `prompt_id` values from the displayed table.
+   If a family has three platform/country variants, expand it to three IDs; never interpret "untrack 1" as
+   permission to leave two hidden sibling variants running.
+2. Echo every exact prompt ID, platform, country, Context (when present), and first 80 characters. State the
+   number of **variant rows** that will stop.
+3. Require the user to type `UNTRACK <N>` exactly, where `<N>` is that expanded exact-ID count. Do not
    accept yes, approval of the displayed list, or any confirmation from discovery/view operations.
 4. Only after the exact typed confirmation, call `aeko_untrack_prompt(prompt_id)` once per selected prompt.
 
@@ -94,7 +110,7 @@ Stop on backend 403/404 and surface the backend message.
 Print:
 
 ```
-Untracked N prompt(s).
+Untracked N variant row(s) across M question family/families.
 
 Still tracking: <count if known>
 Remaining quota: <remaining if known>
@@ -102,4 +118,5 @@ Remaining quota: <remaining if known>
 Historical response and citation data is preserved.
 ```
 
-If nothing changed, say so plainly.
+Count only successful calls. If any call fails, list the variants still active; do not claim the whole
+question family was untracked. If nothing changed, say so plainly.

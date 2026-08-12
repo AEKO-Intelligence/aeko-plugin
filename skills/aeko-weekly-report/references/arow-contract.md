@@ -13,9 +13,9 @@ emitted_at: <ISO-8601 timestamp>
 kind: <closed row kind>
 source:
   slot: <site|pdp|ads|analytics|visibility|actions>
-  provider: <public_web|local_html|meta_ads|tiktok_ads|google_ads|openai_ads|google_analytics|aeko|aeko_ga4|manual>
-  rung: <1|2|3>
-  tool: <exact called tool|manual_export|none>
+  provider: <public_web|local_html|meta_ads|tiktok_ads|google_ads|openai_ads|cross_platform_claims|google_analytics|aeko|aeko_ga4|manual>
+  rung: <1|2|3|mixed>
+  tool: <exact called tool|manual_export|derived_by_aeko_ads_review|none>
   fetched_at: <ISO-8601 timestamp|null>
   window: {from: <YYYY-MM-DD>, to: <YYYY-MM-DD>, label: <label>}
   freshness_note: <string|null>
@@ -42,13 +42,16 @@ for every row emitted by one skill invocation.
 
 ## Field rules
 
-- `kind` is one of: `site_finding`, `pdp_finding`, `ad_metric`, `traffic_metric`, `impact_metric`,
+- `kind` is one of: `site_finding`, `pdp_finding`, `ad_metric`, `ad_reconciliation`, `traffic_metric`, `impact_metric`,
   `visibility_summary`, `visibility_prompt`, `action_item`, `technical_item`.
 - `source.slot`, `provider`, and `rung` are always present. Rung `1` is an AEKO-managed source, `2` is the
   customer's official connector or a direct public fetch, and `3` is a manual export/paste or local file.
+  Rung `mixed` is reserved for an `ad_reconciliation` row already derived by `/aeko-ads-review` from
+  identified platform rows across rungs; its contributing row IDs remain in `evidence`.
   An unavailable row retains the rung it intended to use; `status` and `degraded_because` carry absence.
-- `source.tool` is the exact called tool/capability, `manual_export`, or `none` only when no source could be
-  called. Dynamic namespaced connector names are evidence, not a resolver key.
+- `source.tool` is the exact called tool/capability, `manual_export`, `derived_by_aeko_ads_review` for the
+  reserved reconciliation row, or `none` only when no source could be called. Dynamic namespaced connector
+  names are evidence, not a resolver key.
 - Every numeric value lives in `metrics` as a number, never as a formatted string. Use `_micros` for
   currency, `_pct` for 0–100 percentages, `_ratio` for unbounded ratios, `_0_100` for scores, and bare names
   for counts. Put the ISO currency code in `dimensions.currency`.
@@ -80,8 +83,10 @@ levels.
   inventory counts, not scores; emit an unavailable row when no target/evidence can be assessed.
 - `/aeko-ads-review report_mode=weekly`: exactly one `ad_metric` row for each of Meta, TikTok, Google Ads,
   and OpenAI Ads, always. Missing/account-gated platforms keep their row; the OpenAI row carries spend and
-  efficiency only because conversions/ROAS are not ingested. Store truth, when supplied, is a separate
-  manual/provider row.
+  efficiency only because conversions/ROAS are not ingested. Store truth is a separate manual/provider row,
+  unavailable when not supplied. The source skill also emits one `ad_reconciliation` row with provider
+  `cross_platform_claims`, rung `mixed`, and tool `derived_by_aeko_ads_review`; the weekly composite may
+  repeat that row but never recomputes it from platform rows.
 - `/aeko-ga4 report_mode=weekly`: at least one `traffic_metric` and one `impact_metric` row, including
   unavailable rows.
 - `/aeko-ai-visibility report_mode=weekly`: `visibility_summary` plus available `visibility_prompt` rows;
