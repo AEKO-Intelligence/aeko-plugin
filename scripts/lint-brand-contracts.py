@@ -40,8 +40,8 @@ def check(root: Path, mcp_source: Path | None = None) -> list[str]:
 
     skills = sorted(p for p in (root / "skills").glob("*/SKILL.md")
                     if not p.parent.name.endswith("-workspace"))
-    if len(skills) != 26:
-        errors.append(f"Expected 26 canonical skills, found {len(skills)}")
+    if len(skills) != 27:
+        errors.append(f"Expected 27 canonical skills, found {len(skills)}")
     tools: set[str] = set()
     for path in skills:
         source = path.read_text()
@@ -102,4 +102,4 @@ if __name__ == "__main__":
     failures = check(ROOT, args.mcp_source)
     if failures:
         raise SystemExit("\n".join(f"ERROR: {failure}" for failure in failures))
-    print("Brand release contracts pass (26 skills; self-contained shared refs; private paths excluded).")
+    print("Brand release contracts pass (27 skills; self-contained shared refs; private paths excluded).")

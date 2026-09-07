@@ -25,6 +25,7 @@ MARKDOWN_LINK = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 # Every byte admitted to the catalog is named here. The builder never archives
 # a checkout, follows a symlink, or fetches a branch/tag at build or run time.
 PACKAGE_ALLOWLIST = {
+    "aeko-create-ad-copy": ("SKILL.md", "references/ad-copy-evals.md"),
     "aeko-action-center": (
         "SKILL.md",
         "references/action-item-contract.md",
@@ -233,10 +234,11 @@ LEGACY_RELATIONSHIPS = {
 }
 
 # Selection metadata is part of the reviewed artifact rather than inferred from
-# descriptions or model output. Only the four commands below are valid generic
+# descriptions or model output. Only the explicitly mapped commands below are valid generic
 # feedback targets; the remaining commands still carry a stable category and an
 # empty dependency closure for catalog discovery.
 COMMAND_CATEGORIES = {
+    "aeko-create-ad-copy": "advertising",
     "aeko-action-center": "router",
     "aeko-ads-review": "reporting",
     "aeko-ai-visibility": "reporting",
@@ -266,6 +268,11 @@ COMMAND_CATEGORIES = {
 }
 
 FEEDBACK_SELECTION = {
+    "aeko-create-ad-copy": {
+        "subject_kind": "automation_output",
+        "execution_classes": [],
+        "requires_knowledge": ["voice/brand-voice", "products/product-facts", "markets/market-guidance"],
+    },
     "aeko-create-content": {
         "subject_kind": "content",
         "execution_classes": ["local_content_artifact"],
@@ -455,9 +462,9 @@ def _validate_local_links(slug: str, records: list[dict]) -> None:
 
 
 def build_catalog() -> dict:
-    if len(PACKAGE_ALLOWLIST) != 26 or len(PACKAGE_ALLOWLIST) > MAX_DOCUMENTS:
+    if len(PACKAGE_ALLOWLIST) != 27 or len(PACKAGE_ALLOWLIST) > MAX_DOCUMENTS:
         raise ValueError(
-            "The trusted catalog must contain exactly 26 bounded entrypoints."
+            "The trusted catalog must contain exactly 27 bounded entrypoints."
         )
     if set(COMMAND_CATEGORIES) != set(PACKAGE_ALLOWLIST):
         raise ValueError("Every canonical command requires one stable category.")
@@ -562,7 +569,7 @@ def build_catalog() -> dict:
         "content_sha256": content_digest.hexdigest(),
         "relationship_note": (
             "The nine legacy backend skill/eval documents are runtime prompt components, "
-            "not the 26 customer-plugin command entrypoints. Related entries below are "
+            "not the 27 customer-plugin command entrypoints. Related entries below are "
             "workflow associations only and are not one-to-one imports."
         ),
         "legacy_backend_documents": [

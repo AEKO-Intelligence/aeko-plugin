@@ -1,10 +1,10 @@
 {
-  "content_sha256": "0a0681d0b66c7e8e07af00eec29552f99d69017ccf3d0e9a768249f0a5de261d",
+  "content_sha256": "48f56c1b9218c5ecf2e555353789d68b4c3bb68e4234ed235e7aeb1a45c88d38",
   "counts": {
-    "canonical_entrypoints": 26,
+    "canonical_entrypoints": 27,
     "legacy_backend_documents": 9,
-    "source_bytes": 1163588,
-    "source_files": 135
+    "source_bytes": 1169108,
+    "source_files": 137
   },
   "documents": [
     {
@@ -309,6 +309,49 @@
           "sha256": "7ba6d8304b1bf062048c29399b29cfe95c0bd8039d5793515c9789722eeb7b01",
           "size_bytes": 8555,
           "source_path": "skills/aeko-content-ideas/references/brand-execution-contract.md"
+        }
+      ]
+    },
+    {
+      "command": "/aeko-create-ad-copy",
+      "description": "Draft or revise product ad copy from supplied customer contexts and accepted brand guidance, then check the exact copy against the brand's evals. Use for copy creation, not campaign reporting or account setup.",
+      "key": "aeko-create-ad-copy",
+      "kind": "skill",
+      "legacy_backend_document_keys": [],
+      "legacy_backend_relationship": "none",
+      "name": "aeko-create-ad-copy",
+      "package_slug": "aeko-create-ad-copy",
+      "selection": {
+        "category": "advertising",
+        "feedback": {
+          "execution_classes": [],
+          "requires_knowledge": [
+            "voice/brand-voice",
+            "products/product-facts",
+            "markets/market-guidance"
+          ],
+          "subject_kind": "automation_output"
+        },
+        "requires_commands": []
+      },
+      "skill_md": {
+        "content": "---\nname: aeko-create-ad-copy\ndescription: Draft or revise product ad copy from supplied customer contexts and accepted brand guidance, then check the exact copy against the brand's evals. Use for copy creation, not campaign reporting or account setup.\n---\n\n# Create ad copy\n\nProduce useful ad copy for the requested product, market and language. Keep the\nuser's Automation Prompt separate from this reusable skill: it defines the job,\nwhile the accepted brand package defines the brand's rules and evidence.\n\n## Load the brand's accepted instructions\n\nIn AEKO, consume the run's pinned skill, evals, support files and Brand Wiki;\nnever switch to a newer release halfway through a run. In an external AI client,\nuse the authenticated `aeko_get_active_brand_package` tool to select this command,\nthen `aeko_get_brand_package_version` and `aeko_read_brand_package_file` to read\nthe exact accepted versions. Read every required chunk before generating.\nAn exported package can provide the same files locally through its manifest.\n\nUse this command's accepted guidance and applicable evals, including declared\nbrand-specific support files. Read the required Wiki pages for brand voice,\nproduct facts and market guidance, retaining their authority and scope metadata.\nA draft page, a cited source or an AI observation is not an accepted brand fact.\nIf a required file, eval or source is unavailable, report the missing dependency;\ndo not substitute another brand's package or silently omit its rules.\n\n## Draft or revise\n\n- Ground product claims in the supplied product data and accepted Wiki. Customer\n  contexts describe a situation or need; they do not prove product capabilities.\n- Follow the requested market, language, format and any optional style preset.\n  When no style is specified, write a clear, natural product benefit for the\n  supplied situation. Do not invent rankings, certifications, prices or claims.\n- Apply brand preferences only within their recorded scope. An ad wording\n  preference does not restrict research questions, quoted evidence or other\n  brands unless that scope was explicitly accepted.\n- For a revision, use the selected output, its original source, and the correction\n  conversation. Preserve useful factual content while making the requested change.\n  A request to revise one output does not authorize changing future brand rules.\n- In hosted ads, emit exactly the requested structured fields `title` and\n  `description`, within the supplied limits. Do not put explanations or tool\n  receipts into those fields. External clients may show a short copy table when\n  the user has not requested a machine-readable format.\n\n## Evaluate the exact result\n\nRead [the ad-copy checks](references/ad-copy-evals.md) and every applicable accepted\nbrand eval. Check the final strings after revision, not an earlier draft. Resolve\nobjective failures directly; use the available judge for subjective criteria.\nAn unavailable or failed judge is not a passed check. Return the checked draft\nwith its check result, or explain the unresolved requirement.\n\nKeep drafting and delivery separate. A draft is not uploaded, and a tool call is\nnot a delivery receipt. In AEKO the configured deterministic save/delivery stages\nhandle the destination after evals; an external client needs the user's actual\ndelivery request and an available authorized tool before it can publish.\n\n## Learn from feedback\n\nOffer a lasting brand update only when the user wants the correction applied to\nfuture work. Record the rejected text, the accepted replacement, the requested\nscope and the relevant source. Propose a change to this brand's skill guidance\nand applicable eval/example, preserving existing instructions. The brand package\nchanges only after its activation policy or explicit review succeeds. Report the\nrecorded event, proposed change and accepted version as distinct receipts.\nIf the host lacks an updater tool, present the proposed change for AEKO review or\nlocal editing; never claim it was saved. Keep credentials out of package files.\n",
+        "editable": true,
+        "path": "SKILL.md",
+        "sha256": "a09c77da99c402ddd10660924a13d8a5f7432628be2ecf4caa6fa403b78fb4a6",
+        "size_bytes": 4046,
+        "source_path": "skills/aeko-create-ad-copy/SKILL.md"
+      },
+      "source_package_sha256": "2e7cded8202f2aba2f211a370fbbe52b63793735c669b1fc078bc199b0754578",
+      "subkind": "customer_plugin",
+      "support_files": [
+        {
+          "content": "# Ad-copy checks\n\nCheck the exact final title and description together with their source and the\naccepted brand package. Brand-specific evals supplement these defaults.\n\n| Check | Pass condition |\n| --- | --- |\n| Format | Required fields are nonempty strings and satisfy the destination's supplied length limits. |\n| Product grounding | Each factual product claim is supported by supplied product data or accepted Wiki facts for this product and market. |\n| Context fidelity | The copy addresses the supplied customer situation without inventing a testimonial or attributing an experience to a real person. |\n| Brand voice | The wording follows the applicable accepted tone, terminology and claim preferences. |\n| Market and language | The result follows the requested language and relevant accepted market constraints. |\n| Correction fidelity | A revision addresses the user's correction and retains unaffected supported facts. |\n\nFor deterministic checks, report the failed field and requirement. For subjective\nchecks, judge against the supplied criterion and evidence rather than the model's\npersonal preference. Record unavailable checks separately from failed content.\nDo not weaken a required eval merely to make a candidate pass.\n\nA brand's rejected/accepted pair is regression evidence for the recorded scope.\nDo not generalize it into a universal banned phrase or apply it to an unrelated\nskill. An update that contradicts existing approved guidance needs review.\n",
+          "editable": true,
+          "path": "references/ad-copy-evals.md",
+          "sha256": "1121609dada8fa134f8f16829688e9205a5323a0b93b84000e0f8fd7fc518f1e",
+          "size_bytes": 1474,
+          "source_path": "skills/aeko-create-ad-copy/references/ad-copy-evals.md"
         }
       ]
     },
@@ -1697,11 +1740,11 @@
     "max_skill_bytes": 131072,
     "max_total_source_bytes": 4194304
   },
-  "relationship_note": "The nine legacy backend skill/eval documents are runtime prompt components, not the 26 customer-plugin command entrypoints. Related entries below are workflow associations only and are not one-to-one imports.",
+  "relationship_note": "The nine legacy backend skill/eval documents are runtime prompt components, not the 27 customer-plugin command entrypoints. Related entries below are workflow associations only and are not one-to-one imports.",
   "schema": "aeko-trusted-upstream-catalog-v1",
   "source": {
     "network_fetch": false,
-    "plugin_version": "0.29.2",
+    "plugin_version": "0.29.3",
     "repository": "https://github.com/AEKO-Intelligence/aeko-plugin",
     "selection": "explicit-public-file-allowlist"
   }

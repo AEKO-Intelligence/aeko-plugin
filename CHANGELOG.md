@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.29.3 — Brand-aware ad drafting and correction (unreleased)
+
+- Add `/aeko-create-ad-copy` with accepted skill/eval/Wiki loading, scoped brand guidance,
+  output correction, and a separate explicit lasting-feedback contract.
+- Bundle ad-copy quality checks and publish the reviewed 27-command trusted catalog.
+- Keep generation, eval results, feedback records, accepted package versions and delivery
+  receipts distinct across hosted and portable clients.
+
 ## 0.29.2 — Accepted package discovery and trusted catalog (unreleased)
 
 - Require clients to discover and load the accepted skill, eval, wiki, and support bytes after

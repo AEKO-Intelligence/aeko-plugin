@@ -127,7 +127,7 @@ labels, schema keys, JSON-LD terms, and the brand mark `AEKO` stay in English/AS
 
 ## Skill catalog by job
 
-The shipped catalog contains 26 active skills. Each active folder under [`skills/`](skills/) contains one
+The shipped catalog contains 27 active skills. Each active folder under [`skills/`](skills/) contains one
 `SKILL.md`; compatibility-only command stubs are intentionally not shipped because this is the catalog's
 first release.
 
@@ -163,6 +163,8 @@ first release.
 
 ### Store and content
 
+- `/aeko-create-ad-copy` — draft or revise product ads with the accepted brand skill, evals and Wiki.
+
 - `/aeko-store mode=setup|reviews` — domain/store setup and the agent's only review-intake path.
 - `/aeko-create-content <item_id>` — evidence-grounded content executor.
 - `/aeko-publish-content <item_id>` — guarded publisher for saved content variations.
@@ -188,7 +190,7 @@ explicitly. Hosted runs and exports must select the same version, and private AE
 attached skills and label unavailable hosted execution. This plugin does not provide the full
 Responses/MCP runner, contextual chat executor, or GitHub App provisioning/sync.
 
-The reproducible [trusted upstream catalog](docs/trusted-upstream-catalog.md) covers all 26 public
+The reproducible [trusted upstream catalog](docs/trusted-upstream-catalog.md) covers all 27 public
 `aeko-*` entrypoints with exact file allowlists and SHA-256 provenance. The current backend's nine legacy
 automation skill/eval documents are different runtime prompt components. The backend now vendors this
 reviewed catalog for explicit reconciliation; existing hosted templates still use their legacy components.
@@ -331,7 +333,7 @@ schema key, JSON-LD 용어, 브랜드 표기 `AEKO`는 영어/ASCII로 유지합
 
 ## 작업별 스킬 카탈로그
 
-배포 카탈로그에는 26개의 활성 스킬이 있습니다. [`skills/`](skills/) 아래 각 활성 폴더에는 하나의
+배포 카탈로그에는 27개의 활성 스킬이 있습니다. [`skills/`](skills/) 아래 각 활성 폴더에는 하나의
 `SKILL.md`가 있으며, 이번 카탈로그가 첫 릴리스이므로 호환 전용 명령 stub은 배포하지 않습니다.
 
 ### 시작과 연결
