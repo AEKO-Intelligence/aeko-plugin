@@ -1,7 +1,7 @@
 {
   "name": "aeko-plugin",
-  "version": "0.29.0",
-  "description": "AEKO skills for Codex: zero-account site and PDP audits, PDP HTML builds, connector-aware ads and GA4 measurement, connection setup, and weekly read-and-propose reporting; optional AEKO workflows add AI visibility, prompt, content, store, and guarded OpenAI Ads operations. Content ideas await backend wrappers, and scheduled marketing writes are unsupported.",
+  "version": "0.29.1",
+  "description": "AEKO skills for Codex: zero-account site and PDP audits, PDP HTML builds, connector-aware ads and GA4 measurement, connection setup, and weekly read-and-propose reporting; optional AEKO workflows add AI visibility, prompt, content, store, and guarded OpenAI Ads operations. Brand customization is portable; content ideas require live MCP capabilities, and plugin scheduled marketing writes are unsupported.",
   "author": {
     "name": "AEKO",
     "url": "https://aeko-intelligence.com"
@@ -14,7 +14,7 @@
   "interface": {
     "displayName": "AEKO",
     "shortDescription": "Audits, PDP builds, measurement, and read-and-propose weekly reporting",
-    "longDescription": "Start without an AEKO account: audit a public site or PDP, turn verified facts into responsive PDP HTML and JSON-LD, review advertising through your own connectors or exports, inspect GA4 through your own connector, map connected capability slots, and compose weekly reports and schedules. Optional AEKO workflows add AI-answer visibility, tracked evidence, content, store, action, and guarded OpenAI Ads operations. Content ideas are present but await backend wrappers; scheduled marketing writes are not supported, so loop runs only read and propose.",
+    "longDescription": "Start without an AEKO account: audit a public site or PDP, turn verified facts into responsive PDP HTML and JSON-LD, review advertising through your own connectors or exports, inspect GA4 through your own connector, map connected capability slots, and compose weekly reports and schedules. Optional AEKO workflows add AI-answer visibility, tracked evidence, content, store, action, and guarded OpenAI Ads operations. Brand skill/eval customization is portable. Content ideas require live MCP capabilities; plugin scheduled marketing writes are unsupported, so loop runs only read and propose. Hosted agent execution and the automatic brand updater are not implemented by this plugin.",
     "developerName": "AEKO",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],

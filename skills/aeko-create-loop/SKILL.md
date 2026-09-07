@@ -6,11 +6,14 @@ description: >
   scheduled prompt, installs it through the host or gives exact UI steps, and
   foreground dry-runs it once. Never acts as the scheduled orchestrator.
 argument-hint: "[cadence] [config=<notion-page-id>]"
-allowed-tools: Skill, ToolSearch
+allowed-tools: Read, Skill, ToolSearch
 disallowed-tools: Write, Edit, Bash
 ---
 
 # AEKO Create Loop
+
+Before work, read [the brand execution contract](references/brand-execution-contract.md).
+Preserve the exact task prompt and apply only this brand's selected rules, evals, and examples.
 
 Set up the user's weekly loop. This skill is an interactive **schedule composer**, not an orchestrator: it
 does not pull weekly sources, inspect approval threads, evaluate decisions, stage marketing changes, or run
@@ -89,6 +92,12 @@ connector skill is available. Put a human-readable summary first and one fenced 
 ```yaml
 schema: aeko-loop-config/1
 summary: <plain-language weekly job>
+task_prompt: <original user job instructions verbatim; not just the summary>
+report_questions: []
+brand_package_ref: <selected identity and version/digest>
+eval_package_refs: []
+source_window: {kind: previous_complete_week, timezone: <IANA timezone>}
+no_input_behavior: report_unavailable_without_marketing_writes
 timezone: <IANA timezone>
 cadence: <human-readable cadence>
 language: <language code>
@@ -109,12 +118,17 @@ calendar:
   calendar_id: null
   blackout_convention: null
   standing_quiet_window: null
-caps: {pdp_urls: 10, rows_per_kind: 50}
+caps: {pdp_urls: 10, rows_per_kind: 50, source_bytes: 65536, tool_calls: 30, delivery_retries: 1}
 ```
 
 Use exact IDs from connector receipts. After creation, delegate one readback and verify the schema, cadence,
 timezone, sources, destinations, and page ID. A write receipt without successful readback is not a durable
 config. Print the verified Notion page ID and URL.
+
+The original prompt must survive the Notion readback and every child skill brief. Compare it
+verbatim, separately from the summary. A package reference is not package loading: verify the
+host can read the selected skill/eval bytes; if not, stop setup with that missing capability.
+These config fields describe this plugin's host loop, not an AEKO hosted automation API.
 
 Edits to sources, report questions, cadence, and language happen on this page. Security-sensitive fields are
 different: the page is editable and has no cryptographic integrity proof, so approver IDs and delivery
@@ -132,6 +146,9 @@ Compose a short prompt with both a human-readable summary and the verified point
 
 ```text
 Run the AEKO weekly marketing loop for <brand/site>.
+Task: <original user job instructions verbatim>.
+Package/evals: <selected immutable versions/digests and required references>.
+Source window: previous complete week in <timezone>, resolved at scheduled_at.
 Cadence: <cadence in timezone>. Deliver to <destinations>. Report language: <language>.
 AEKO_LOOP_SECURITY_V1
 config_page_id: <exact verified Notion config page ID>

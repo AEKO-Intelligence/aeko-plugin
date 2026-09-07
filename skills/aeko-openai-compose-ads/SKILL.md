@@ -2,16 +2,21 @@
 name: aeko-openai-compose-ads
 description: >
   Account-gated AEKO workflow that composes flexible, cross-product OpenAI Ads ad groups from a store's contextual
-  reviews. Pulls every contextual review across the domain, clusters them by a
+  reviews. Samples a bounded set of contextual reviews for one domain, clusters them by a
   shared shopper-situation facet (e.g. several products all matching '민감성 피부'
   or occasion '선물'), composes ONE broader context-hint set per cluster, and creates
   an ad group with one ad per product — all PAUSED for review. This is the agentic
   step beyond the dashboard's one-review→one-ad flow.
 argument-hint: "[domain-id] [min-score]"
-allowed-tools: aeko_list_domains, aeko_list_contextual_reviews, aeko_list_campaigns, aeko_create_ad_group_from_context
+allowed-tools: Read, aeko_get_ad_account_status, aeko_list_domains, aeko_list_contextual_reviews, aeko_list_campaigns, aeko_create_ad_group_from_context
 ---
 
 # AEKO OpenAI Compose Ads
+
+Before work, read [the brand execution contract](references/brand-execution-contract.md).
+Preserve the exact task prompt and apply only this brand's selected rules, evals, and examples.
+Use [the output evaluation rubric](references/brand-output-eval.md) plus the selected brand evals
+when checking the exact result; report missing inputs/checks as unavailable.
 
 Turn the review pool into broader, cross-product ad groups. The dashboard does one review → one ad group;
 here you *cluster* reviews so a single ad group with a broader hint carries several products' ads.
@@ -34,8 +39,15 @@ composed `context_hints` themselves in the target market's language (they are ad
 
 ## Step 1 — Resolve domain + pull the review pool
 
-1. Resolve the domain.
-2. Call `aeko_list_contextual_reviews(domain_id, min_context_score=<min-score>, limit=200)`. It returns a
+1. Resolve exactly one owned domain and load its selected rules/evals. Call
+   `aeko_get_ad_account_status(domain_id)`; a missing connected account, 401/403, or tier denial
+   stops this account-gated workflow. Do not reinterpret a failure as an empty review pool.
+2. Default to one call to `aeko_list_contextual_reviews(domain_id, min_context_score=<min-score>, limit=50)`.
+   Keep at most 10 distinct products, three clusters, and 64 KiB of selected source text; a lower
+   job limit wins. Report this as a sample, never every review. This tool has no window, cursor,
+   or offset parameters. If the task requires a time window, filter only authoritative returned
+   timestamps for the requested event (context creation is not review posting); if unavailable, stop with `source_window_unavailable`. Never substitute
+   all-time data for a last-24-hours request or increase limits to simulate pagination. It returns a
    structured JSON list: each item has `review_id`, `store_product_id`, `external_product_ref`,
    `product_title`, `context_score`, the pre-purchase facets (`customer_state`, `recent_concern`, `occasion`,
    `recipient`, `product_experience`), and precomputed `ad_body` / `ad_context_hints`.
@@ -61,10 +73,12 @@ For each cluster:
   cluster, in the market language. Broaden past any single review: e.g. mask-pack '자극 없이 순했어요' + serum
   '여름에 끈적임 없이' both grounding on 민감성 → hint `["민감성 피부에 좋은 제품"]`. NEVER use a felt-effect /
   after-state ("피부가 좋아졌어요") as a hint — that describes someone who already bought.
-- **ads** — one ad per DISTINCT product in the cluster: `{ store_product_id, source_review_id }`. Leave
-  `title`/`body` out to let the backend compose clean creative from that product's review, OR pass a
-  `body` you adapted from the product's precomputed `ad_body`. Deduplicate by `store_product_id` (one ad
-  per product per group).
+- **ads** — one ad per DISTINCT product in the cluster: `{ store_product_id, source_review_id }`. Keep
+  both creative fields explicit: supply explicit nonempty `title`, `body`, and `target_language`
+  after reviewing them against the task, applicable brand rules/evals, and review evidence.
+  Precomputed `ad_body` is an unverified draft; do not assume backend generation has loaded
+  the brand package. Deduplicate by `store_product_id` (one ad per product per group).
+  Evaluate targeting hints too. Do not generalize one review's experience into a product-wide fact.
 - **ad_group_name** — a short human label, e.g. `민감성 피부 - 재생 라인`.
 
 ## Step 4 — Choose placement
@@ -76,7 +90,9 @@ Ask (or infer): put these ad groups under an EXISTING campaign or a NEW one?
 
 ## Step 5 — Preview + confirm
 
-Show a table the merchant can approve:
+Check the exact title/body/hints and applicable brand evals first. Failed or unavailable required
+checks block creation after at most one correction. Show a table the merchant can approve, including
+every product's exact title/body, source review ID, and check result alongside the cluster preview:
 ```
 Cluster: 민감성 피부에 좋은 제품
   Hint(s): 민감성 피부에 좋은 제품
@@ -87,7 +103,10 @@ Cluster: 친구 선물로 좋은 제품
 Placement: new campaign "AEKO 컨텍스트 캠페인", budget 300,000 KRW
 All ad groups + ads are created PAUSED.
 ```
-Get explicit confirmation (schedule wrappers may auto-approve).
+Get explicit confirmation for the exact reviewed payload and placement. An unattended schedule may
+render a proposal only; it cannot create even PAUSED structures. A schedule wrapper never supplies
+confirmation. If the task names an existing ad group, stop: this tool creates a NEW group under a
+campaign and does not append ads to the named group.
 
 ## Step 6 — Create (paused)
 
@@ -97,13 +116,16 @@ aeko_create_ad_group_from_context(
     domain_id,
     ad_group_name=<cluster name>,
     context_hints=<composed hints>,
-    ads=[{store_product_id, source_review_id}, ...],
-    idempotency_key=<stable key>,          # e.g. "compose:<domain_id>:<cluster-slug>" — REUSE on retry
+    ads=[{store_product_id, source_review_id, title, body, target_language}, ...],
+    idempotency_key=<stable key>,          # stable logical-action key including brand, run, and reviewed payload hash — REUSE on retry
     campaign_id=<id>  OR  new_campaign_name=<name>, new_campaign_budget_micros=<micros>,
 )
 ```
 Use a **stable** `idempotency_key` per cluster (reuse the same value if you retry) so a re-run never
-double-creates. If placing several clusters in one NEW campaign, create the first with `new_campaign_*`,
+double-creates for that logical action. A new scheduled window or changed approved payload is a new
+action and needs a new key; do not reuse a permanent cluster-slug key. Retry a transport failure at most
+once with the identical key/payload; a partial/ambiguous failure stops further creation and reports
+returned IDs for reconciliation. If placing several clusters in one NEW campaign, create the first with `new_campaign_*`,
 then read back the returned `campaign.id` and use `campaign_id=` for the rest so they share the campaign.
 
 ## Step 7 — Summary
@@ -113,6 +135,8 @@ then read back the returned `campaign.id` and use `campaign_id=` for the rest so
   Campaign: <name / id>
   <cluster>: hint "<hint>" → <k> products
   ...
+  Review sample/window: <bounds, selected/skipped/truncated counts>
+  Brand package/evals: <versions or local hashes; pass/fail/unavailable>
   Next: review + activate in the AEKO dashboard (광고 성과) or OpenAI Ads Manager.
         Measure with /aeko-openai-ads-reporting; rebalance budget with /aeko-openai-budget-shift.
 ```

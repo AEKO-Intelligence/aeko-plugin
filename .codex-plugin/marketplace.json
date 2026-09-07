@@ -8,8 +8,8 @@
   "plugins": [
     {
       "name": "aeko-plugin",
-      "description": "Audit sites and PDPs, build PDP HTML, review ads through the customer's own connectors, connect sources, measure GA4 and AI visibility, and compose weekly read-and-propose reports; AEKO-backed actions are optional, content ideas await wrappers, and scheduled marketing writes are unsupported.",
-      "version": "0.29.0",
+      "description": "Audit sites and PDPs, build PDP HTML, review ads through the customer's own connectors, connect sources, measure GA4 and AI visibility, and compose weekly read-and-propose reports; AEKO-backed actions are optional, brand customization is portable, content ideas require live MCP capabilities, and plugin scheduled marketing writes are unsupported.",
+      "version": "0.29.1",
       "keywords": [
         "site-audit",
         "product-page-audit",

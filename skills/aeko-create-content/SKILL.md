@@ -21,6 +21,11 @@ allowed-tools: aeko_get_content_idea_handoff, aeko_fetch_source_content, aeko_ge
 
 # AEKO Create Content
 
+Before work, read [the brand execution contract](references/brand-execution-contract.md).
+Preserve the exact task prompt and apply only this brand's selected rules, evals, and examples.
+Use [the output evaluation rubric](references/brand-output-eval.md) plus the selected brand evals
+when checking the exact result; report missing inputs/checks as unavailable.
+
 **Direct handoff contract v0.26.0** — Content-idea handoffs cover source-backed actions plus
 Contextual Review-driven Reddit discovery. A Reddit discovery handoff prepares a safe search and answer
 brief without pretending AEKO found or read a thread. Direct mode never posts or publishes.
@@ -306,7 +311,9 @@ hyphens; use `content-idea` when no usable text remains. Write under:
 ./aeko-artifacts/<domain_id>/handoffs/<handoff_id>/<channel>/<safe-slug>__<channel>.md
 ```
 
-Report the channel, action, deliverable type, snapshot grounding used, snapshot sources used, optional
+Check the exact direct-handoff artifact against the preserved task prompt and applicable brand evals;
+failed/unavailable checks keep it a needs-review draft. Report package/eval provenance and results,
+then the channel, action, deliverable type, snapshot grounding used, snapshot sources used, optional
 owner-verified stored-source reads, unresolved preflight/missing-evidence items, and local path when written.
 State that nothing was posted, submitted, edited, or published.
 
@@ -336,8 +343,8 @@ load deferred tools one-at-a-time mid-run.
 
 > Reference-file reads (`references/aeo-frameworks.md`, `references/drafter-instructions.md`, recipes,
 > persistent examples) are **not** loaded by the coordinator — each drafter subagent reads what it needs
-> (Step 5). The coordinator only reads `references/examples/context-reviews-fixture.md` as a Step 3
-> fallback, and may collect/write user-supplied owned examples in Step 4 when the user explicitly opts in.
+> (Step 5). Synthetic review fixtures are reserved for explicitly isolated regression runs; never a live
+> fallback. The coordinator may collect/write user-supplied owned examples in Step 4 when the user explicitly opts in.
 
 ## Step 1 — Fetch and parse the Plan.md
 
@@ -395,13 +402,19 @@ tracked-prompt analysis and hands each drafter more context, so it is slower.
 
 ## Step 3 — Pull the substance (the *what to write about*)
 
+Bound this task before fetching: at most five products, five reviews per product, five prompt
+snapshots, three selected channels, 64 KiB selected source text, and 20 source/tool calls unless the
+user supplied lower caps. Stop and report truncation at a cap; do not silently widen a requested window.
+A required time filter must be supported by the tool or authoritative returned timestamps, otherwise
+report `source_window_unavailable`. Frozen direct-handoff mode keeps its stricter source boundaries.
+
 This is the substance backbone. First resolve the domain's review source ONCE with
 `aeko_list_review_integrations(domain_id)` → pick an `integration_id` (if none is connected, skip reviews
 and degrade per below). Then, when `parsed_products[]` is non-empty (the usual case), issue a single
 **parallel batch** of, per product `p`:
 
 - `aeko_get_product_description(p.source_id or p.id)` → full product copy / specs (`full_description`).
-- `aeko_get_product_reviews(integration_id, p.source_id)` → lived-experience contextual reviews with the
+- `aeko_get_product_reviews(integration_id, p.source_id, limit=5)` → lived-experience contextual reviews with the
   memory facets (고객 상태 / 최근 고민 / 상황 / 대상 / 제품 경험 / 느낀 효과), keyed by product.
 
 Build `substance` = `{ products: [...with full_description...], context_reviews: [...] }`.
@@ -424,8 +437,9 @@ product-page substance. This is mandatory, especially when the PDP is image-heav
 
 **Degrade gracefully:**
 - `aeko_get_product_reviews` missing/empty → continue; product copy still carries substance.
-  For evals or when no live reviews exist, read `references/examples/context-reviews-fixture.md` and use
-  matching `product_source_id` entries as the review pool. Note in the summary that reviews were a fixture.
+  Never use `references/examples/context-reviews-fixture.md` as live evidence. Only an explicitly
+  isolated regression task may load it, with all save/upload/complete/publish operations disabled
+  and every output labeled synthetic. With no live reviews, omit lived-experience claims.
 - `aeko_get_product_description` 4xx/5xx → fall back to the `parsed_products[]` Plan fields alone; warn once.
 
 **No-product fallback** — when `parsed_products[]` is empty: skip the product/review calls entirely. The
@@ -508,14 +522,16 @@ For each URL, `WebFetch` it once. Public blogs/pages may return usable text; JS-
 pages may be thin. If the fetched payload is thin, keep the URL + any user-provided note and warn once; do
 not browse further or ask another question. Pasted text takes precedence over scraped text.
 
-When `save_to_references=true`, write the example into this skill's local
-`references/examples/` directory before Step 5:
+When `save_to_references=true`, write only into the selected brand-owned package's
+`references/examples/` directory before Step 5. Verify its domain ownership; never persist brand
+examples into a shared upstream checkout or replaceable installation cache. Without a resolved
+brand-owned path, retain the example for this run and report that persistence needs package setup:
 
 - Filename: `<channel>-<safe-slug>-example.md`; use `in-store-<safe-slug>-example.md` for global owned
   PDP/category/brand-page examples. Collapse non-ASCII to ASCII where possible; if empty, use
   `example-<YYYYMMDD-HHMM>`. If the file exists, append `-2`, `-3`, etc. Do not overwrite.
 - File header:
-  `<!-- AEKO captured during /aeko-create-content. source: <url|pasted>; channel: <channel>; style-only, not factual source. -->`
+  `<!-- AEKO captured during /aeko-create-content. source: <url|pasted>; domain: <domain_id>; channel: <channel>; style-only, not factual source. -->`
 - Body: the fetched/pasted example plus any style notes. Strip obvious PII if the user supplied it, and
   warn in the summary that saved examples are read into future model context.
 - Record `saved_path`. Saved files are picked up by the matching example-file rules in Step 5; unsaved
@@ -531,7 +547,9 @@ product image auto-fills the hero.
 
 ## Step 5 — Fan out parallel per-channel drafters
 
-This replaces the old sequential Step 5 loop. Drafting is independent per channel, so run it in parallel.
+Drafting is independent per channel. Use parallel drafters only when the host supports them and
+this task permits delegation; otherwise perform the same brief/draft/check process sequentially.
+Never drop the original task prompt or required evals to fit a delegated brief.
 
 ### 5.1 Compute shared identifiers ONCE (coordinator owns these)
 - `slug` — per **§A (slug derivation)** from `resolved_title`.
@@ -539,8 +557,9 @@ This replaces the old sequential Step 5 loop. Drafting is independent per channe
 - `aeko_shop_publish_slug` — meaningful **English** slug per **§A**, for the aeko.shop `.meta.json`.
 
 ### 5.2 Build one brief per selected channel and spawn drafters in ONE message
-For each selected channel, spawn a `Task` (general-purpose) drafter **in a single message** (so they run
-concurrently). Each drafter's prompt instructs it to:
+When delegation is available and permitted, spawn a `Task` (general-purpose) drafter for each
+selected channel **in a single message** (so they run concurrently). Otherwise use the same briefs
+sequentially in this host. Each drafter's prompt instructs it to:
 > Read `skills/aeko-create-content/references/drafter-instructions.md` and
 > `skills/aeko-create-content/references/aeo-frameworks.md` (and, for editorial/HTML channels,
 > `skills/aeko-create-content/references/recipes/editorial-html-jsonld.md`; for channels with a recipe,
@@ -550,7 +569,8 @@ concurrently). Each drafter's prompt instructs it to:
 
 Pass the JSON brief (the shape in drafter-instructions.md §1): `channel`, `domain_id`, `item_id`,
 `resolved_title`, `slug`, `filename_token`, `aeko_shop_publish_slug` (aeko_shop only), `target_language`,
-`content_context`, `voice_summary` (derived from content context), `target_cohort` (sharpen from context + the prompt),
+`task_prompt` (verbatim), `brand_package` (identity/version or local digest), `source_window`,
+`limits`, `required_evals` (exact applicable text/version), `brand_rules`, `content_context`, `voice_summary` (derived from content context), `target_cohort` (sharpen from context + the prompt),
 `must_include`, `forbidden`, `sections_required`, `contrarian_hint`, `competitive_brief` (competitive mode
 only), `products` (with `full_description` and `evidence_facts`), `context_reviews`, `media`
 (= `media_by_channel[channel]`), `run_example_refs` (matching this channel + `global`, including
@@ -577,6 +597,11 @@ result (skipped/errored) is recorded as a failed channel; continue with the rest
 
 Drafters self-check, but their self-reports cannot be trusted for publish-blocking gates. The coordinator
 re-verifies before any save:
+
+- **Task/brand evals:** read the exact artifact, including title and metadata, against `task_prompt`,
+  the applicable brand rules, and each selected required eval. Return pass/fail/unavailable with
+  evidence. One correction attempt; a failed or unavailable required check blocks that artifact
+  from save/completion. Examples, recipes, and generated context cannot override explicit rules.
 
 - **Universal (every artifact):** no placeholder markers (`[Image`/`[photo`/`[placeholder`/`TODO` in body);
   every image has non-empty alt; `forbidden` strings absent; `must_include` strings present across the
@@ -610,6 +635,10 @@ One fix iteration on any hard-gate failure; still failing → leave the item `pe
 live in `references/recipes/editorial-html-jsonld.md`.
 
 ## Step 7 — Validate & save
+
+Carry task/package/eval provenance into the local run summary and any supported metadata fields.
+Do not invent backend metadata fields; if a receipt cannot bind the exact saved body to the checks,
+report the verification limitation rather than claiming a future publisher can revalidate it.
 
 Proceed only if ≥1 artifact was written and every written artifact passed its hard gates.
 

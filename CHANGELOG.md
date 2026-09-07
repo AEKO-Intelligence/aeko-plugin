@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.29.1 — Portable brand execution foundation (unreleased)
+
+- Preserve whole-job prompts and scoped brand rules/evals across drafting and loop handoffs.
+- Bound ad/content evidence; require explicit reviewed ad creative, remove schedule auto-approval,
+  and reserve synthetic reviews for isolated regressions.
+- Document portable document files, manual/automatic update seams, and private-corpus exclusions;
+  automatic updater and multi-stage hosted execution remain unimplemented here.
+- Match content-idea guidance to existing sibling MCP wrappers while checking live deployments.
+- Recheck publish-time brand evidence honestly when stored bodies are unavailable; retain account,
+  platform, and mutation gates. Add local release validation and synthetic regression scenarios.
+
+
 All notable changes to the AEKO plugin (skills + manifests). This repo ships skills only; backend
 tool changes live in [`aeko-mcp`](https://github.com/AEKO-Intelligence/aeko-mcp).
 

@@ -116,4 +116,6 @@ if [ -n "$prohibited_hits" ]; then
   exit 1
 fi
 
+python3 "$repo_root/scripts/lint-brand-contracts.py"
+
 printf 'Release contracts pass (version %s).\n' "$(printf '%s\n' "$versions" | sed -n '1p')"

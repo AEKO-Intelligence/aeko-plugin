@@ -21,6 +21,12 @@ The coordinator hands you a JSON brief:
   "domain_id": "...", "item_id": "...",    // for artifact paths
   "resolved_title": "...",                  // drives the local slug (SKILL.md §A)
   "target_language": "ko",                  // BCP-47-ish content language, e.g. ko | en | ja | zh | es
+  "task_prompt": "<original user/automation prompt, verbatim>",
+  "brand_package": {"identity": "...", "version_or_digest": "..."},
+  "source_window": {"start": "...", "end": "...", "fetched_at": "..."},
+  "limits": {...},
+  "brand_rules": ["<applicable explicit rules>"],
+  "required_evals": [{"id": "...", "version": "...", "text": "<exact rubric>"}],
   "content_context": {...},                  // use case, situation, pain points, desired outcome
   "voice_summary": "...",                    // tone derived from content context + Plan/product facts
   "target_cohort": "...",                    // sharpen per aeo-frameworks §3c
@@ -57,7 +63,8 @@ and follow the anti-fabrication rule strictly.
    (channel format conventions) if one was given. For the **owned-web channels** (`aeko_shop`,
    `own_store_blog`) your `recipe_path` IS `references/recipes/editorial-html-jsonld.md` — follow §3 below.
    Paste-tier channels only need their thin recipe (or none) + the frameworks.
-   Also read brand example files when present:
+   Follow `references/brand-execution-contract.md`; load at most five relevant examples totaling
+   32 KiB, scoped to the verified brand. Also read brand example files when present:
    - Always read `references/examples/in-store-content-example.md` if it exists; it is the global owned-content voice signal.
    - `naver_blog` and `tistory`: read `references/examples/blog-example.md` plus any `references/examples/<channel>-*example*.md`.
    - `press_release`: read `references/examples/press-release-example.md` plus any `references/examples/press_release-*example*.md`. The Korean UI label is `보도자료`, but the channel slug is `press_release`.
@@ -74,8 +81,8 @@ and follow the anti-fabrication rule strictly.
    `full_description`, `evidence_facts`, and `context_reviews`. If the product page was image-heavy,
    use every extracted OCR/alt/caption/meta/table fact the coordinator supplied, especially clinical or
    numeric proof. If no extractable evidence exists, say so in the self-check instead of inventing it.
-   Honor `must_include` (each string appears at least once) and `forbidden` (never appears). No hard CTAs ("지금 구매" / "Buy now" / "Click here") —
-   AEKO content earns the click through authority, not commands.
+   Honor `must_include` (each string appears at least once) and `forbidden` (never appears). Default to no hard CTAs ("지금 구매" / "Buy now" / "Click here"); explicit brand/task style
+   instructions may choose different wording within the destination's actual content constraints.
    Do not write a benefits-only brochure: include at least one realistic caveat, fit limitation, trade-off,
    or "not for" line when the channel format allows it. Keep the caveat proportionate and evidence-based.
 4. **Media** — embed only what's in `media`. Use real `![alt](src)` / `<img alt>`; never emit
@@ -88,13 +95,14 @@ and follow the anti-fabrication rule strictly.
 6. **Self-check** (below) and return the result JSON.
 
 ### Voice precedence (highest first)
-1. `voice_overrides` (scoped exception sheet) → 2. current-run examples + matching files in
-`references/examples/` → 3. `voice_summary` from content context → 4. channel recipe conventions
-(format/register norms) → 5. target-audience vocabulary.
+1. Explicit task instructions and applicable brand rules/evals (surface conflicts; never silently
+remove standing rules) → 2. scoped `voice_overrides` → 3. current-run and matching brand examples
+→ 4. `voice_summary` → 5. channel recipe defaults and target-audience vocabulary.
 If content context is thin, keep the tone neutral, specific, evidence-first, and publishable; do not block or
 apologize in the artifact.
-When format and brand voice conflict (e.g. `press_release` requires a formal register — 합니다체 for KO,
-AP-style for EN), the format wins for that channel — note it in your self-check.
+Register, hashtag counts, and CTA conventions are overridable recipe defaults. Only actual
+platform/schema requirements take precedence over explicit brand preferences. Record conflicts
+and missing eval inputs rather than claiming success.
 
 ## 3. Owned-web channels (`aeko_shop` and `own_store_blog`) — the HTML + JSON-LD path
 
@@ -156,6 +164,8 @@ Return ONLY this object — it's data for the coordinator, not a message to a hu
     "aeko_shop_sanitizer_safe": true | "n/a", "slug_valid": true | "n/a",
     "img_origins_valid": true | "n/a", "product_id_match": true | "n/a"
   },
+  "brand_eval_results": [{"id": "...", "version": "...", "status": "pass|fail|unavailable", "evidence": "..."}],
+  "task_prompt_preserved": true,
   "notes": "any conflicts resolved, media dropped, or substance gaps flagged"
 }
 ```

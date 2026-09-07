@@ -6,7 +6,7 @@ Skills for cross-border ecommerce marketing in Claude, Codex, and Gemini CLI. Au
 product pages, build PDP HTML, review advertising through your own connectors, measure traffic and AI
 visibility, operate guarded marketing workflows, and assemble a weekly read-and-propose loop.
 
-This repository ships **skills only**. AEKO-backed tools come from the separate
+This repository ships **skills, supporting recipes, and evaluation guidance**. AEKO-backed tools come from the separate
 [AEKO MCP server](https://github.com/AEKO-Intelligence/aeko-mcp), hosted at
 `https://aeko-intelligence.com/mcp`. The plugin does not claim native Meta, Google Ads, TikTok, GA4,
 Notion, Slack, or Calendar integrations: free connector paths read the customer's own installed
@@ -35,13 +35,13 @@ while its conversion and ROAS cells remain dashed because those metrics are not 
 unavailable, the skills show an exact manual export or connect path instead of treating absence as zero.
 
 The AEKO connector is needed for AI-answer monitoring and source history, tracked prompts, Action items,
-store changes, publishing, OpenAI Ads operations, and the AEKO GA4 join. `/aeko-content-ideas` is shipped
-but stops at its capability check because `aeko_list_content_ideas`, `aeko_start_content_idea`, and
-`aeko_dismiss_content_idea` are not yet available from the backend.
+store changes, publishing, OpenAI Ads operations, and the AEKO GA4 join. `/aeko-content-ideas` checks the connected deployment for
+`aeko_list_content_ideas`, `aeko_start_content_idea`, and `aeko_dismiss_content_idea`. These wrappers
+exist in sibling MCP source; an older deployment may still lack them.
 
 Scheduling does not add marketing-write capability. `/aeko-create-loop` is an interactive composer, and
 `/aeko-run-loop` reads approvals and evidence but only proposes changes. Scheduled marketing writes remain
-unsupported until server-side staging exists. A cloud schedule also needs Notion or Slack for a durable
+unsupported in the plugin loop; AEKO hosted automation is a separate capability. A cloud schedule also needs Notion or Slack for a durable
 destination and approval surface.
 
 ## How AEKO works (and what it will not do)
@@ -159,7 +159,7 @@ first release.
 
 - `/aeko-manage-prompts mode=discover|review` — prompt discovery, tracking, Views, Contexts, suggestions, and guarded untracking.
 - `/aeko-competitor-analysis scope=brand|product` — free public research stage plus optional AEKO enrichment.
-- `/aeko-content-ideas` — intended content-idea review/start/dismiss flow; currently unavailable while backend wrappers are missing.
+- `/aeko-content-ideas` — account-gated content-idea review/start/dismiss flow with live MCP capability checks.
 
 ### Store and content
 
@@ -180,8 +180,12 @@ first release.
 
 ## Customizing skills
 
-[CUSTOMIZATION.md](CUSTOMIZATION.md) explains how to add brand examples, recipes, and voice overrides for
-`/aeko-create-content`, `/aeko-update-pdp`, and `/aeko-fix-technical` without forking the plugin.
+[CUSTOMIZATION.md](CUSTOMIZATION.md) describes brand-owned skill/eval packages, manual edits, scoped
+examples, and the seam for the planned automated updater. Hosted runs and exports must select the same
+version; private AEKO benchmarks never ship. [Whole-job prompt examples](docs/automation-prompt-examples.md)
+keep the saved task prompt separate from attached skills and label unavailable hosted execution.
+The automatic updater, multi-stage hosted agent runner, and GitHub synchronization are not implemented
+by this plugin.
 
 ## Relationship to other AEKO repositories
 
@@ -229,13 +233,13 @@ Notion, Slack, Calendar와의 자체 통합을 주장하지 않습니다. 무료
 0으로 처리하지 않고 정확한 수동 export 또는 연결 절차를 보여줍니다.
 
 AI 답변 모니터링과 출처 이력, 추적 프롬프트, Action item, 스토어 변경, 게시, OpenAI Ads 운영,
-AEKO GA4 join에는 AEKO 커넥터가 필요합니다. `/aeko-content-ideas`는 배포되지만
-`aeko_list_content_ideas`, `aeko_start_content_idea`, `aeko_dismiss_content_idea`가 백엔드에 아직 없어
-capability check에서 중단됩니다.
+AEKO GA4 join에는 AEKO 커넥터가 필요합니다. `/aeko-content-ideas`는 연결된 배포의
+`aeko_list_content_ideas`, `aeko_start_content_idea`, `aeko_dismiss_content_idea` 기능을 확인합니다.
+형제 MCP 소스에 구현되어 있으며, 이전 배포에서 빠진 기능만 unavailable로 표시합니다.
 
 Schedule은 마케팅 쓰기 권한을 추가하지 않습니다. `/aeko-create-loop`는 대화형 composer이고,
-`/aeko-run-loop`는 승인과 근거를 읽지만 변경을 제안하기만 합니다. 서버 측 staging이 생기기 전에는
-예약된 마케팅 쓰기를 지원하지 않습니다. Cloud schedule에는 지속 가능한 목적지와 승인 공간으로
+`/aeko-run-loop`는 승인과 근거를 읽지만 변경을 제안하기만 합니다. 이 플러그인의 loop는
+예약된 마케팅 쓰기를 지원하지 않습니다. AEKO 호스팅 자동화는 별도의 기능입니다. Cloud schedule에는 지속 가능한 목적지와 승인 공간으로
 Notion 또는 Slack도 필요합니다.
 
 ## AEKO 작동 방식 (그리고 하지 않는 것)
@@ -352,7 +356,7 @@ schema key, JSON-LD 용어, 브랜드 표기 `AEKO`는 영어/ASCII로 유지합
 
 - `/aeko-manage-prompts mode=discover|review` — 프롬프트 discovery, tracking, View, Context, suggestion, 보호된 untrack.
 - `/aeko-competitor-analysis scope=brand|product` — 무료 공개 리서치 단계와 선택형 AEKO 보강.
-- `/aeko-content-ideas` — 콘텐츠 아이디어 검토/start/dismiss 흐름; 백엔드 wrapper가 없어 현재 사용할 수 없음.
+- `/aeko-content-ideas` — 계정 기반 콘텐츠 아이디어 검토/start/dismiss 흐름; 연결된 MCP 기능을 확인.
 
 ### 스토어와 콘텐츠
 
@@ -373,9 +377,11 @@ schema key, JSON-LD 용어, 브랜드 표기 `AEKO`는 영어/ASCII로 유지합
 
 ## 스킬 커스터마이징
 
-[CUSTOMIZATION.md](CUSTOMIZATION.md)는 플러그인을 fork하지 않고 `/aeko-create-content`,
-`/aeko-update-pdp`, `/aeko-fix-technical`에 브랜드 예시, recipe, voice override를 추가하는 방법을
-설명합니다.
+[CUSTOMIZATION.md](CUSTOMIZATION.md)는 브랜드 소유 스킬·eval 패키지, 수동 편집, 범위가 지정된
+예시와 향후 자동 updater의 연결 지점을 설명합니다. 호스팅 실행과 내보내기는 같은 버전을
+선택해야 하며 AEKO 비공개 벤치마크는 배포하지 않습니다. [작업 프롬프트 예시](docs/automation-prompt-examples.md)는
+스킬 외에 별도 작업 지시를 보존하고 미지원 호스팅 실행을 표시합니다. 자동 updater, 다단계
+호스팅 agent runner와 GitHub 동기화는 이 플러그인에서 구현하지 않았습니다.
 
 ## 다른 AEKO 저장소와의 관계
 

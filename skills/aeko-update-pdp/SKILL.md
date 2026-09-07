@@ -11,6 +11,11 @@ allowed-tools: aeko_list_action_items, aeko_create_action_item, aeko_claim_actio
 
 # AEKO Update PDP
 
+Before work, read [the brand execution contract](references/brand-execution-contract.md).
+Preserve the exact task prompt and apply only this brand's selected rules, evals, and examples.
+Use [the output evaluation rubric](references/brand-output-eval.md) plus the selected brand evals
+when checking the exact result; report missing inputs/checks as unavailable.
+
 ## Mode routing
 
 If `$ARGUMENTS` contains `mode=refresh`, remove only that mode token, then read
@@ -365,7 +370,10 @@ Before generating, load these reference files in order. Anthropic progressive-di
    - `Read references/examples/json-ld-preferences.json` — brand's optional-field preferences for JSON-LD emission. Required keys cannot be overridden.
    - `Read references/style/voice-overrides.md` — domain-scoped overrides; filter to blocks where `domain: <frontmatter.domain_id>` matches.
 
-**Precedence when sources conflict:** `voice-overrides` > `examples/*` > `recipes/*` > Plan/content context > prose body voice cues.
+**Precedence when sources conflict:** explicit task instructions and applicable brand rules/evals
+(surface contradictions; never silently remove standing rules) > scoped `voice-overrides` >
+brand examples > generated Plan/content context > generic recipe defaults. Actual responsive/schema,
+claim ownership, and write-confirmation contracts remain required.
 
 The Step 9 summary must list which reference files were loaded so the user can verify their exemplars are picked up.
 
@@ -457,6 +465,11 @@ After collecting all answers, apply substitutions in-memory. Re-validate `must_i
 The final artifact must contain ZERO `[VERIFY: <field>]` badges in visible HTML and ZERO `.aeko-verify`-style decorations. The only acceptable unresolved-state form is HTML comments produced by the explicit `두기` / `leave` reply.
 
 ## Step 5c — Finalize and write the preview artifact
+
+Apply the selected brand evals to the exact newly authored HTML/schema, with the original task
+prompt retained. In `preserve_existing` mode, report conflicting preserved merchant text separately;
+a rule failure does not authorize altering that prefix. A failed or unavailable required eval may
+produce a labeled review preview but blocks the store-write/completion path after one correction.
 
 Whether or not there were pending verifications, re-run the scope-specific acceptance checks after Step 5b,
 then **always** write the finalized preview HTML to

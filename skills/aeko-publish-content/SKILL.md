@@ -7,10 +7,15 @@ description: >
   item-scoped aeko.shop post. Detects live overwrite risk across every row,
   names the target URL, and requires same-turn human confirmation.
 argument-hint: "<item-id>"
-allowed-tools: aeko_list_content_variations, aeko_publish_content_variation, aeko_update_content_variation, aeko_unpublish_content
+allowed-tools: Read, aeko_list_content_variations, aeko_publish_content_variation, aeko_update_content_variation, aeko_unpublish_content
 ---
 
 # AEKO Publish Content
+
+Before work, read [the brand execution contract](references/brand-execution-contract.md).
+Preserve the exact task prompt and apply only this brand's selected rules, evals, and examples.
+Use [the output evaluation rubric](references/brand-output-eval.md) plus the selected brand evals
+when checking the exact result; report missing inputs/checks as unavailable.
 
 Publish one backend-saved variation for an exact action `item_id`, or remove that item's aeko.shop post.
 Mirror the user's language; keep IDs, URLs, destination slugs, tool names, and commands ASCII.
@@ -59,6 +64,14 @@ If a selected row itself is already published, offer to show that stored result 
 never pretend re-publishing the same row refreshes the page.
 
 ## Step 2 — preview the exact effect
+
+Load this brand's applicable rules/evals before confirmation. A saved row is not proof those
+checks passed. The current list API hides raw bodies: do not report a fresh body-level eval
+from flags, a title, or an unbound local file. For a required brand check, require an exact-version
+validation receipt bound to the selected stored payload or a supported read of that payload.
+If neither is available, mark `brand_eval_unverifiable` and stop publication; return to the
+authoring flow for a reviewable draft. A user's review affirmation remains required but does
+not manufacture an automated validation receipt. Unpublish still follows its separate flow.
 
 Build the plan only from list/lookup responses:
 

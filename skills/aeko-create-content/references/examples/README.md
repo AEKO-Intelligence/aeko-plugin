@@ -1,6 +1,6 @@
 # Brand-specific exemplars
 
-Drop a real winning post from your brand into one of these files and `/aeko-create-content` will mimic its tone and structure on the next run. **No forking the plugin. No editing SKILL.md.**
+Drop a real winning post from your brand into one of these files and `/aeko-create-content` will mimic its tone and structure on the next run. Keep these files in the selected brand-owned package; installation caches are replaceable. See [CUSTOMIZATION.md](../../../../CUSTOMIZATION.md).
 
 If you skipped `/aeko-start`, `/aeko-create-content` also asks during channel selection whether you
 have owned channels or existing content examples to reference. You can paste URLs, paste raw examples, or
@@ -14,7 +14,7 @@ When `/aeko-create-content` drafts a channel, the **substance** (what to say) co
 1. Apply the AEO quality frameworks from `../aeo-frameworks.md` (the quality core — always).
 2. Read the channel recipe from `../recipes/<channel>.md` (format conventions — length, required parts, acceptance gates).
 3. **If a matching example file exists in this folder, or the user supplied an example during the current
-   run, mimic its tone and structure** where it refines the recipe. Recipe acceptance gates still apply.
+   run, mimic its tone and structure** where it refines the recipe. Actual destination/schema gates still apply; explicit brand rules can override recipe style defaults.
 4. Apply content-context voice for sentence-level register.
 
 So example files steer *feel*; the frameworks + substance drive *what gets said*. The recipe defines what *must* be present (acceptance gates); the example defines what *should* feel familiar.
@@ -27,7 +27,7 @@ So example files steer *feel*; the frameworks + substance drive *what gets said*
 | `instagram-post-example.md` | A real Instagram caption + hashtags + alt text | `instagram` |
 | `in-store-content-example.md` | A real PDP, brand-page section, or owned-blog post | informs voice across all channels |
 | `press-release-example.md` | A real press release you've issued (Korean 보도자료 or English) | `press_release` |
-| `context-reviews-fixture.md` | Sample product context-reviews (the lived-experience substance) — used as a **fallback** when the `aeko_get_product_context_reviews` tool isn't live yet, and for evals | all channels (originality source) |
+| `context-reviews-fixture.md` | Synthetic product context-reviews for explicitly isolated regression runs only; never a fallback for missing live reviews | all channels (originality source) |
 | `aeko_shop-fixture.*` | A worked aeko.shop article (`.md` + `.html` + `.meta.json`) showing the publish-ready triple | `aeko_shop` (reference only) |
 
 You can add more — e.g., `tiktok-script-example.md`, `magazine-feature-example.md` — and the skill will pick them up as long as the filename matches `<channel>-*example*.md`. Bundled aliases also work: `blog-example.md` for `naver_blog`/`tistory`, `press-release-example.md` for `press_release`, and `in-store-content-example.md` as the global owned-content voice signal. For new press-release examples, prefer `press_release-<slug>-example.md`; Korean users still see the channel as 보도자료 in the picker. Examples saved during a `/aeko-create-content` run use the same naming pattern.

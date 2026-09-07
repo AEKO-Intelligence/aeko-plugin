@@ -5,7 +5,7 @@ description: >
   pause clearly wasteful campaigns, ad groups, or ads. Pulls performance over a window, proposes a
   reallocation proportional to efficiency (CTR/CPC/spend — ROAS not yet available),
   ALWAYS previews as a dry run first, and only writes after explicit confirmation
-  within strict guardrails. Unattended runs stage a plan only and never write.
+  within strict guardrails. Unattended runs render a proposal only and never write.
 argument-hint: "[domain-id] [days]"
 allowed-tools: aeko_list_domains, aeko_list_campaigns, aeko_list_ad_groups, aeko_get_ad_insights, aeko_update_campaign_budget, aeko_list_ads, aeko_set_campaign_state, aeko_set_ad_group_state, aeko_set_ad_state
 ---
@@ -22,7 +22,7 @@ It operates OpenAI Ads through AEKO only; it never claims to change Meta, TikTok
 - **Always dry-run before writing.** `aeko_update_campaign_budget` defaults to `dry_run=True` and also
   enforces guards at the tool layer (floor, ceiling, max delta) — treat those as a backstop, not the plan.
 - **Never** apply a change without showing the full before→after diff and getting fresh explicit confirmation.
-- **Unattended runs only stage.** They may collect metrics, compute proposals, and call budget updates with
+- **Unattended runs only propose.** They may collect metrics, compute proposals, and call budget updates with
   `dry_run=True`; they must never call a budget write with `dry_run=False`, change campaign/ad-group/ad
   state, resume spend, or treat a schedule wrapper as confirmation.
 - **ROAS caveat:** conversions/revenue aren't ingested, so optimize on **efficiency proxies** only
@@ -122,10 +122,13 @@ If asked to also trim waste:
 
 ## Scheduling note
 
-An unattended schedule may generate a staged dry-run plan only:
+An unattended host job may render a dry-run proposal only. Configure it through the host's
+advertised scheduler or `/aeko-create-loop`; no universal `/schedule` command is assumed.
+Preserve the exact saved job prompt, brand scope, source window, limits, and destination alongside:
+```text
+/aeko-openai-budget-shift <domain-id> 7
 ```
-/schedule every Monday 8am /aeko-openai-budget-shift <domain-id> 7
-```
+This is a prompt handoff, not an installed schedule or server-side staged change.
 It may use conservative `max_delta_pct` and `max_budget_micros` values to validate the proposal, but it must
 not apply it or pause/resume anything. A later interactive run must re-fetch current budgets/performance,
 dry-run again, show the new diff, and obtain fresh explicit confirmation before any write. Host scheduling
@@ -141,7 +144,7 @@ support varies.
 ## What this skill never does
 
 - Never writes a budget without an interactive dry-run + fresh explicit confirmation.
-- Never writes or changes entity state unattended; unattended output is a staged plan only.
+- Never writes or changes entity state unattended; unattended output is a proposal only; no durable executable staging is implied.
 - Never exceeds the per-run delta cap or a campaign's ceiling; never drops below the floor.
 - Never skips the ad-group middle rung, never archives campaigns/ad groups/ads (only reversible `pause`),
   and never claims ROAS-based decisions.
