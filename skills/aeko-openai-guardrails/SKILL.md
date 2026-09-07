@@ -7,7 +7,7 @@ description: >
   disarming first, and confirm-gates both directions of the account-wide switch.
   Bounded by hourly reporting; entity resume is always a separate server-gated action.
 argument-hint: "[domain-id]"
-allowed-tools: aeko_list_domains, aeko_list_campaigns, aeko_list_ad_groups, aeko_list_ads, aeko_get_ad_insights, aeko_list_ad_rules, aeko_get_ad_rule, aeko_get_ad_rule_capabilities, aeko_validate_ad_rule, aeko_create_ad_rule, aeko_update_ad_rule, aeko_delete_ad_rule, aeko_preview_ad_rule, aeko_set_ad_rule_enabled, aeko_set_ad_automation_enabled, aeko_list_ad_rule_executions, aeko_list_ad_rule_runs
+allowed-tools: Read, aeko_list_domains, aeko_list_campaigns, aeko_list_ad_groups, aeko_list_ads, aeko_get_ad_insights, aeko_list_ad_rules, aeko_get_ad_rule, aeko_get_ad_rule_capabilities, aeko_validate_ad_rule, aeko_create_ad_rule, aeko_update_ad_rule, aeko_delete_ad_rule, aeko_preview_ad_rule, aeko_set_ad_rule_enabled, aeko_set_ad_automation_enabled, aeko_list_ad_rule_executions, aeko_list_ad_rule_runs
 ---
 
 # AEKO OpenAI Guardrails
@@ -58,6 +58,19 @@ Resolve `$1` through `aeko_list_domains`, then call `aeko_get_ad_rule_capabiliti
 assumptions. Retain the account-wide switch state and every rule's exact ID, enabled state, version, scope,
 conditions, guards, cooldown, daily cap, and per-run cap.
 
+Before any requested mutation or rule proposal, read `references/brand-execution-contract.md` and
+`references/brand-output-eval.md`. Preserve the original task and verified domain/account, selected
+package/eval versions, observed window and merchant limits. Defaults require no custom package; listing
+existing rules does not require a brand package. Load only this brand's applicable policy, not another
+account's rule examples. Observed spend and example thresholds are evidence/defaults, never authority to
+rewrite a standing merchant limit. Conflicting explicit limits require resolution, not a silent merge.
+
+Check the exact proposed operation/definition against applicable brand policy/evals as well as the live
+capability/schema checks. A required failed/unavailable check blocks that mutation; it cannot be waived
+by a successful blast-radius preview. Preserve all separate foreground confirmations below, including
+both global-switch directions. One-off corrections remain scoped to the current proposal; this skill
+never edits permanent skill rules or upstream defaults. A brand file cannot authorize an enable call.
+
 ## Global switch — both directions require the same class of gate
 
 Handle a global stop/restart request before rule setup. For either direction:
@@ -87,6 +100,12 @@ has no confirmation parameter; state that limitation in the risk block.
 4. Explain proposed multiples: for example, an hourly spend threshold at 2–3× normal or daily CPM around
    2× trailing average. If history is thin, use only a spend cap the merchant explicitly states; never guess
    CPM/CPC.
+
+Bound discovery to ten explicitly selected campaigns and twenty groups/ads in total, 30 observational
+reads and 128 KiB of retained evidence by default; lower job caps win. Insight `limit` is supported, but
+hierarchy lists accept only parent IDs. If a complete baseline or required blast-radius preview cannot
+fit, report unavailable and stop the affected proposal; never truncate a preview and call it safe to arm.
+Do not compute an hourly baseline from daily totals unless hourly observations are actually returned.
 
 ## Step 2 — construct only supported definitions
 

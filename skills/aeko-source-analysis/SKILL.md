@@ -6,7 +6,7 @@ description: >
   product evidence. Use for source analysis, citation winners, cited-page claim
   checks, and correction or outreach drafts. Read-only.
 argument-hint: "<prompt-id> [window] | domain_id=<uuid> source_id=<uuid>"
-allowed-tools: aeko_fetch_source_content, aeko_get_domain_info, aeko_get_tracked_prompt, aeko_list_contexts, aeko_list_store_products, aeko_get_product_description, WebFetch, Write
+allowed-tools: Read, ToolSearch, aeko_fetch_source_content, aeko_get_domain_info, aeko_get_tracked_prompt, aeko_list_contexts, aeko_list_store_products, aeko_get_product_description, WebFetch, Write
 ---
 
 # AEKO Source Analysis
@@ -22,6 +22,23 @@ call it **AI 답변 참고 출처**. Keep IDs, URLs, schema keys, quoted evidenc
 English/ASCII. The brand mark is always `AEKO`.
 
 ## Select one mode
+
+Read `references/brand-execution-contract.md` and `references/brand-output-eval.md`. Preserve the whole
+original `task_prompt`, selected mode/window, verified brand/domain and package/eval versions. Defaults
+work without a custom package. Prompt ownership alone does not identify a brand in a multi-brand account;
+if the current brand is unknown, analyze the prompt generically and do not apply customer rules or claim
+which mention is "ours". Only the cited-page mode's verified domain or explicit verified task context
+permits that comparison.
+
+Scope rules apply to authored analysis/corrections, never to changing quoted source evidence. Evaluate
+the exact report and any outreach draft before saving/accepting them; required failures/unavailable checks
+block the affected artifact. Preserve the original task and brand/eval context with any follow-up command;
+neither an action recommendation nor an outreach draft is permission to execute or post it.
+
+Retain at most 256 KiB of source text per run (or a lower job limit), within the selected mode's call caps.
+If a complete prompt payload cannot fit, report the limit and request a narrower supported window in an
+interactive run; unattended runs stop that analysis. Do not silently discard response bodies/citations
+and call the report complete. Keep required rules/evals intact, separate from the evidence budget.
 
 1. **Prompt mode** — a positional `<prompt-id>`, optionally followed by `latest`, `7d`, `30d`, or `90d`.
    Also accept `mode=prompt prompt_id=<uuid> [window=<value>]`.
@@ -53,4 +70,3 @@ each citation's `domain`, `source_url`, `position_in_response`, and `context_sni
 `@type` values; citability/source-analysis signals; and cited-page extracted text. Never collapse this
 payload into counts alone. Preserve backend truncation flags and distinguish cached crawl evidence from
 the single-page live fallback.
-

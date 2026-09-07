@@ -13,8 +13,19 @@ ROOT = Path(__file__).resolve().parents[1]
 ADOPTERS = (
     "aeko-openai-compose-ads", "aeko-create-content", "aeko-publish-content",
     "aeko-update-pdp", "aeko-fix-technical", "aeko-create-loop", "aeko-run-loop",
+    "aeko-weekly-report", "aeko-pdp-build", "aeko-message-audit", "aeko-source-analysis",
+    "aeko-competitor-analysis", "aeko-ai-visibility", "aeko-ads-review", "aeko-ga4",
+    "aeko-openai-ads-reporting", "aeko-openai-guardrails",
 )
-EVAL_ADOPTERS = ADOPTERS[:5]
+EVAL_ADOPTERS = ADOPTERS[:5] + ADOPTERS[7:]
+SUPPORT_ADOPTERS = (
+    ("arow-contract.md", "skills/aeko-weekly-report/references/arow-contract.md",
+     ("aeko-site-audit", "aeko-pdp-audit", "aeko-ads-review", "aeko-ga4",
+      "aeko-ai-visibility", "aeko-action-center")),
+    ("aeo-frameworks.md", "skills/aeko-create-content/references/aeo-frameworks.md",
+     ("aeko-source-analysis", "aeko-competitor-analysis", "aeko-ai-visibility")),
+    ("action-item-contract.md", "docs/contracts/action-item-contract.md", ("aeko-action-center",)),
+)
 
 
 def check(root: Path, mcp_source: Path | None = None) -> list[str]:
@@ -56,6 +67,12 @@ def check(root: Path, mcp_source: Path | None = None) -> list[str]:
                 errors.append(f"{slug}: {filename} must be an identical in-package file")
             if f"references/{filename}" not in (path / "SKILL.md").read_text():
                 errors.append(f"{slug}: missing discoverable reference to {filename}")
+
+    for filename, canonical, slugs in SUPPORT_ADOPTERS:
+        for slug in slugs:
+            copy = root / "skills" / slug / "references" / filename
+            if copy.is_symlink() or not copy.is_file() or copy.read_bytes() != (root / canonical).read_bytes():
+                errors.append(f"{slug}: {filename} must be an identical in-package file")
 
     # Inspect tracked path names only: never read original outputs or ignored eval workspaces.
     tracked = subprocess.run(["git", "ls-files", "-z"], cwd=root, check=True,

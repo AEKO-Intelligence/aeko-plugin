@@ -15,6 +15,18 @@ Produces a structured AI visibility report for one domain. Output is designed to
 
 ## Marketer-facing output contract
 
+Read `references/brand-execution-contract.md` and `references/brand-output-eval.md` before selecting report
+evidence. Keep the original `task_prompt`, questions, verified domain, selected package/eval versions,
+window/timezone and destination intact; defaults require no custom package. Apply scoped rules to authored
+interpretation, not raw metrics, source quotations or metric definitions. Honor the Starter first-line
+rule below. Before saving/accepting the exact report, check its task coverage and required brand evals;
+failed/unavailable required checks block the affected artifact. Weekly rows keep their schema and carry
+relevant limitations in `degraded_because`/`dimensions`, not a second user-facing report.
+
+Default to one call per listed scope, one domain/list resolution and at most 256 KiB of retained evidence;
+no automatic retries or follow-up crawl. Honor lower job budgets. If a required payload does not fit, keep
+the affected scope unavailable/partial and report the limit rather than silently passing a full report.
+
 Write for a marketing lead or founder. Lead with business meaning, not backend scopes: "Are we being mentioned?",
 "Are we being cited?", "What changed?", and "What should we do next?" Keep `depth=summary` to one page.
 
@@ -48,19 +60,32 @@ Keep slash commands, IDs, file paths, channel slugs, schema keys, and tool names
    Do not render an empty report.
 5. Use domain and prompt context only for report segmentation and content/PDP recommendations.
 
+The tracked-prompt list is account-wide and its current formatter exposes no `domain_id`. Nonempty account
+history does not prove this domain has history. Do not populate `prompt_ids` from the entire account or
+semantic similarity: use only IDs explicitly tied to this domain by returned scoped evidence or the
+verified job selection; otherwise omit the optional filter and retain the domain-scoped backend results.
+
 ## Step 2 — Pull visibility data
 
-Call in parallel:
-- `aeko_get_visibility_summary(domain_id, scope="overview")` — 30-day mention / citation / source counts + sentiment + recent brand mentions + monthly trend.
-- `aeko_get_visibility_summary(domain_id, scope="tracked_prompt_metrics", window=$2)` — 7-day performance with WoW trends (the tool window arg only affects this scope in v0.5.0; use 7d default).
-- `aeko_get_visibility_summary(domain_id, scope="cited_sources")` — pages from this domain AI engines cite.
-- `aeko_get_share_of_voice(domain_id, prompt_ids=<active ids or omitted>, start_date=<window start>, end_date=<window end>)`
+Call in parallel when supported and within the remaining budget; otherwise run the same reads sequentially:
+- `aeko_get_visibility_summary(domain_id, scope="overview")` — all-time totals, seven-day WoW comparisons
+  and a 13-week trend; not totals for the requested report window.
+- `aeko_get_visibility_summary(domain_id, scope="tracked_prompt_metrics", window=<requested hint>)` — fixed
+  latest seven days and previous seven-day comparison. `window` is compatibility-only and is not forwarded
+  to the backend; it cannot select a calendar week or a 14/30/90-day metrics window.
+- `aeko_get_visibility_summary(domain_id, scope="cited_sources")` — pages from this domain AI engines cite;
+  no selectable date range. Do not label these "new this week" without authoritative event timestamps.
+- `aeko_get_share_of_voice(domain_id, prompt_ids=<verified selected ids or omitted>, start_date=<window start>, end_date=<window end>)`
   — the brand's share across tracked-prompt responses for the exact requested dates.
-- `aeko_get_answer_drift(domain_id, days=<7|14|30|90>, prompt_ids=<active ids or omitted>)` — which
+- `aeko_get_answer_drift(domain_id, days=<7|14|30|90>, prompt_ids=<verified selected ids or omitted>)` — which
   monitored answers materially changed over the requested lookback.
 
 Compute ISO dates from the requested window. Do not convert Share of Voice into a made-up score or describe
 answer drift as visibility loss; report the backend definitions and denominators returned by each tool.
+`days` is a rolling lookback, not an arbitrary historical start/end. Retain each source's actual window,
+timezone and fetch time; when exact boundaries are unavailable, say so. A weekly request never relabels
+all-time or rolling data as last Monday–Sunday. If exact-window answers are required and cannot be
+selected, mark those answers unavailable while keeping separately labeled usable observations.
 
 ## Step 3 — Compose report — summary depth
 
@@ -68,16 +93,17 @@ answer drift as visibility loss; report the backend definitions and denominators
 
 ```
 # AEKO Visibility Report — <brand_name>
-**Window:** <window> · **Depth:** summary · **Generated:** <ISO date>
+**Requested window:** <window> · **Depth:** summary · **Generated:** <ISO date>
+**Source windows:** <all-time overview; fixed metrics window; SOV dates; drift lookback>
 
 ## Headline
 
-AI visibility: <total_mentions> mentions · <total_citations> citations
-Mentions: <total_mentions> (<WoW trend>)
-Citations: <total_citations> (<WoW trend>)
-Sentiment: <avg_sentiment_score>% positive (<WoW trend>)
+AI visibility, all time: <overview total_mentions> mentions · <overview total_citations> citations
+Mentions, fixed seven-day metrics: <returned count> (<its WoW trend>)
+Citations, fixed seven-day metrics: <returned count> (<its WoW trend>)
+Sentiment: <returned value with its actual definition, units and window>
 Share of Voice: <backend SOV value + denominator/peer set>
-Answer drift: <changed prompts / assessed prompts> changed in <window>
+Answer drift: <changed prompts / assessed prompts> changed in <actual drift lookback>
 
 ## What moved this week
 
@@ -86,7 +112,7 @@ Answer drift: <changed prompts / assessed prompts> changed in <window>
 - <largest Share of Voice gain/loss, only when the SOV payload supports a comparison>
 - <highest-impact answer drift, naming prompt/platform/date and what changed>
 
-## Top new citations (this window)
+## Top cited pages (source window; not necessarily new)
 
 - <page_url> — cited <N>× by {platforms} · top prompt: "<prompt text>"
 - ...
@@ -135,10 +161,12 @@ context columns when present. Else cite the summary data and note that per-promp
 ```
 
 When a competitor's page outranks yours for a prompt, note *why* in the plugin's AEO vocabulary
-(BLUF / PREP / Informational Gain / E-E-A-T — see `skills/aeko-create-content/references/aeo-frameworks.md`):
+(BLUF / PREP / Informational Gain / E-E-A-T — see `references/aeo-frameworks.md`):
 "the cited winner leads with the answer (BLUF) and shows lived detail (Informational Gain); your page is
 generic." This makes the report's findings map straight to what the executor skills fix — for a single
 prompt, hand off to `/aeko-source-analysis <prompt_id>`.
+Carry the original task, report question, verified domain/package/eval context, actual evidence windows and
+remaining limits with that command. It is a proposed analysis, not permission for an executor to write.
 
 Where response and crawl snippets are available, add a clearly labeled "inferred absorption" note:
 "AI appears to reuse these facts from the page..." This is an interpretation from text overlap, not a
@@ -164,9 +192,13 @@ and how often they appear next to tracked prompts.>
 ## Weekly-report normalized rows
 
 When invoked with `report_mode=weekly`, read
-`../aeko-weekly-report/references/arow-contract.md` completely. Emit one `visibility_summary` `arow/1` row
-with `source.slot: visibility`, `source.provider: aeko`, rung `1`, the requested window, the actual fetch
-time, and only backend-returned numeric metrics. At full depth, emit one `visibility_prompt` row per prompt,
+`references/arow-contract.md` completely. Emit separate `visibility_summary` `arow/1` rows for scopes with
+different windows/definitions, with `source.slot: visibility`, `source.provider: aeko`, rung `1`, each
+scope's actual window (null plus an explanatory freshness note when exact dates are unavailable), the
+actual fetch time, and only backend-returned numeric metrics. Record the requested window separately in
+`dimensions`; incompatible scopes remain partial for that requested comparison. Never combine all-time,
+fixed-seven-day, exact-date SOV and rolling drift metrics into one requested-week row.
+At full depth, emit one `visibility_prompt` row per prompt,
 capped at 50. Emit these rows instead of rendering a second user-facing report; normal interactive mode is
 unchanged. Keep metric definitions/denominators and platform scope in `dimensions`; do not convert Share
 of Voice or answer drift into a made-up composite.

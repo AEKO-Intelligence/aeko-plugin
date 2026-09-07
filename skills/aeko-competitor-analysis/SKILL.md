@@ -6,7 +6,7 @@ description: >
   skill adds tracked-prompt citations, visibility, domain, and official product
   evidence. Use for brand positioning or PDP comparison matrices.
 argument-hint: "scope=brand [domain-id] <competitor> | scope=product <product-id-or-url> [competitor-urls...]"
-allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_product_description, aeko_list_store_integrations, aeko_search_research_prompts, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_get_visibility_summary, WebSearch, WebFetch, Write
+allowed-tools: Read, aeko_list_domains, aeko_get_domain_info, aeko_get_product_description, aeko_list_store_integrations, aeko_search_research_prompts, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_get_visibility_summary, WebSearch, WebFetch, Write
 ---
 
 # AEKO Competitor Analysis
@@ -20,6 +20,24 @@ Keep `scope`, IDs, URLs, paths, schema keys, slash commands, and tool names in E
 is always `AEKO`.
 
 ## Select one scope
+
+Read `references/brand-execution-contract.md` and `references/brand-output-eval.md`. Preserve the complete
+original `task_prompt`, current brand/product, market/language, evidence window, requested comparison,
+selected package/eval versions and limits. Use defaults when no customization exists; do not add an AEKO
+account requirement to public research. A competitor's page is evidence about that competitor, never the
+current brand's rule source or permission to copy its claims/customer experience.
+
+Apply current-brand rules to authored recommendations and proposed copy without rewriting literal quotes
+or hiding unfavorable comparisons. Evaluate the exact report before saving/accepting it; report required
+failed/unavailable checks and block the affected artifact. Pass the original task, verified brand context,
+package/eval versions, evidence and remaining limits with any follow-up command, without granting writes.
+
+Default aggregate limits: five WebSearch calls, six WebFetch calls (target plus up to five competitors),
+ten tracked-prompt detail reads and 256 KiB of retained evidence text. Respect lower job caps and explicit
+source filters; no recursive crawl or unbounded prompt history. Record fetched time, actual windows and
+omissions; a partial sample never proves absence. A required unsupported historical window is unavailable,
+not permission to substitute today's public page. Resolve optional parallel reads sequentially when the
+host cannot run them in parallel.
 
 - `scope=brand` — accept an optional AEKO domain ID and one competitor name or root domain; read
   `references/brand-mode.md` completely.

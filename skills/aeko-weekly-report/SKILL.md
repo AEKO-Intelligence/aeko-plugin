@@ -19,6 +19,15 @@ delivery to an installed connector skill. A direct MCP call from this skill is a
 `/aeko-run-loop` may invoke this skill, but this skill never schedules or executes that loop itself.
 
 Before running, read `references/arow-contract.md` completely and enforce it literally.
+Also read `references/brand-execution-contract.md` and `references/brand-output-eval.md`.
+Use AEKO defaults when no brand customization is selected. Apply scoped brand rules to the report's
+authored interpretation; never rewrite source rows, metric definitions, or provenance to match a voice.
+
+Retain the original user/automation `task_prompt` verbatim, including the requested report questions.
+Resolve the current domain/site, selected package and eval versions (or local paths/digests), applicable
+rule/eval text, language, exact window/timezone, source targets, limits, no-input behavior, and destination
+from the supplied job. A skill name or config summary does not replace that prompt. Required files must be
+readable by this host; an unmaterialized local path in a scheduled prompt is not access.
 
 ## User-facing language and window
 
@@ -28,12 +37,13 @@ is always `AEKO`.
 
 Default to the last complete Monday-through-Sunday window in the report timezone. When a Notion config page
 is supplied, use its timezone, source targets, declared ad platforms, domain IDs, PDP URLs, delivery targets,
-and language. Otherwise ask for only the missing target values needed by the six simple skills. Do not let
+and language. Otherwise ask interactively for only the missing target values needed by the six simple skills. Do not let
 one missing target block other sources.
+Unattended runs record missing targets as unavailable and continue with the configured sources.
 
 ## Step 1 — invoke simple skills, never their MCP tools
 
-Use host skill invocation and request `report_mode=weekly` plus the identical window from:
+Use host skill invocation and request `report_mode=weekly` plus the identical requested window from:
 
 1. `/aeko-site-audit <site-root> report_mode=weekly`
 2. `/aeko-pdp-audit <pdp-url-or-file> report_mode=weekly` for each configured PDP, capped at 10
@@ -42,9 +52,23 @@ Use host skill invocation and request `report_mode=weekly` plus the identical wi
 5. `/aeko-ai-visibility <domain-id> <window> summary report_mode=weekly`
 6. `/aeko-action-center <domain-id> all report_mode=weekly`
 
-Attempt the independent invocations in parallel when the host supports it. If skill-to-skill invocation is
-unavailable, print the exact six commands with resolved arguments, ask the user to paste their `arow` blocks,
-and stop before claiming a report ran. Never replace a missing source with a direct connector or AEKO call.
+Attach the retained whole-job context to every invocation, including each PDP: original `task_prompt`,
+report questions, verified brand/domain, readable selected package/evals and their versions/text, exact
+window/timezone, source-specific target, remaining limits, and no-input behavior. These are host handoff
+instructions, not invented MCP parameters. Tell children to return evidence only; the composite owns
+delivery. A source's point-in-time or fixed window must remain its actual window, not the requested label.
+
+Attempt independent invocations in parallel only when the host supports it and budgets can be reserved
+before dispatch; otherwise invoke sequentially with the same context. Default to at most 15 child
+invocations (one site, ten PDPs, four other sources), 300 retained rows and 256 KiB of row text in total,
+with at most 50 rows per kind. Honor lower job limits and each child's own read limits. Stop dispatching
+when the remaining budget cannot accommodate another child. Report omitted targets/counts; unknown
+counts stay unknown. These are instruction-level budgets, not a host transport guarantee.
+
+If skill-to-skill invocation is unavailable, print the resolved commands plus their complete handoff
+context for manual execution. Ask for the resulting `arow` blocks only in an interactive run; unattended
+runs record the unavailable children and stop before claiming they ran. Never replace a missing source
+with a direct connector or AEKO call.
 
 For a configured source with no target or connection, the simple skill must emit an unavailable row. A
 missing block is a source-contract failure: show that source as unavailable in prose and in the final blind-
@@ -109,11 +133,22 @@ Render in this order:
 The blind-spots section is mandatory and is the final section. Do not put a cheerful close, CTA, or hidden
 footnote after it. A report with all sources available still ends with the section and says `None`.
 
+Before accepting the report, evaluate the exact authored report against the original questions and required
+brand evals. Preserve this section order and the mandatory blind-spots ending. Keep the check receipt in
+the run record; a failed/unavailable required check blocks delivery of the affected report. Check the
+actual Slack summary separately when composing it: a passing full report does not validate a new summary.
+
 ## Step 4 — deliver through skills, not tools
 
 Resolve the `docs` and `chat` slots through `/aeko-connect` or the supplied config receipt. A slot counts as
 deliverable only when the live skill registry exposes an invocable connector skill that can perform the
 required write and readback; connector tool presence alone does not authorize this composite to call it.
+
+Honor `delivery=conversation|notion|slack|auto` and the job's exact destination. `conversation` performs no
+connector write; a selected single destination does not authorize sending to another. Use `/aeko-connect`
+only interactively. An unattended run uses the supplied verified destination/capability receipt and
+falls back to conversation if that receipt is absent. Deliver only within the user's authorized scope;
+receipts and week-key readback must identify the actual destination, not merely a tool name.
 
 - Notion available: delegate creation/update of one week-keyed report page to the installed Notion skill,
   then require a returned page ID/URL as the delivery receipt. Re-runs update the same week key, not duplicate.

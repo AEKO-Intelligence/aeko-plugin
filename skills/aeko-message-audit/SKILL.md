@@ -34,6 +34,13 @@ to a store. Bash may only create empty temporary paths and run the bundled read-
 
 ## Evidence doctrine
 
+Read `references/brand-execution-contract.md` and `references/brand-output-eval.md`. Retain the original
+`task_prompt`, advertiser/domain identity, exact window/timezone, selected package/evals and limits across
+sweep, drill and any correction handoff. Use defaults without requiring a custom package. A brand rule
+applies only after its advertiser/domain matches this audit; another client's files are not candidates.
+Apply voice/claim rules to newly authored fixes, not to literal ad quotes or evidence-state labels: a
+prohibited phrase in an observed ad must remain visible as evidence rather than being silently rewritten.
+
 Mirror the user's language for prose; keep provider names, dates, currencies, IDs, URLs, state keys, and
 slash commands in English/ASCII. The brand mark is `AEKO`.
 
@@ -266,3 +273,10 @@ Do not recommend putting an unverified claim onto an owned surface merely to mak
 substantiation is absent or contradicted, the fix is to verify, qualify, or **remove the paid claim**. Only a
 substantiated PDP-suitable claim may hand off to `/aeko-pdp-build`; an evidence-backed article/post may hand
 off to `/aeko-create-content`.
+
+Check the final report and exact proposed replacement/outreach copy against the original task and required
+brand evals before accepting it. Preserve the vocabulary and render contracts; put check limitations in
+their existing coverage/error area. On a failed/unavailable required copy check, report the failure and
+withhold that proposed copy rather than changing the evidence verdict. Any handoff carries the original
+task prompt, verified brand/package/eval context, claim IDs, literal evidence, exact window and remaining
+limits separately from the executor command. It grants no creative, store or publishing permission.

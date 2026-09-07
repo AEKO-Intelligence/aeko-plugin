@@ -33,8 +33,11 @@ Keep slash commands, IDs, file paths, channel slugs, schema keys, and tool names
 2. Call `aeko_get_product_description(integration_id, external_product_id)` for official description HTML
    and prefer it for the user's product facts. Use the integration's `domain_id` with
    `aeko_get_domain_info(domain_id)` for market/category context.
-3. Call `aeko_get_tracked_prompts`; use `aeko_search_research_prompts` only to find relevant research rows
-   when no tracked set matches. For relevant tracked IDs, call `aeko_get_tracked_prompt(..., window="30d")`
+3. Call `aeko_get_tracked_prompts` once; its list is account-wide and carries no domain ID. Select at most
+   ten prompt IDs only when the job or returned domain-scoped evidence establishes their relation to the
+   selected product/domain. Otherwise omit private prompt-detail enrichment and disclose why. Use
+   `aeko_search_research_prompts` only to find relevant research rows
+   when no tracked set matches. For verified tracked IDs, call `aeko_get_tracked_prompt(..., window=<supported job window or "30d">)`
    and retain actually cited competing PDP domains.
 
 If the connector is unavailable or any AEKO call returns 401, continue from the public baseline and label
@@ -45,11 +48,14 @@ official-product and tracked-citation enrichment unavailable. Never stop the pub
 If `competitor-urls` missing:
 
 1. Build a search query from the user's product title + product/category context + country/market from domain info. Example: `"차렵이불" 한정수량 알러지케어 site:*.co.kr -site:slound.co.kr`.
-2. `WebSearch(query, num_results=10)`. Filter to distinct roots (drop duplicates, skip marketplaces if possible).
+2. Use the exposed `WebSearch` input schema (no assumed `num_results` parameter), retaining at most ten
+   search results. Filter to distinct roots (drop duplicates, skip marketplaces if possible).
 3. When Step 1.5 returned tracked-prompt citation evidence, augment with its top-cited competing domains.
    These are domains AI engines actually cite — higher value than raw search. If AEKO is unavailable, omit
    this augmentation and say why.
-4. Pick top 3-5 competitor URLs. Confirm with the user before proceeding ("Here are the candidates I found — use these, or paste your own?").
+4. Pick top 3-5 competitor URLs within the job's criteria. Confirm discovered candidates interactively;
+   unattended runs require an explicit candidate set or bounded discovery authorization in the original
+   job, otherwise return `competitor_selection_unavailable` without waiting for a reply.
 
 ## Step 3 — Fetch each competitor PDP
 
@@ -84,6 +90,9 @@ Fields to compare (adapt per category — product-type-aware):
 ```
 
 Use Claude's reasoning to fill each row from the fetched text. Missing data → `—` not fabrication.
+Raw HTML/JSON-LD fields are assessed only when the fetch result actually exposes them. Converted markdown
+that omits scripts is not proof of missing schema; label those cells unassessed. Competitor review counts
+or quotes are never evidence that the user's product has those reviews or experiences.
 
 ## Step 5 — Strengths + weaknesses + gaps
 
@@ -108,7 +117,7 @@ Compose three sections:
 - <classify each content gap in the plugin's vocabulary so it maps to a fix: BLUF (do competitors lead
   with the answer while this PDP buries it?), PREP (self-contained benefit blocks?), Informational Gain
   (lived/specific detail this PDP lacks?), E-E-A-T (FAQ answers showing real experience?). See
-  `skills/aeko-create-content/references/aeo-frameworks.md`.>
+  `aeo-frameworks.md`.>
 ```
 
 ## Step 6 — Recommended actions
@@ -128,6 +137,8 @@ Rank 3 actions by impact:
 
 Write the full matrix + analysis to:
 `./aeko-artifacts/<domain_id-or-public>/product-competitor-analyses/<product-slug>-<YYYYMMDD>.md`
+after the entrypoint's exact-report checks, using only a verified domain. If the host cannot write locally
+or the job requests conversation output, render there and do not claim a file was saved.
 
 User-facing summary:
 

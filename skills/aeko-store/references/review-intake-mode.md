@@ -30,6 +30,12 @@ checks are instruction-level controls.
 
 ## Step 2 — collect real evidence
 
+Default to at most 50 candidate reviews, five public source URLs and 64 KiB of review text per run, honoring
+lower requested limits. Gather only the selected product's records; no recursive crawl or all-history
+import. Report excluded/unreadable/capped counts without calling them an empty corpus. A required review
+window uses actual observed review timestamps; unknown dates cannot pass that filter. Do not replace a
+missing eligible review with a synthetic fixture or another product's statement.
+
 - `merchant-paste`: preserve verbatim text from the user's paste/file/screenshot plus rating, author, and
   date only when visible. A source URL is optional because the merchant is the source.
 - `agent-gather`: retain only a literal customer statement with a locatable public URL. Store copy,

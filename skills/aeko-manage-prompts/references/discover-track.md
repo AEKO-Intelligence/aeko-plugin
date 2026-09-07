@@ -97,7 +97,10 @@ fresh account surfaces above.
 
 Call `aeko_search_research_prompts` with the parsed filters + `page_size=25`. At least one filter must be non-null (the tool rejects fully empty queries).
 
-If zero results → widen: drop the most restrictive filter, typically `query_type` or an overly narrow keyword, and retry once. Tell the user what was relaxed.
+If zero results, return the empty result for the original filters. Offer at most one retry relaxing a
+recipe-derived preference; never silently drop an explicit job/brand constraint, country, or entitlement.
+Explain the proposed change first and obtain the user's choice when an explicit filter would change.
+No results is valid; do not invent a research prompt to reach a target count.
 
 ## Step 4 — Score + rank candidates
 

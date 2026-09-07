@@ -99,7 +99,7 @@ For each top source with non-null `crawl`, analyze:
 - **Source analysis signals** (from `crawl.source_analysis`): citability score if present, heading depth, structural patterns.
 - **Content shape** (from first ~500 chars of `crawl.extracted_text`): Q&A format, first-person review, comparison table, listicle, news article, etc.
 - **Framework read** — *why* does this source get cited? Name it in the plugin's AEO vocabulary (BLUF /
-  PREP / Informational Gain / E-E-A-T — see `skills/aeko-create-content/references/aeo-frameworks.md`): does
+  PREP / Informational Gain / E-E-A-T — see `aeo-frameworks.md`): does
   it lead with the answer (BLUF)? give self-contained Point·Reason·Example blocks (PREP)? carry lived,
   specific detail a generic page lacks (Informational Gain)? show experience in its FAQ (E-E-A-T)? This is
   what makes the takeaway *actionable* — it maps straight to a fix the executor skills apply.
@@ -118,7 +118,9 @@ Print under each top source:
    Takeaway:   <one sentence: the framework gap to close on the user's page>
 ```
 
-If `crawl` is null (source never crawled) and the URL is public, do a light `WebFetch` to get a rough structural read — mark the analysis as "live-fetched, not cached" so the user knows the difference.
+If `crawl` is null and the URL is public, use at most three `WebFetch` calls across the run for a rough
+structural read. Mark them "live-fetched, not cached" with fetched time; current pages do not establish
+what a page contained at the historical response date. No recursive follow-up or automatic retry.
 
 ## Step 5 — Competitor callout
 
@@ -151,7 +153,13 @@ Pick the most specific, load-bearing action. If none fits, pick "run the visibil
 
 ## Step 7 — Save the analysis
 
-Write the full analysis markdown to `./aeko-artifacts/<domain_id>/prompt-deep-dives/<prompt_id>-<window>.md` so the user can revisit without re-running. Tell them the path.
+After the entrypoint's exact-report checks, write the full analysis markdown to
+`./aeko-artifacts/<verified-domain-id-or-unscoped>/prompt-deep-dives/<prompt_id>-<window>.md` only in a
+writable local host and the requested destination. A prompt ID alone does not establish a domain folder.
+If local writing is unavailable or conversation output was requested, render it there and do not claim
+persistence. Never overwrite another brand's artifact. Any executor handoff includes the original task,
+verified brand/package/eval context and source anchors; propose first-person review copy only when genuine
+first-person evidence supports it, never because a competitor's review format won citations.
 
 ## Error paths
 

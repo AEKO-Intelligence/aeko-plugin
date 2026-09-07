@@ -1,6 +1,6 @@
 # Weekly ads rows
 
-Read `../../aeko-weekly-report/references/arow-contract.md` completely before emitting rows. Weekly mode has
+Read `arow-contract.md` completely before emitting rows. Weekly mode has
 no conversational ground-truth question and no interactive table.
 
 Emit exactly one `ad_metric` `arow/1` row for Meta, TikTok, Google Ads, and OpenAI Ads, even when unavailable

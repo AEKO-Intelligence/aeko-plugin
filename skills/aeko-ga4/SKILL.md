@@ -18,6 +18,20 @@ require, or infer an AEKO account.
 
 ## User-facing language and inputs
 
+For report generation, read `references/brand-execution-contract.md` and
+`references/brand-output-eval.md`. Retain the original `task_prompt`, report questions, selected brand and
+package/eval versions, exact source/property/window, limits and destination. Use defaults without a custom
+package; keep the free official-connector path free of AEKO account checks. Apply scoped rules to authored
+interpretation only; metric definitions, provenance and row contracts remain unchanged. Check the exact
+report/rows against the task and required evals before acceptance, disclosing unavailable checks in the
+existing limits/row fields. This does not add package prerequisites to property setup or connection help.
+
+Default report budget: eight data-read calls per chosen source and 256 KiB of retained evidence across
+sources, honoring lower job limits. Bound official connector rows through its real schema; no arbitrary
+history scan, undocumented filters or automatic retries. Cap exhaustion makes the affected view partial.
+In weekly/unattended mode, use the already selected source/property from the job; missing or ambiguous
+selection emits unavailable rows without a question, property-selection call or sync.
+
 Mirror the user's chat language. Keep metric keys, property/account IDs, dates, source/rung labels, commands,
 and tool names in English/ASCII. The brand mark is always `AEKO`.
 
@@ -86,7 +100,7 @@ account/tier reason; it never changes the status of the customer's official conn
 
 ## Normalized row contract
 
-Read `../aeko-weekly-report/references/arow-contract.md` completely before emitting rows. Emit at least one
+Read `references/arow-contract.md` completely before emitting rows. Emit at least one
 `traffic_metric` row and one `impact_metric` row for the selected source, using one `run_id`.
 
 - Official connector: `source.slot: analytics`, `source.provider: google_analytics`, `source.rung: 2`, and

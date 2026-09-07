@@ -31,7 +31,7 @@ If competitor is a name (not URL), run a quick `WebSearch` for `"<competitor>" o
 Collect in parallel where possible:
 
 1. **Root page crawl** — `WebFetch(<competitor_root>)`. Extract: tagline, hero messaging, top-nav categories, whether llms.txt / structured data is present.
-2. **Wikipedia / Wikidata entity check** — `WebSearch("<competitor> site:wikipedia.org")` and `WebSearch("<competitor> site:wikidata.org")`. If results → the competitor has AI-knowledge-graph recognition, which is a load-bearing signal.
+2. **Wikipedia / Wikidata entity check** — `WebSearch("<competitor> site:wikipedia.org")` and `WebSearch("<competitor> site:wikidata.org")`. A matching result is a public entity signal, not proof of model training, embeddings, or citation causation.
 3. **Recent news** — `WebSearch("<competitor> news 2026")` (adjust year if needed). Surface any fundraising, product launches, brand refresh.
 4. **Press / partnerships** — `WebSearch("<competitor> partnership OR acquired OR launch")` — optional if prose asks for depth.
 
@@ -46,11 +46,15 @@ or the connector is missing/returns 401, retain the complete public-signals repo
 1. `aeko_get_domain_info(domain_id)` to ground the "vs us" comparison using names, URLs, keywords, market,
    industry, and surfaced Context.
 2. `aeko_get_visibility_summary(domain_id, scope="cited_sources")` — surfaces pages from the user's domain AI engines cite.
-3. Call `aeko_get_tracked_prompts` and select the user's top 5–10 relevant tracked prompts. If the tracked
+3. Call `aeko_get_tracked_prompts` once and select at most ten relevant tracked prompts only when the job
+   or returned domain-scoped evidence establishes their relation to this domain. The account-wide list's
+   formatter exposes no domain ID; similarity alone cannot establish that relation. If no scoped selection
+   is available, mark the prompt comparison unavailable and keep public/domain-level findings. If the tracked
    set is empty, use domain keywords/context with `aeko_search_research_prompts(scope=..., country=...)` as
    a research fallback, but label those rows untracked and do not claim measured history.
 4. For each selected tracked prompt:
-   - Call `aeko_get_tracked_prompt(prompt_id, window="30d")` for cited-source analysis.
+   - Call `aeko_get_tracked_prompt(prompt_id, window=<supported job window or "30d">)` for cited-source
+     analysis. Record actual response dates; do not silently broaden an explicit window.
    - Count how often the competitor's brand name appears in `responses[].mentions`.
    - Count how often the competitor's root domain appears in `responses[].citations[].domain`.
 5. Build a comparison matrix:
@@ -94,15 +98,18 @@ AI answers entirely.">
 ## What the competitor does that we don't
 
 (From Step 2 signals that translate to AEO leverage:)
-- Wikipedia entity → AI models have richer embeddings for them
-- llms.txt on root → declared AI-readability
+- Wikipedia entity → an observed public identity reference, with unmeasured model effect
+- llms.txt → presence only when the exact resource was fetched within the shared WebFetch cap; a homepage
+  link alone is not its contents or proof of AI-readability
 - Structured data present → Product / FAQPage / Organization schemas
 - Recent news coverage → fresh signal for news-aware AI engines
 - **Content frameworks** → where the competitor's *cited pages* win on substance, name it in the plugin's
   AEO vocabulary (BLUF / PREP / Informational Gain / E-E-A-T — see
-  `skills/aeko-create-content/references/aeo-frameworks.md`) so the gap maps to a fix the executor skills apply.
+  `aeo-frameworks.md`) so the gap maps to a fix the executor skills apply.
 
-For each present for competitor but absent for user → flag.
+Flag a difference only when both sides were actually assessed; unavailable user evidence is not absence.
+Converted page text alone cannot establish raw JSON-LD absence. Preserve unknown fields instead of
+asserting the competitor has markup the user's page lacks.
 
 ## Recommended action
 
@@ -111,7 +118,10 @@ For each present for competitor but absent for user → flag.
 
 ## Step 5 — Save + summary
 
-Write to `./aeko-artifacts/<domain_id>/competitor-analyses/<competitor-slug>-<YYYYMMDD>.md`.
+After the entrypoint's exact-report checks, write to
+`./aeko-artifacts/<verified-domain-id-or-public>/competitor-analyses/<competitor-slug>-<YYYYMMDD>.md`
+when the requested local destination is writable; otherwise render in conversation and state no local
+persistence. A public-only run must not guess a brand/domain folder or claim a missing comparison matrix.
 
 User-facing summary:
 

@@ -46,6 +46,19 @@ is always `AEKO`.
 
 ## Inputs and deterministic defaults
 
+Read `references/brand-execution-contract.md` and `references/brand-output-eval.md` before selecting
+evidence. Retain the full `task_prompt`, verified advertiser/domain, requested questions, selected
+package/evals, exact window/timezone, caps and destination when called by weekly-report. Use defaults
+without requiring a custom package or AEKO access for free rows. Brand rules govern authored findings;
+they do not change attribution definitions, required table/row layout or literal provider evidence.
+Before accepting the exact report/rows, check original questions and applicable required evals. Record
+failures in the existing coverage/limits fields and withhold any affected unvalidated recommendation.
+
+Default to at most 16 provider-report reads, 2,000 returned data rows and 256 KiB of retained evidence
+across all platforms, with lower job limits taking precedence. Use only limit/date arguments supported by
+each exposed schema; do not add pagination to AEKO account insights. Stop fetching on a cap and mark the
+affected source partial. Do not infer complete spend or exact omitted totals from a truncated sample.
+
 - `week-of`: an ISO date in the requested week. Default is the last complete Monday-through-Sunday period.
   The literal request `this week` always means Monday through today and must say `partial through <today>`.
 - `platforms`: defaults to all four. The final table always has four platform rows; excluded sources are
@@ -296,6 +309,8 @@ unavailable, with export/connect/upgrade/dashboard remedies attached to their co
 For `report_mode=weekly`, read `references/weekly-rows.md` completely and follow it instead of the
 interactive rendering. It preserves all four platform rows, the source-produced claimed reconciliation,
 and the inability to ask for missing store truth.
+Keep the parent task and selected brand context in the run record, separate from source rows. Return only
+the row handoff; do not deliver externally or invoke the depth report as a side effect.
 
 ## Error rules
 

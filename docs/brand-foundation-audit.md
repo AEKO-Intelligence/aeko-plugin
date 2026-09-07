@@ -1,5 +1,12 @@
 # Portable brand foundation audit — 2026-09-07
 
+This report records the first ten-skill batch, committed as `ab1da11`. The
+[follow-up review](brand-foundation-followup.md) covers the remaining sixteen:
+fifteen received targeted corrections and the connection board retained its existing
+setup behavior. Together these reports cover all 26 entrypoints at source level;
+they do not establish model behavioral quality. References below to uncommitted work
+or a pending sixteen-skill audit describe the first batch's original handoff.
+
 ## Outcome and ownership
 
 Local, reviewable changes in `/Users/seanhan/orca/workspaces/aeko-plugin/brand-customization-foundation`.

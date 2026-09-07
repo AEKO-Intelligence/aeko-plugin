@@ -25,6 +25,13 @@ former shell-free design; keep it to the exact commands in Step 1.
 
 ## Marketer-facing output contract
 
+Read `references/brand-execution-contract.md` and `references/brand-output-eval.md` before drafting.
+Keep the whole original task as `task_prompt`, the verified product/site, selected package/eval versions,
+and any explicit current-brand rules. No custom package or account is required: use AEKO defaults when
+none is selected. Brand presentation preferences may change neutral styling and optional section order;
+they cannot change the source-language/evidence ledger, append-only handoff, no-CTA boundary, HTML safety,
+or visible/schema parity required below. A conflict with those contracts stops the affected proposal.
+
 Language: preserve the source language of every fact. Korean evidence stays Korean; do not translate it to
 English or rewrite it into a different claim. Mirror the user's chat language for instructions and summary
 text. Keep slugs, schema keys, attribute names, source IDs, URLs, and slash commands in English/ASCII. The
@@ -82,6 +89,10 @@ host-schema replacement safety still require a URL re-audit.
 Re-audit the URL to produce the `aeko_pdp_image_facts/v1` object before drafting. Attempt
 `/aeko-pdp-audit <url>` through the host's skill mechanism. If skill-to-skill invocation is unavailable,
 perform the required evidence pass directly instead of dead-ending:
+
+Pass the original `task_prompt`, verified product/site, selected brand context and versions, source intent,
+and remaining limits with that child invocation. Keep this context separate from the fact JSON and from
+tool arguments. The child diagnoses evidence; brand wording preferences never rewrite its literal facts.
 
 1. Resolve `scripts/fetch_evidence.py` relative to this `SKILL.md`. Create one empty temporary image
    directory with `mktemp -d` and one temporary JSON file with `mktemp`, then run only
@@ -304,6 +315,11 @@ FAQPage only`, `host_product_absent -> Product + FAQPage`, or `confirmed_host_pr
 ## Step 7 — run acceptance checks
 
 Do not present the artifact until every applicable check passes:
+
+Check the exact final HTML, JSON-LD and handoff against the original task and selected required brand evals
+using `references/brand-output-eval.md`, as well as the checks below. Record pass/fail/unavailable in the
+run record. Allow at most one bounded correction; a required unavailable or still-failing check blocks
+acceptance and is reported without claiming the paste-ready artifact passed.
 
 ### Evidence and parity
 
