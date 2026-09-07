@@ -1,6 +1,19 @@
 # Changelog
 
-## 0.29.1 — Portable brand execution foundation (unreleased)
+## 0.29.2 — Accepted package discovery and trusted catalog (unreleased)
+
+- Require clients to discover and load the accepted skill, eval, wiki, and support bytes after
+  OAuth instead of treating authentication as package loading.
+- Add all 26 canonical command packages to one bounded, self-contained trusted upstream catalog
+  built from explicit public-file allowlists with per-file and aggregate SHA-256 provenance.
+- Document the exact nine legacy backend automation documents and vendor the reviewed catalog for
+  explicit backend default reconciliation without runtime source fetching.
+- Keep prompt/Context/view and content-idea listing lightweight, but load exact accepted-package
+  guidance before those skills author new text or start an authored-content handoff.
+- Keep local export projections tied to their original document/version/digest and wiki authority
+  metadata. The full Responses/MCP runner, contextual chat executor, and GitHub App remain separate.
+
+## 0.29.1 — Portable brand execution foundation (2026-09-07)
 
 - Preserve whole-job prompts and scoped brand rules/evals across drafting and loop handoffs.
 - Bound ad/content evidence; require explicit reviewed ad creative, remove schedule auto-approval,

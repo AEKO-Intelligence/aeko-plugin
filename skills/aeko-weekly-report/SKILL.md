@@ -7,7 +7,7 @@ description: >
   sources, and delivers through resolved Notion or Slack skills when possible.
   Used directly or as the evidence component of aeko-run-loop.
 argument-hint: "[window=last-week] [config=<notion-page-id>] [delivery=auto|notion|slack|conversation]"
-allowed-tools: Skill, ToolSearch, Read
+allowed-tools: Skill, ToolSearch, Read, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 disallowed-tools: Write, Edit, Bash
 ---
 

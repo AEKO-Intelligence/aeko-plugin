@@ -16,7 +16,7 @@ description: >
   discovery preparation, and never saves, completes, or
   publishes through AEKO. It never writes to a connected store or auto-publishes.
 argument-hint: "<item-id> [deep] | handoff=<id>"
-allowed-tools: aeko_get_content_idea_handoff, aeko_fetch_source_content, aeko_get_action_plan, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_list_own_content, aeko_request_media_upload, aeko_save_content_variation, aeko_list_content_variations, aeko_complete_action_item, Task, Read, Write, Bash, WebFetch, WebSearch
+allowed-tools: aeko_get_content_idea_handoff, aeko_fetch_source_content, aeko_get_action_plan, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_list_own_content, aeko_request_media_upload, aeko_save_content_variation, aeko_list_content_variations, aeko_complete_action_item, Task, Read, Write, Bash, WebFetch, WebSearch, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO Create Content

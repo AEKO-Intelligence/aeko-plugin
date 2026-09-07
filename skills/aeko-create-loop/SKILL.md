@@ -6,7 +6,7 @@ description: >
   scheduled prompt, installs it through the host or gives exact UI steps, and
   foreground dry-runs it once. Never acts as the scheduled orchestrator.
 argument-hint: "[cadence] [config=<notion-page-id>]"
-allowed-tools: Read, Skill, ToolSearch
+allowed-tools: Read, Skill, ToolSearch, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 disallowed-tools: Write, Edit, Bash
 ---
 

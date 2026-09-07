@@ -181,11 +181,17 @@ first release.
 ## Customizing skills
 
 [CUSTOMIZATION.md](CUSTOMIZATION.md) describes brand-owned skill/eval packages, manual edits, scoped
-examples, and the seam for the planned automated updater. Hosted runs and exports must select the same
-version; private AEKO benchmarks never ship. [Whole-job prompt examples](docs/automation-prompt-examples.md)
-keep the saved task prompt separate from attached skills and label unavailable hosted execution.
-The automatic updater, multi-stage hosted agent runner, and GitHub synchronization are not implemented
-by this plugin.
+examples, Brand Wiki guidance, and the backend updater seam. OAuth authorizes package reads but does not
+load the accepted skill, eval, wiki, or support bytes; clients must discover and read the pinned package
+explicitly. Hosted runs and exports must select the same version, and private AEKO benchmarks never ship.
+[Whole-job prompt examples](docs/automation-prompt-examples.md) keep the saved task prompt separate from
+attached skills and label unavailable hosted execution. This plugin does not provide the full
+Responses/MCP runner, contextual chat executor, or GitHub App provisioning/sync.
+
+The reproducible [trusted upstream catalog](docs/trusted-upstream-catalog.md) covers all 26 public
+`aeko-*` entrypoints with exact file allowlists and SHA-256 provenance. The current backend's nine legacy
+automation skill/eval documents are different runtime prompt components. The backend now vendors this
+reviewed catalog for explicit reconciliation; existing hosted templates still use their legacy components.
 
 ## Relationship to other AEKO repositories
 
@@ -378,10 +384,11 @@ schema key, JSON-LD 용어, 브랜드 표기 `AEKO`는 영어/ASCII로 유지합
 ## 스킬 커스터마이징
 
 [CUSTOMIZATION.md](CUSTOMIZATION.md)는 브랜드 소유 스킬·eval 패키지, 수동 편집, 범위가 지정된
-예시와 향후 자동 updater의 연결 지점을 설명합니다. 호스팅 실행과 내보내기는 같은 버전을
+예시, Brand Wiki, 백엔드 updater 연결 지점을 설명합니다. OAuth 인증만으로 선택된 패키지의
+skill/eval/wiki 바이트가 로드되지는 않습니다. 호스팅 실행과 내보내기는 같은 고정 버전을
 선택해야 하며 AEKO 비공개 벤치마크는 배포하지 않습니다. [작업 프롬프트 예시](docs/automation-prompt-examples.md)는
-스킬 외에 별도 작업 지시를 보존하고 미지원 호스팅 실행을 표시합니다. 자동 updater, 다단계
-호스팅 agent runner와 GitHub 동기화는 이 플러그인에서 구현하지 않았습니다.
+스킬 외에 별도 작업 지시를 보존하고 미지원 호스팅 실행을 표시합니다. 전체 Responses/MCP runner,
+contextual chat executor, GitHub App provisioning/sync는 이 플러그인에서 제공하지 않습니다.
 
 ## 다른 AEKO 저장소와의 관계
 

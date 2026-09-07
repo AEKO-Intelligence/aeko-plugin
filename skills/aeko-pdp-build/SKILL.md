@@ -6,7 +6,7 @@ description: >
   aeko_pdp_image_facts/v1 block or a product URL. Free and zero-account: it
   produces paste-ready output without connecting to or writing to a store.
 argument-hint: "<aeko_pdp_image_facts/v1-json-or-product-url>"
-allowed-tools: Read, Glob, Bash, WebFetch, Skill
+allowed-tools: Read, Glob, Bash, WebFetch, Skill, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 disallowed-tools: Write, Edit
 ---
 

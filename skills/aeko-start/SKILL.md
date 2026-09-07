@@ -175,10 +175,11 @@ Glob `<plugin_root>/skills/<skill_name>/references/{recipes,examples,style}/*` a
 - `examples/` — reference artifacts the executor mimics (your past hits, brand-specific exemplars).
 - `style/` — voice overrides scoped by `domain_id` and/or `channel`. Highest-priority voice signal.
 
-Before saving customization, read [CUSTOMIZATION.md](../../CUSTOMIZATION.md). Resolve a
-brand-owned working package and its domain; an installation cache or shared upstream checkout
-is not durable brand storage. Manual edits and the planned automated updater target the same
-portable skill/eval files. The updater and automatic GitHub sync are not implemented here.
+Before saving customization, read [the local customization contract](references/customization-contract.md).
+Resolve a brand-owned working package and its domain; an installation cache or shared upstream
+checkout is not durable brand storage. Manual edits and a deployed backend updater target the
+same portable skill/eval/wiki versions. This local setup flow does not run the updater or provide
+automatic GitHub App synchronization.
 
 ### 4.2 Ask what to add or change
 

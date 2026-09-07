@@ -8,7 +8,7 @@ description: >
   an ad group with one ad per product — all PAUSED for review. This is the agentic
   step beyond the dashboard's one-review→one-ad flow.
 argument-hint: "[domain-id] [min-score]"
-allowed-tools: Read, aeko_get_ad_account_status, aeko_list_domains, aeko_list_contextual_reviews, aeko_list_campaigns, aeko_create_ad_group_from_context
+allowed-tools: Read, aeko_get_ad_account_status, aeko_list_domains, aeko_list_contextual_reviews, aeko_list_campaigns, aeko_create_ad_group_from_context, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO OpenAI Compose Ads

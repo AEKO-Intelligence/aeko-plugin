@@ -7,7 +7,7 @@ description: >
   item-scoped aeko.shop post. Detects live overwrite risk across every row,
   names the target URL, and requires same-turn human confirmation.
 argument-hint: "<item-id>"
-allowed-tools: Read, aeko_list_content_variations, aeko_publish_content_variation, aeko_update_content_variation, aeko_unpublish_content
+allowed-tools: Read, aeko_list_content_variations, aeko_publish_content_variation, aeko_update_content_variation, aeko_unpublish_content, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO Publish Content

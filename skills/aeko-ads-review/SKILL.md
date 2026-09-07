@@ -7,7 +7,7 @@ description: >
   orders. The customer's official connectors provide the first three free
   rows; the account-gated OpenAI Ads row comes from AEKO.
 argument-hint: "[week-of] [platforms=meta,tiktok,google,openai] [domain-id=<id>] [timezone=<IANA>] [report_mode=interactive|weekly]"
-allowed-tools: Read, Glob, ToolSearch, aeko_list_domains, aeko_get_ad_account_status, aeko_get_ad_insights
+allowed-tools: Read, Glob, ToolSearch, aeko_list_domains, aeko_get_ad_account_status, aeko_get_ad_insights, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 disallowed-tools: Write, Edit, Bash
 ---
 

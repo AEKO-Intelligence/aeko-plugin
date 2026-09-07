@@ -6,7 +6,7 @@ description: >
   normalized traffic and impact rows, including explicit unavailable rows when
   no source is connected. Use for traffic, ecommerce impact, or GA4 setup.
 argument-hint: "[source=auto|official|aeko] [domain-id] [window]"
-allowed-tools: ToolSearch, Read, aeko_list_domains, aeko_get_ga4_status, aeko_list_ga4_properties, aeko_select_ga4_property, aeko_sync_ga4, aeko_get_measure
+allowed-tools: ToolSearch, Read, aeko_list_domains, aeko_get_ga4_status, aeko_list_ga4_properties, aeko_select_ga4_property, aeko_sync_ga4, aeko_get_measure, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 disallowed-tools: Write, Edit, Bash
 ---
 

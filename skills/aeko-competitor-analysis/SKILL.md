@@ -6,7 +6,7 @@ description: >
   skill adds tracked-prompt citations, visibility, domain, and official product
   evidence. Use for brand positioning or PDP comparison matrices.
 argument-hint: "scope=brand [domain-id] <competitor> | scope=product <product-id-or-url> [competitor-urls...]"
-allowed-tools: Read, aeko_list_domains, aeko_get_domain_info, aeko_get_product_description, aeko_list_store_integrations, aeko_search_research_prompts, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_get_visibility_summary, WebSearch, WebFetch, Write
+allowed-tools: Read, aeko_list_domains, aeko_get_domain_info, aeko_get_product_description, aeko_list_store_integrations, aeko_search_research_prompts, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_get_visibility_summary, WebSearch, WebFetch, Write, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO Competitor Analysis

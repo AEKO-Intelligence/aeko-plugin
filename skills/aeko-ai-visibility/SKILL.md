@@ -6,7 +6,7 @@ description: >
   cited sources, competitors, and actions. Routes users with no tracked prompts
   to aeko-manage-prompts instead of rendering an empty report.
 argument-hint: "[domain-id] [window] [depth]"
-allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_tracked_prompts, aeko_get_visibility_summary, aeko_get_share_of_voice, aeko_get_answer_drift, Read, Write
+allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_tracked_prompts, aeko_get_visibility_summary, aeko_get_share_of_voice, aeko_get_answer_drift, Read, Write, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO AI Visibility

@@ -10,13 +10,45 @@ or verified site, market/language, requested channel, source window, output dest
 item/byte/call limits, and no-input behavior separately. A skill attachment or a style name
 does not replace the whole-job prompt. Pass both into every drafter and evaluator.
 
-Resolve the selected brand skill/evals and their versions before reading supporting files.
-A brand with no customization starts with the AEKO default skill/evals; do not require a
-custom package to exist first or invent additional brand restrictions. Record that defaults
-were used, and apply any explicit rules supplied for the current brand and task.
-For local use, record the selected package path and file hashes; for a hosted run, use its
-supplied immutable version snapshot. Missing required package files/evals means unavailable,
-not a passing check. MCP transports data; it does not load skills or evaluate outputs.
+Authentication only authorizes package access. It does not load brand instructions. Before
+brand-specific work, discover the accepted package with `aeko_get_active_brand_package` or,
+when a saved job already names a version, `aeko_get_brand_package_version`. Page through the
+whole member manifest and retain its package ID, version, and digest. A hosted run token sees
+only its snapshot package; normal OAuth sees the selected brand's active package.
+
+Resolve the current command's canonical `aeko-*` skill, every applicable eval, and each
+declared wiki path from that same manifest. Read their exact bytes with
+`aeko_read_brand_package_file`, using the returned `package_slug`, package version, and digest
+on every chunk. Use `aeko_list_brand_wiki_pages` to match a required `topic_path`, then
+`aeko_get_brand_wiki_page` to inspect its authority and sources before treating the page as a
+fact, preference, or observation. Read all required instruction/eval/wiki bytes before
+execution. Missing tools, manifest members, chunks, or required files mean brand-specific
+execution is unavailable, not a passing check. MCP moves bytes; it does not apply them or run
+evals.
+
+The current backend's nine legacy automation skill/eval documents are runtime prompt
+components, not the 26 customer-plugin commands. If the accepted package has no member for the
+current canonical command, do not substitute a related legacy document or claim that the full
+catalog is loaded. A brand with no customization may use the trusted local upstream skill and
+eval files when the host can resolve that self-contained plugin package. Record that fallback
+and its hashes; otherwise stop the brand-specific path.
+
+For local exports, require `package-manifest.json` and verify every file against its recorded
+SHA-256. Manifest members retain document/version identity, `package_slug`, stored/source/exported
+digests, projection, source/exported names, and each support file's path, export path, digest, and
+editability. Supported projection values are `stored-v1`, `canonical-command-v1`,
+`self-contained-v2`, and `portable-wiki-v1`; canonical customer commands still resolve by their
+`aeko-*` key even though the stored database slug is UUID-backed.
+
+A skill or eval with required knowledge loads its verified
+`references/wiki/<topic>/<page>.md` copy. That copy must carry the source Wiki page's authority,
+sources, market/language/product scope, review date, confirmer, and `aeko_export` source identity.
+Wiki support links resolve under `<page>.support/<original-path>`. Each `derived_files` row must
+retain its owner/source paths and digests plus exact `derived_from` document/version/stored-digest
+and file-path provenance. When importing, assemble an owner's support files from its canonical
+member support specs and every derived `owner_support_path`; do not drop or regenerate verified
+copies. Treat `external_observation` and `proposed` content as attributed observations, not facts.
+A local path without this complete verified provenance is not an accepted brand package.
 
 Use only files from the selected brand package. Match any `domain:` and `channel:` blocks
 against the current task; both must match when both are present. A channel-only or unscoped
@@ -80,9 +112,9 @@ package. A lasting rule gets attributed evidence and a negative/acceptable regre
 a one-off correction must not become a permanent rule. Do not propagate either to upstream
 defaults or other brands. Preserve the previous version and concurrent manual edits.
 
-The automated updater is not implemented by this plugin. Its intended policy is bounded,
-nonconflicting automatic improvements after real validation/regressions, with conflicts and
-changes to existing explicit rules sent for review. Brand-owned evals and permitted examples
-travel with export; AEKO's private benchmark corpus, eval scratch, credentials, and unrelated
-customer data never do. Brand wiki retrieval and automatic GitHub synchronization are later
-capabilities; do not invent an endpoint or claim they are active.
+The customer plugin does not run the automated updater. Backend support and deployment must be
+verified separately. Brand-owned evals and permitted examples travel with export; AEKO's private
+benchmark corpus, eval scratch, credentials, and unrelated customer data never do. The MCP source
+now has bounded package/wiki read adapters, but a deployed server may not have those routes yet.
+The full Responses/MCP runner, contextual chat executor, and GitHub App provisioning/sync remain
+separate capabilities. Never infer them from OAuth success or package discovery.

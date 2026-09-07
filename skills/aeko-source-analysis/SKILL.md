@@ -6,7 +6,7 @@ description: >
   product evidence. Use for source analysis, citation winners, cited-page claim
   checks, and correction or outreach drafts. Read-only.
 argument-hint: "<prompt-id> [window] | domain_id=<uuid> source_id=<uuid>"
-allowed-tools: Read, ToolSearch, aeko_fetch_source_content, aeko_get_domain_info, aeko_get_tracked_prompt, aeko_list_contexts, aeko_list_store_products, aeko_get_product_description, WebFetch, Write
+allowed-tools: Read, ToolSearch, aeko_fetch_source_content, aeko_get_domain_info, aeko_get_tracked_prompt, aeko_list_contexts, aeko_list_store_products, aeko_get_product_description, WebFetch, Write, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO Source Analysis

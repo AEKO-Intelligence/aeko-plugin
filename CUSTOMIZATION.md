@@ -3,17 +3,17 @@
 > [한국어](#한국어-버전)
 
 AEKO supplies upstream skills and evaluation guidance. Each customer develops a **brand-owned
-version** through manual edits and, when implemented, AEKO's automated updater. The same
-versioned instructions, applicable evals, and permitted examples must feed hosted automation
-and export for the customer's Codex, Claude Desktop, or other capable client. Brand wiki is
-planned later. Credentials are never part of a package; each host authenticates separately.
+version** through manual edits and the backend updater where that service is deployed. The same
+versioned instructions, applicable evals, Brand Wiki pages, and permitted examples must feed
+hosted automation and exports for Codex, Claude Desktop, or another capable client. Credentials
+are never part of a package; each host authenticates separately.
 
 Keep four things separate:
 
 | Object | What it contains |
 | --- | --- |
 | Upstream plugin | AEKO's generic skills, recipes, and regression guidance |
-| Brand package | That brand's versioned skill/eval instructions and selected examples |
+| Brand package | That brand's accepted skill/eval instructions, Brand Wiki pages, and selected examples |
 | Automation template | An editable whole-job prompt with setup placeholders |
 | Configured job | Saved prompt, attached brand skill/evals, sources/window, destination, schedule, and limits |
 
@@ -43,7 +43,7 @@ have a separately assigned package identity; that does not rename upstream comma
 
 ## Portable document package seam
 
-The backend foundation being developed uses one immutable document version per skill or eval:
+The accepted backend contract uses one immutable document version per skill, eval, or wiki page:
 
 | Field | Meaning |
 | --- | --- |
@@ -53,10 +53,26 @@ The backend foundation being developed uses one immutable document version per s
 | Version/digest | Identity of the exact projected `SKILL.md` and supporting bytes |
 
 The deterministic export has `<package-name>/SKILL.md` and its supporting files. Both hosted
-materialization and export must use those bytes. The job separately selects the skill and
-applicable eval document versions; an `evals/` folder is not an automatic evaluator runner.
+materialization and export must use the accepted versions. The job separately selects the skill
+and applicable eval document versions; an `evals/` folder is not an automatic evaluator runner.
 Ownership comes from authenticated backend document/domain records, never a model-supplied
 frontmatter tenant field. The backend assigns export identity; do not reuse another brand's ID.
+
+OAuth grants access only. A client must still discover the active or saved exact package, retain
+its package ID/version/digest, and read the selected skill, eval, wiki, and support bytes. The
+bounded MCP path is `aeko_get_active_brand_package` (or `aeko_get_brand_package_version` for an
+existing pin), followed by `aeko_read_brand_package_file`. Resolve required wiki paths with
+`aeko_list_brand_wiki_pages` and inspect their authority/sources with
+`aeko_get_brand_wiki_page`. A missing member or tool is unavailable; it is not permission to
+substitute current defaults or skip an eval.
+
+For a local ZIP, start from `package-manifest.json`. Verify every exported SHA-256 and keep the
+original document/version plus stored, source, exported, and projected digests. Supported
+projections are `stored-v1`, `canonical-command-v1`, `self-contained-v2`, and
+`portable-wiki-v1`. A verified `references/wiki/<topic>/<page>.md` copy carries full Wiki
+authority, sources, scope, review date, confirmer, and `derived_from` source identity; its support
+links resolve under `<page>.support/`. Reject a missing or mismatched projection rather than
+rebuilding it from unverified local files.
 
 Current foundation constraints: skill text at most 128 KiB, 64 support files, 256 KiB per
 support file, 2 MiB total, 16 KiB metadata, and a 200-character single-line description.
@@ -66,13 +82,14 @@ Trusted upstream non-Markdown helpers may be retained read-only by the backend; 
 cannot upload scripts through that seam. Local HTML/JSON examples below are existing plugin
 patterns, not a claim that the current brand editor accepts those file types.
 
-The backend package validator/serializer owns these limits and projections; this document
-creates no new endpoint. A seed/import adapter must supply canonical document metadata, a
+The backend package validator/serializer owns these limits and projections. A seed/import adapter must supply canonical document metadata, a
 concise description, and all referenced support files rather than upload an arbitrary plugin
 folder. The shared execution contract is copied into each adopting skill's `references/` so
 individual exports can include it without reading outside their package. Release lint verifies
-those copies. A GitHub importer/sync service and the multi-stage hosted agent runner are not
-implemented by this plugin; never claim a local edit is already synchronized.
+those copies. The [trusted upstream catalog](docs/trusted-upstream-catalog.md) packages all 26
+public command entrypoints through an explicit file allowlist with SHA provenance. The backend
+now vendors that reviewed artifact for explicit default reconciliation. A GitHub App and sync
+service are not implemented by this plugin; never claim a local edit is synchronized.
 
 ## Brand rules, examples, and evals
 
@@ -124,10 +141,11 @@ Inspect `Refs loaded` and the brand-eval results to verify the chosen files actu
 
 ## Automated updates and rollback
 
-Automatic evolution is the intended AEKO service alongside manual editing. The updater is
-not implemented yet. Its proposed policy is to activate bounded, nonconflicting improvements
-only after actual validation and regressions; conflicts, ambiguous feedback, and changes to
-existing explicit rules go to review. The current exact-version preview/promote gate remains.
+Automatic evolution is a backend service alongside manual editing. The accepted implementation
+can activate only bounded, nonconflicting changes after its required checks; conflicts,
+ambiguous feedback, and changes to existing explicit rules go to review. This skills-only plugin
+does not start, host, or deploy that service. Verify the actual backend before describing the
+updater as available.
 
 An updater must target the same document `text`, `metadata`, and `support_files`, pin the base
 digest, attribute feedback and changes, and compare the base before activation. Concurrent
@@ -157,10 +175,10 @@ invoke paid models:
 ## 한국어 버전
 
 AEKO의 공통 스킬·평가 지침을 출발점으로 **브랜드 소유 패키지**를 발전시킵니다. 수동 편집과
-향후 자동 업데이트는 같은 버전의 스킬·eval·허용된 예시 파일을 수정해야 합니다. 이 버전을
-AEKO 호스팅 실행과 Codex/Claude Desktop용 내보내기에서 함께 사용합니다. 브랜드 wiki,
-자동 updater, GitHub 자동 동기화, 다단계 호스팅 agent runner는 이 플러그인에서 구현하지
-않았습니다. 각 클라이언트의 인증은 별도이며 자격 증명은 패키지에 넣지 않습니다.
+배포된 백엔드 updater는 같은 버전의 스킬·eval·Brand Wiki·허용된 예시 파일을 다뤄야 합니다.
+이 버전을 AEKO 호스팅 실행과 Codex/Claude Desktop용 내보내기에서 함께 사용합니다. 이
+skills-only 플러그인은 updater나 GitHub App 동기화를 실행하지 않습니다. 각 클라이언트의
+인증은 별도이며 자격 증명은 패키지에 넣지 않습니다.
 
 작업별 자유 텍스트 프롬프트와 연결된 스킬은 별개입니다. 원래 프롬프트를 그대로 보존하고,
 브랜드·기간·채널·eval·목적지·한도·입력 없음 동작을 명확히 하세요.
@@ -175,7 +193,9 @@ AEKO 호스팅 실행과 Codex/Claude Desktop용 내보내기에서 함께 사�
 백엔드 패키지 기반은 `text`, `metadata`, `support_files`를 버전화하고 같은 바이트로
 `SKILL.md`와 참조 파일을 내보냅니다. 브랜드 편집용 참조 파일은 Markdown이며, 로컬 HTML/JSON
 예시가 있다고 현재 편집 API도 그 파일을 받는 것은 아닙니다. 위의 크기·경로·소유권 규칙과
-실제 백엔드 검증기를 따르세요. 로컬/GitHub 편집만으로 호스팅 활성화가 완료되지는 않습니다.
+실제 백엔드 검증기를 따르세요. OAuth 인증만으로 패키지가 로드되지는 않습니다. 활성 또는
+고정 버전을 조회한 뒤 동일한 package ID/version/digest에서 필요한 skill/eval/wiki 바이트를
+명시적으로 읽어야 합니다. 로컬/GitHub 편집만으로 호스팅 활성화가 완료되지는 않습니다.
 
 자동 updater의 의도된 정책은 실제 검증·회귀 검사를 통과한 제한적이고 충돌 없는 개선의 자동
 활성화입니다. 충돌과 기존 명시 규칙 변경은 검토하고, 현재 exact-version preview/promote

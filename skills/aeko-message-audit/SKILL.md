@@ -7,7 +7,7 @@ description: >
   ad claims, paid-to-owned message gaps, and claims AI misses or gives to
   competitors. Requires at least one customer's official ad connector.
 argument-hint: '[days=30] [platforms=meta,google,tiktok] [timezone=<IANA>] [domain-id=<id>] [claim="<text>"]'
-allowed-tools: Read, Glob, Bash, WebFetch, ToolSearch, aeko_list_domains, aeko_get_domain_info, aeko_list_store_integrations, aeko_list_store_products, aeko_get_product_description, aeko_list_own_content, aeko_fetch_source_content, aeko_get_citability, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_get_visibility_summary
+allowed-tools: Read, Glob, Bash, WebFetch, ToolSearch, aeko_list_domains, aeko_get_domain_info, aeko_list_store_integrations, aeko_list_store_products, aeko_get_product_description, aeko_list_own_content, aeko_fetch_source_content, aeko_get_citability, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_get_visibility_summary, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 disallowed-tools: Write, Edit
 ---
 

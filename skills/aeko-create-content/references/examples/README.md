@@ -1,6 +1,6 @@
 # Brand-specific exemplars
 
-Drop a real winning post from your brand into one of these files and `/aeko-create-content` will mimic its tone and structure on the next run. Keep these files in the selected brand-owned package; installation caches are replaceable. See [CUSTOMIZATION.md](../../../../CUSTOMIZATION.md).
+Drop a real winning post from your brand into one of these files and `/aeko-create-content` can use its tone and structure on the next run after the selected package loads this file. Keep examples in the brand-owned package; installation caches are replaceable. Follow [the package execution contract](../brand-execution-contract.md).
 
 If you skipped `/aeko-start`, `/aeko-create-content` also asks during channel selection whether you
 have owned channels or existing content examples to reference. You can paste URLs, paste raw examples, or

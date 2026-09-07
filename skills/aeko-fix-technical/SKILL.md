@@ -7,7 +7,7 @@ description: >
   Claude's reasoning — no prepare-* backend wrappers. Writes artifacts
   locally, surfaces a deploy checklist, marks the item complete.
 argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_domain_info, aeko_complete_action_item, Read, Write, WebFetch, WebSearch, Bash
+allowed-tools: aeko_get_action_plan, aeko_get_domain_info, aeko_complete_action_item, Read, Write, WebFetch, WebSearch, Bash, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO Fix Technical

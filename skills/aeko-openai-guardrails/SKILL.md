@@ -7,7 +7,7 @@ description: >
   disarming first, and confirm-gates both directions of the account-wide switch.
   Bounded by hourly reporting; entity resume is always a separate server-gated action.
 argument-hint: "[domain-id]"
-allowed-tools: Read, aeko_list_domains, aeko_list_campaigns, aeko_list_ad_groups, aeko_list_ads, aeko_get_ad_insights, aeko_list_ad_rules, aeko_get_ad_rule, aeko_get_ad_rule_capabilities, aeko_validate_ad_rule, aeko_create_ad_rule, aeko_update_ad_rule, aeko_delete_ad_rule, aeko_preview_ad_rule, aeko_set_ad_rule_enabled, aeko_set_ad_automation_enabled, aeko_list_ad_rule_executions, aeko_list_ad_rule_runs
+allowed-tools: Read, aeko_list_domains, aeko_list_campaigns, aeko_list_ad_groups, aeko_list_ads, aeko_get_ad_insights, aeko_list_ad_rules, aeko_get_ad_rule, aeko_get_ad_rule_capabilities, aeko_validate_ad_rule, aeko_create_ad_rule, aeko_update_ad_rule, aeko_delete_ad_rule, aeko_preview_ad_rule, aeko_set_ad_rule_enabled, aeko_set_ad_automation_enabled, aeko_list_ad_rule_executions, aeko_list_ad_rule_runs, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO OpenAI Guardrails

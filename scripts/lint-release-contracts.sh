@@ -117,5 +117,6 @@ if [ -n "$prohibited_hits" ]; then
 fi
 
 python3 "$repo_root/scripts/lint-brand-contracts.py"
+python3 "$repo_root/scripts/build-trusted-upstream-catalog.py" --check
 
 printf 'Release contracts pass (version %s).\n' "$(printf '%s\n' "$versions" | sed -n '1p')"

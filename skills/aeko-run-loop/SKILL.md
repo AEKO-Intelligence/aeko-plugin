@@ -7,7 +7,7 @@ description: >
   thread command into execution; all marketing writes require a later fresh
   interactive review.
 argument-hint: "config=<notion-page-id> [dry_run=true] [delivery=auto|conversation]"
-allowed-tools: Read, Skill, ToolSearch
+allowed-tools: Read, Skill, ToolSearch, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 disallowed-tools: Write, Edit, Bash
 ---
 
