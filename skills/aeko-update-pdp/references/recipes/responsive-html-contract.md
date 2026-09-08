@@ -6,8 +6,9 @@ load_when: SKILL.md §5 generates HTML; Step 5 acceptance gates evaluate
 
 # Responsive HTML contract for newly authored HTML (mandatory)
 
-Fail the run if newly authored AEKO HTML violates a rule below. These are non-negotiable; brand-specific
-examples cannot relax them. Under `preserve_existing`, validate only `new_structured_section_html`. The
+Fail the run if newly authored AEKO HTML violates the layout/schema or execution rules below. Brand-specific
+examples cannot relax those rules. Writing preferences under "Citability defaults" can be customized by
+explicit task/brand guidance under SKILL.md precedence. Under `preserve_existing`, validate only `new_structured_section_html`. The
 merchant's byte-preserved prefix is outside this contract: existing links, buttons, scripts, handlers,
 alt-less images, styles, and vocabulary must be reported as preserved, never stripped or rewritten to make
 the combined preview pass.
@@ -30,13 +31,24 @@ This skill produces AEO citability content for the PDP description block — not
 - CSS classes like `.aeko-cta-buttons` and any related styling must not be emitted.
 - The `aeko-cta` section heading is "구매 안내" (KO) / "Purchase info" (EN), never "구매하기" / "Buy now".
 
-## Citability baseline (apply even when prose is silent)
+## Citability defaults (apply when task/brand guidance is silent)
 
 - 80–167 word passages per block.
 - Name the subject explicitly in every paragraph (no pronoun opens).
 - Each section opens with a 1–2 sentence direct answer.
 - "X is a Y that Z" structures for core claims.
 - Include specific numbers / dimensions / years where possible.
+
+These passage-length and phrasing patterns are writing defaults, not platform requirements. Accepted
+brand rules can choose shorter passages, a different register, or another section order. Keep factual
+grounding and clear standalone answers; never pad a short specification to meet a generic word count.
+
+## Preview verification
+
+Validate the actual proposal at mobile and desktop widths under `references/browser-review.md` before
+claiming it is responsive. CSS inspection alone does not pass this check. The local review shell is a
+separate artifact; its viewport controls and annotations never enter the description payload. Under
+`preserve_existing`, report merchant-prefix overflow as preserved rather than silently editing the source.
 
 ## Frontmatter must_include / forbidden / sections_required
 

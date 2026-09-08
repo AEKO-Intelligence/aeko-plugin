@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.29.4] — 2026-09-08
+
+- `/aeko-update-pdp` runs the command handoff in the user's AI platform, loads one accepted brand-package
+  version, and reviews the editable description in the available browser with current/proposed views,
+  mobile/desktop inspection, and iterative feedback before delivery.
+- Separates local review UI from description/schema payloads, infers reversible preview choices when
+  the task is clear, and retains exact product identity, claim fencing, live confirmation, audit, rollback,
+  and the unchanged `mode=refresh` workflow.
+- Clarifies that brand layout/writing preferences override recipe defaults; store contracts and factual
+  evidence still apply. Adds portable browser guidance to the explicit trusted-catalog allowlist.
+
 ## 0.29.3 — Brand-aware ad drafting and correction (unreleased)
 
 - Add `/aeko-create-ad-copy` with accepted skill/eval/Wiki loading, scoped brand guidance,

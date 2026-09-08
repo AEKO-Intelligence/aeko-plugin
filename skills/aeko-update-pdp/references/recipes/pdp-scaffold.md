@@ -6,7 +6,10 @@ load_when: SKILL.md §5 generates HTML for any image_strategy
 
 # PDP HTML scaffold
 
-Skeletal — adapt per brand voice + Plan.md prose. Section names should be localized per `frontmatter.target_language`.
+Skeletal — adapt to accepted brand instructions, relevant examples, and Plan context under SKILL.md
+precedence. Section order is a default; do not impose it on a customized brand layout. Section names should
+be localized per the resolved target language. This scaffold represents the editable description, not the
+native gallery, variants, buy controls, or storefront theme.
 
 ```html
 <section class="aeko-hero">
@@ -37,7 +40,7 @@ Skeletal — adapt per brand voice + Plan.md prose. Section names should be loca
 - **`preserve_existing`:** call `aeko_get_product_description(integration_id, external_product_id)` to fetch
   the raw editable description HTML. Keep `<new_structured_section_html>` as its own value and validate only
   that new section against the responsive contract. Build the full preview/write value exactly once as
-  `<existing_html>` + `\n<!-- AEKO structured content -->\n` + `<new_structured_section_html>`. Never treat
+  `<existing_html>` + `\n<!-- AEKO appended -->\n` + `<new_structured_section_html>`. Never treat
   that full value as the new section or append it to `<existing_html>` again. The live API has no append
   primitive: this is a high-risk full-field replacement and is unavailable unless the saved `before.html`,
   byte-identical prefix, nondecreasing `<img>` count, JSON-LD merge, and stale-base gates all pass. JSON-LD
@@ -54,4 +57,7 @@ else.
 
 ## Brand-specific override
 
-If `references/examples/pdp-html-example.html` exists, use its section ordering, heading copy, and class-name conventions in place of the scaffold defaults. Acceptance gates in `responsive-html-contract.md` still apply on top.
+If an applicable brand-owned `references/examples/pdp-html-example.html` exists, use its section ordering,
+heading copy, and class-name conventions in place of scaffold defaults. Explicit task/brand instructions
+take precedence over examples. Layout/schema, evidence, and execution gates in
+`responsive-html-contract.md` still apply; its writing defaults remain customizable.
