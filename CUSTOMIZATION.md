@@ -139,6 +139,29 @@ or platform integration. Source examples shape style/structure; they are never f
 customer experience, or permission to repeat prices and claims without current evidence.
 Inspect `Refs loaded` and the brand-eval results to verify the chosen files actually applied.
 
+### PDP browser sessions
+
+Run `/aeko-update-pdp domain_id=<uuid> product_id=<opaque-external-id>` in Claude, Codex, or your other
+AI platform. AEKO's product checks provide Claude, Codex, and Copy Skill Command actions. The app does
+not generate a PDP brief or host/execute the preview.
+
+The skill loads the accepted canonical PDP skill, relevant Wiki evidence, and applicable evals from one
+pinned brand package, then inspects the current page and opens a responsive description preview. The
+review provides current/proposed views, a change list, and mobile/desktop widths. Browser capabilities are
+detected at runtime; an OS/local-file fallback is labeled honestly when the host cannot inspect it.
+
+Customize section order, typography, spacing, and writing length in the selected brand-owned package.
+For this skill, explicit task and standing brand rules take precedence over scoped voice rules, brand
+examples, generated Plan context, and generic recipes, in that order. Contradictory explicit rules need
+resolution. Recipe word counts and scaffold ordering are defaults; valid responsive HTML/JSON-LD,
+factual evidence, exact product identity, claims, and live-write confirmation remain required.
+
+The editable scope is product-description HTML plus supported schema/SEO fields. Native galleries,
+variants, purchase controls, and theme layout require separate storefront capabilities. Review controls
+never enter the store payload. Feedback can revise the local preview immediately; lasting preferences
+are proposed for the same brand-owned package and do not silently alter upstream instructions.
+`mode=refresh` retains its existing rating/count-only JSON-LD workflow.
+
 ## Automated updates and rollback
 
 Automatic evolution is a backend service alongside manual editing. The accepted implementation

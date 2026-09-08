@@ -1,20 +1,15 @@
 ---
 name: aeko-update-pdp
 description: >
-  PDP executor for an Action-tab item or a direct domain-and-product handoff,
-  plus mode=refresh for surgical review JSON-LD maintenance. Normal mode builds
-  previewed responsive HTML and schema; refresh mode patches only ratingValue
-  and reviewCount while preserving all non-JSON-LD HTML bytes.
+  Improve an existing PDP description and metadata in the user's AI platform.
+  Load the brand's accepted customization, inspect the page, and review responsive
+  browser previews before delivery. Accepts an Action item or exact domain/product
+  command; mode=refresh only patches review rating/count JSON-LD.
 argument-hint: "<item-id> | domain_id=<uuid> product_id=<id> | mode=refresh <product-id> [integration-id]"
 allowed-tools: aeko_list_action_items, aeko_create_action_item, aeko_claim_action_item, aeko_release_action_item, aeko_get_action_plan, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_list_store_integrations, aeko_update_product_page, aeko_revert_store_write, aeko_list_store_writes, aeko_complete_action_item, Read, Write, WebFetch, Bash, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO Update PDP
-
-Before work, read [the brand execution contract](references/brand-execution-contract.md).
-Preserve the exact task prompt and apply only this brand's selected rules, evals, and examples.
-Use [the output evaluation rubric](references/brand-output-eval.md) plus the selected brand evals
-when checking the exact result; report missing inputs/checks as unavailable.
 
 ## Mode routing
 
@@ -30,11 +25,22 @@ schema field.
 Without `mode=refresh`, continue with the normal executor below. Normal PDP output remains AEO content,
 never CTA voice; the store owns purchase actions.
 
-Executes one Action-tab PDP item end-to-end: claim the item → fetch Plan.md → ask optimization scope and image
-strategy → generate responsive HTML + JSON-LD → show a local preview → ask where it should go → mark complete.
-Nothing reaches a connected store before the preview and the user's delivery choice.
+For normal mode, read [the brand execution contract](references/brand-execution-contract.md).
+Preserve the exact task prompt and apply only this brand's selected rules, evals, and examples.
+Use [the output evaluation rubric](references/brand-output-eval.md) plus the selected brand evals
+when checking the exact result; report missing inputs/checks as unavailable. Refresh mode retains its
+separate workflow and does not enter package loading, rewriting, or the browser review loop below.
 
-Two optimization scopes the user chooses up front:
+AEKO supplies the skill command. Execute this session in Claude, Codex, or the user's other AI platform:
+claim the item → load its Plan and accepted brand context → inspect the current page → build a responsive
+description preview → open and check it in a browser → revise with the user → deliver the selected version.
+The app does not generate a PDP brief, host a preview, or execute this workflow.
+
+Supported changes are the **editable product description and supported JSON-LD/SEO metadata**. Native
+gallery, price/variant selectors, purchase controls, navigation, and theme layout remain storefront-owned.
+Any illustrative store shell in a preview must be labeled as context; do not imply these tools can apply it.
+
+Two optimization scopes:
 - **`content_and_metadata`** — rewrite the product-page copy to AEO standards AND emit structured data / meta. The full pipeline (image strategy, AEO frameworks, copy generation).
 - **`metadata_only`** — leave the merchant's visible description copy untouched; consolidate and optimize
   the machine-readable layer (eligible Product / FAQPage / Review JSON-LD + `<meta>` tags) so AI engines can
@@ -49,13 +55,15 @@ does not yet formalize those sections, so this skill never cites its TODO headin
 ## Marketer-facing output contract
 
 Frame this as "improving a product page so AI shopping/search tools can understand and cite it." Say up front
-that the first result is a local preview. After the preview, ask one delivery question. Before a live update,
+that the first result is a local preview. After review, resolve the user's delivery choice once. Before a live update,
 show Before / After / Risk / Undo and ask for a second explicit confirmation. Do not show raw Plan frontmatter,
 `execution_class`, or schema internals unless debugging.
 
 Language: mirror the user's chat language for user-facing steps, summaries, questions, and risk/undo copy.
 Keep slash commands, IDs, file paths, channel slugs, schema keys, JSON-LD terms, and tool names in English/ASCII.
-When a Plan includes `target_language`, use it for generated PDP content; do not let it override the assistant UI language.
+Resolve PDP language from the explicit task and accepted market guidance, falling back to the Plan's
+`target_language`. Record any explicit override separately from the unchanged Plan; never derive content
+language from dashboard/chat language alone. References to target language below mean this resolved choice.
 
 ## Input
 
@@ -72,11 +80,12 @@ If neither complete form is present, stop and show:
 
 ## Step 0 — Load tools and resolve direct mode
 
-Before any tool call, issue exactly one deferred-tool search for the full run:
-
-```text
-ToolSearch(query="select:aeko_list_action_items,aeko_create_action_item,aeko_claim_action_item,aeko_release_action_item,aeko_get_action_plan,aeko_get_product_description,aeko_list_review_integrations,aeko_get_product_reviews,aeko_list_store_integrations,aeko_update_product_page,aeko_revert_store_write,aeko_list_store_writes,aeko_complete_action_item,WebFetch", max_results=20)
-```
+Resolve the Action, store-description, review, package-read, and delivery tools listed in `allowed-tools`
+through the host's available tool discovery. Reuse tools already loaded; use deferred search only when the
+host provides it. Do not assume `ToolSearch`, `WebFetch`, `Bash`, or browser APIs exist under those exact
+names in every AI platform. Read the available tool signatures before calling their host equivalents.
+Missing required Action claim/source tools stop normal execution before generation; browser fallbacks are
+specified separately in `references/browser-review.md`.
 
 ### Existing-item mode
 
@@ -156,6 +165,8 @@ Call `aeko_get_action_plan(item_id)`. Parse YAML frontmatter + prose body.
 - `execution_class == "store_write_artifact"` — else redirect: `technical_artifact` → `/aeko-fix-technical`, `local_content_artifact` → `/aeko-create-content`.
 - `status == "ready"` — the claim lives separately, so Plan status remains `ready`; any other status means
   token-matched release and stop.
+- The returned `item_id` must equal the claimed item. In direct mode, `domain_id` must equal the command's
+  domain exactly; otherwise release and stop before loading another domain's context.
 - `write_target` consistency: must pair with `write_mode` as stamped in the Plan —
   `shadow_product ↔ shadow`, `append_below_existing ↔ live`, `preview_only ↔ local`. Mismatch → stop. This
   is an inline compatibility check, not a claim that the shared contract's TODO section is authoritative.
@@ -171,18 +182,52 @@ Print the header in the user's chat language:
 3. Safety — KO: "먼저 로컬 미리보기를 만듭니다. 확인 전에는 스토어가 바뀌지 않습니다." / EN:
    "I'll create a local preview first. Nothing changes in the store until you review it."
 
-Print prose body verbatim. Never echo raw frontmatter.
+Summarize the relevant objective and proposed scope briefly; keep the Plan as internal execution context.
+Never echo raw frontmatter or require the user to review a brief before the preview.
 
-## Step 2 — Resolve content context
+## Step 2 — Load accepted brand customization and content context
+
+Use the package discovery/read tools in the brand execution contract for `frontmatter.domain_id`.
+Discover available host tools by capability; tool namespaces and deferred-search syntax vary by host.
+The supported read adapters are `aeko_get_active_brand_package`, `aeko_get_brand_package_version`,
+`aeko_read_brand_package_file`, `aeko_list_brand_wiki_pages`, and `aeko_get_brand_wiki_page`.
+
+1. With no prior pin, call `aeko_get_active_brand_package(domain_id, offset=0, limit=50)` once and retain
+   the returned package ID/version/digest. Read further member pages through
+   `aeko_get_brand_package_version(domain_id, version=<pinned version>, offset=<next_offset>, limit=50)`;
+   require the same ID/digest throughout. For an existing exact pin, use that version from the start.
+2. Select canonical `aeko-update-pdp` and applicable eval/wiki members from that manifest; never substitute
+   a similarly named legacy automation document. Read complete selected instructions and required support
+   files with `aeko_read_brand_package_file(domain_id, package_version, package_digest, package_slug,
+   path, offset, max_bytes=8192)`, following each returned `next_offset` unchanged. Read through the same
+   pin throughout revisions; do not recursively restart the skill or acquire another Action claim.
+3. Resolve declared Wiki paths and scope from the pinned package. Wiki discovery/detail tools describe
+   the current accepted version; if that version differs from the pin, do not mix its authority or bytes
+   into this run. Use the pinned page's preserved authority/provenance or report it unavailable.
+4. Apply product/market facts only within their stated scope. `brand_preference` can guide layout/voice;
+   `external_observation` and `proposed` remain attributed observations. Load relevant brand examples only,
+   within the contract's five-example/32 KiB cap. Record package and eval provenance for the local receipt.
+
+A verified local package export can supply these bytes under the contract's manifest/hash checks.
+If required customization cannot be loaded, report it unavailable and release the claim before stopping.
+If the accepted manifest has no customized canonical PDP command, the contract permits the trusted
+self-contained upstream fallback; state that fallback and its hashes. OAuth alone is not evidence that
+customization loaded, and unavailable required brand evals never count as passing.
 
 Do not call legacy identity tools. Extract content/PDP context from
 frontmatter + prose: `context`, `use_case`, `buyer_context`, `pain_points`, `desired_outcome`, `tone`,
 `positioning`, `must_include`, `forbidden`, and `sections_required`. This is **context-only**. If context is thin, continue with product facts, OCR, reviews, and a neutral
 evidence-first voice.
 
-## Step 2.5 — Optimization scope (ask user — FIRST question)
+## Step 2.5 — Resolve optimization scope
 
-Ask this **before** the image-strategy question. It decides whether we touch the merchant's copy at all.
+Use an explicit task choice first, then applicable accepted brand guidance and the Plan's requested work.
+For a bare domain/product command, proceed with a reversible `content_and_metadata` preview and state that
+assumption. An explicit request to keep copy unchanged selects `metadata_only`. Do not ask the user to
+repeat a scope already clear from the conversation. Ask the choice below only when contradictory requests
+or missing scope would materially change the intended result; preview work itself needs no extra approval.
+
+When clarification is necessary, resolve it before an image-strategy question.
 Ask in the user's chat language; for languages other than KO/EN, translate the EN template naturally while
 keeping the option numbers unchanged.
 
@@ -209,16 +254,21 @@ Reply with a number or describe the direction you want.
 Store as `optimization_scope ∈ {content_and_metadata, metadata_only}`.
 
 **How the scope changes the rest of the run:**
-- `content_and_metadata` → proceed normally: ask image strategy (Step 3), run the full AEO copy generation (Step 5.1), honor `must_include` / `sections_required` in the visible body.
+- `content_and_metadata` → resolve image strategy (Step 3), run the full AEO copy generation (Step 5.1), honor `must_include` / `sections_required` in the visible body.
 - `metadata_only` → SKIP the image-strategy question (Step 3); force `image_strategy = preserve_existing` internally and never rebuild. In Step 5, do NOT rewrite or reorder the merchant's description copy or claim to change its headings. Generate Product JSON-LD and SEO meta fields (title/description where the Plan asks). Add FAQPage or Review/AggregateRating only when the exact Q&A/review facts already appear in readable visible content on the unchanged page; Context reviews alone never justify hidden schema. `must_include` / `forbidden` are validated against the eligible JSON-LD + meta output, not by injecting copy into the visible body. `sections_required` acceptance is waived (no new body sections are authored).
 
 For `metadata_only`, the preview and any later live update must keep the existing description body unchanged.
 Only the approved JSON-LD and meta fields may differ.
 
-## Step 3 — Image strategy (ask user — content_and_metadata scope only)
+## Step 3 — Resolve image strategy (content_and_metadata only)
 
 **Skip this step when `optimization_scope == metadata_only`** (force `image_strategy = preserve_existing`,
-proceed to Step 4). Otherwise ask in the user's chat language. Use the matching KO/EN template below when
+proceed to Step 4). Otherwise use an explicit task/brand choice when available. For a bare command,
+start with `preserve_existing` and propose a new structured description section using existing evidence.
+Do not silently rebuild or replace merchant content. A request to redesign the description using its current
+images selects `rebuild_from_existing`; a request supplying new local images selects `rebuild_with_local`.
+State the chosen approach briefly and proceed to the preview. Ask below only when that choice is unresolved.
+Use the matching KO/EN template below when
 applicable; for other languages, translate the EN template naturally while keeping option
 numbers unchanged.
 
@@ -261,11 +311,24 @@ store-accessible URL and reject the payload if any placeholder, data URI, or loc
 
 ### Source-of-truth description — all scopes and strategies
 
-Before inspecting the public page, resolve the Plan's exact `integration_id` and external `product_id`, then
+Before inspecting the public page, resolve the Plan's exact `integration_id` and external `product_id`.
+In direct mode, require the resolved domain and opaque external product ID to match both input arguments
+exactly before reading or writing that product. Never resolve an identity mismatch by title or similar URL.
+Then
 call `aeko_get_product_description(integration_id, product_id)`. Strip only the tool's surrounding markdown
 fence; bind the enclosed bytes as `current_description_html`. Never bind this variable from `WebFetch`, the
 rendered live page, or Plan prose. Record `current_description_length` and `current_description_img_count`
 from this exact value.
+
+For `preserve_existing`, if that base already contains `<!-- AEKO appended -->` or the legacy
+`<!-- AEKO structured content -->` marker, do not append another generated section. Resolve metadata-only
+or an explicitly requested rebuild for this revision; never remove an earlier section under preservation.
+
+Read [browser review guidance](references/browser-review.md). For `content_and_metadata`, open the public
+`target_url` read-only using the host's available browser and inspect its desktop/mobile structure, including
+where the editable description sits. This also applies to `rebuild_with_local`. Capture the useful layout
+constraints and current problems. A blocked public page is an evidence gap, not permission to invent its
+layout; continue from the exact store description when the other evidence gates permit it.
 
 Extract every JSON-LD script from the source description with case-insensitive HTML-attribute parsing that
 recognizes both `type="application/ld+json"` and `type='application/ld+json'`, regardless of attribute order
@@ -358,11 +421,13 @@ fact that appears nowhere else.
 
 ### 5.0 Load references (on-demand)
 
-Before generating, load these reference files in order. Anthropic progressive-disclosure pattern — recipe detail loads only when this step runs.
+Before generating, load these relative reference paths from the selected pinned skill package, or the
+disclosed trusted upstream fallback. Do not mix an installed customer example into another brand's package.
+Recipe detail loads only when this step runs.
 
 1. **Always:**
    - `Read references/recipes/pdp-scaffold.md` — HTML scaffold + strategy-branch behavior.
-   - `Read references/recipes/responsive-html-contract.md` — hard rules (no JS, no action elements, citability baseline, pending-verification handling).
+   - `Read references/recipes/responsive-html-contract.md` — layout/schema rules, citability defaults, and pending-verification handling.
    - `Read references/recipes/json-ld-schemas.md` — Product / FAQPage / Review requirements + FAQ source priority.
 
 2. **If they exist (silent skip otherwise):**
@@ -375,6 +440,11 @@ Before generating, load these reference files in order. Anthropic progressive-di
 brand examples > generated Plan/content context > generic recipe defaults. Actual responsive/schema,
 claim ownership, and write-confirmation contracts remain required.
 
+Accepted brand section order, typography, spacing, and passage length can replace recipe defaults.
+Examples cannot override explicit rules, facts, claim ownership, or live-write gates. Apply this same
+precedence in the scaffold, responsive reference, and `CUSTOMIZATION.md`; a generic recipe must not
+silently outrank the accepted brand's instructions.
+
 The Step 9 summary must list which reference files were loaded so the user can verify their exemplars are picked up.
 
 ### 5.1 Apply
@@ -386,8 +456,8 @@ The Step 9 summary must list which reference files were loaded so the user can v
   machine-readable layer: `json_ld_payload` (the fully preserved/merged Product / FAQPage / Review graph),
   `meta_title`, and `meta_description`. Context
   reviews may help assess positioning but must not create hidden FAQ/review claims in this scope. Do not insert visible
-  headings or body copy. For the local preview only, render the unchanged description together with a clearly
-  labeled, non-editing inspector block that shows the proposed JSON-LD/meta values; keep the store-write
+  headings or body copy. Keep `pdp.html` as the unchanged description preview. In the separate `review.html`
+  shell, show a clearly labeled, non-editing inspector with proposed JSON-LD/meta values; keep the store-write
   payload separate. Skip the BLUF/PREP copy-writing below, skip `sections_required`, and validate
   `must_include` / `forbidden` against JSON-LD + meta. Then continue to Step 5b.
 - `content_and_metadata` → run the full generation below.
@@ -476,20 +546,42 @@ then **always** write the finalized preview HTML to
 `./aeko-artifacts/<frontmatter.domain_id>/<frontmatter.item_id>/pdp.html`. Skipping the questions when there
 is nothing to verify must never skip this write.
 
+Keep the description payload, JSON-LD/meta proposal, and review interface separate. `pdp.html` is the
+standalone description preview; `review.html` is a local review shell with current/proposed views and a
+concise change list as described in the browser reference. Never send shell controls, viewport frames,
+annotation text, or metadata inspector UI as `description_html`.
+
 For `preserve_existing`, validate the newly authored section by itself against the responsive contract. The
 combined local preview may contain merchant-authored elements forbidden in new AEKO HTML; report those as
 preserved, never strip or rewrite them.
 
-## Step 6 — Local preview
+## Step 6 — Open, inspect, and revise the preview
 
-Open the HTML in the default browser for review:
-- macOS: `Bash(open ./aeko-artifacts/<domain_id>/<item_id>/pdp.html)`
-- Linux: `Bash(xdg-open ./aeko-artifacts/<domain_id>/<item_id>/pdp.html)`
+Follow [browser review guidance](references/browser-review.md): prefer the AI platform's available browser,
+with a local/default-browser fallback only when needed. Offer current/proposed views, a concise change
+list, and mobile/desktop widths. Inspect the actual rendered proposal; writing responsive CSS or opening
+a tab alone is not verification. Fix observed layout issues and recheck affected widths.
 
-## Step 7 — Ask where the preview should go
+Present the preview with the main changes and invite focused feedback. Apply each requested revision to
+the same product and pinned brand context, regenerate the artifacts, rerun applicable brand/content checks,
+and inspect the revised result. Do not complete the item or enter live delivery while revision feedback is
+pending. User-directed revisions start a new review pass; the shared eval contract's bounded automated
+correction rule still applies within each pass. Keep lasting preferences in the local feedback receipt for
+the brand-owned update process; do not silently change the installed skill or activate brand rules.
+
+For `metadata_only`, the review shows the unchanged description and the schema/meta diff; do not propose
+visual redesigns or imply that the page layout improved. If browser inspection is unavailable, label that
+check unavailable and retain the preview for manual review. Never report an unobserved responsive pass.
+
+## Step 7 — Deliver the reviewed revision
+
+Continue after the user has reviewed the current revision. If the user already chose preview-only or asked
+to apply that exact revision, use that choice instead of asking it again. A request to apply enters the
+Before/After/Risk/Undo confirmation below; it does not bypass it. Any content revision invalidates an earlier
+live-write confirmation. Otherwise ask the delivery question below.
 
 The standard MCP surface has no private-draft creation operation. Do not advertise or probe a pseudo-draft
-branch. Ask exactly one delivery question in the user's chat language:
+branch. When the delivery choice is unresolved, ask once in the user's chat language:
 
 **KO**
 ```text
@@ -600,7 +692,7 @@ Set `delivery_mode="preview_only"`. Make no store call. Continue to Step 8.
 aeko_complete_action_item(
     item_id=frontmatter.item_id,
     artifact_summary="<one-line: artifact + delivery mode + audit id if any>",
-    artifact_paths=[<absolute paths of pdp.html + any image files + before.html when live was attempted>],
+    artifact_paths=[<absolute paths of pdp.html, review.html, review receipt, any image files + before.html when live was attempted>],
     write_result={
         "mode": "<current_product | preview_only>",
         "audit_id": "<from write response; null for preview_only>",
@@ -626,6 +718,8 @@ Only complete if:
   Audit ID:      <audit_id>         (revert: aeko_revert_store_write("<audit_id>"))
   Admin URL:     <admin_url>
   Artifact:      <pdp.html path>
+  Browser review: <review.html path; actual checked widths and remaining limits>
+  Brand context: <accepted package version/digest or disclosed upstream fallback; eval results>
   AI-readable:   product facts, review proof, FAQ, shopping facts AEKO could verify
   Refs loaded:   recipes/{pdp-scaffold,responsive-html-contract,json-ld-schemas}.md
                  + examples/pdp-html-example.html  (when present)
@@ -682,7 +776,8 @@ Next: /aeko-action-center <domain_id> pdp
 - Never handles Technical or Content items (redirect to sibling executors).
 - Never hallucinates product copy from blank OCR.
 - Never omits alt text on an `<img>`.
-- Never uses JavaScript in generated HTML.
+- Never uses executable JavaScript in the product description. Local review-shell controls may use
+  isolated UI code under the browser reference; none of it enters a store payload.
 - Never regenerates the Plan.md; fetch once, follow it.
 - Never reads machine values from prose body.
 - Never echoes raw frontmatter.

@@ -193,6 +193,7 @@ PACKAGE_ALLOWLIST = {
         "SKILL.md",
         "references/brand-execution-contract.md",
         "references/brand-output-eval.md",
+        "references/browser-review.md",
         "references/examples/README.md",
         "references/examples/json-ld-preferences.json",
         "references/examples/pdp-html-example.html",
