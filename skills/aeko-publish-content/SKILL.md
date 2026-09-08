@@ -1,262 +1,210 @@
 ---
 name: aeko-publish-content
 description: >
-  Backend-first publisher for content variations saved by
-  `/aeko-create-content` (or any other authoring flow that calls
-  `aeko_save_content_variation`). Looks up saved rows for an item_id,
-  asks the user which destination to publish when more than one exists,
-  and calls the single backend publish route — which branches per
-  destination: `aeko_shop` → live publish via the existing aeko.shop
-  pipeline; `own_store_blog` → AEKO-owned draft row only (never calls
-  Cafe24/Shopify live APIs). Other channels (tistory, naver_blog,
-  social, editorial) remain generation-only — clients post them
-  themselves.
+  Interactive publisher and takedown workflow for backend-saved content
+  variations. Publishes aeko_shop rows to the public aeko.shop post, creates
+  own_store_blog rows as AEKO-owned drafts only, and can unpublish the exact
+  item-scoped aeko.shop post. Detects live overwrite risk across every row,
+  names the target URL, and requires same-turn human confirmation.
 argument-hint: "<item-id>"
-allowed-tools: aeko_list_content_variations, aeko_publish_content_variation, aeko_update_content_variation
+allowed-tools: Read, aeko_list_content_variations, aeko_publish_content_variation, aeko_update_content_variation, aeko_unpublish_content, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO Publish Content
 
-Runs after `/aeko-create-content` (or after any other flow that saved publishable variations to the AEKO backend). Picks a saved variation row for the item_id, confirms with the user, and calls the single backend publish route. The backend branches on the row's destination — `aeko_shop` publishes live; `own_store_blog` creates an AEKO-owned draft row the user can push to their connected store later.
+Before work, read [the brand execution contract](references/brand-execution-contract.md).
+Preserve the exact task prompt and apply only this brand's selected rules, evals, and examples.
+Use [the output evaluation rubric](references/brand-output-eval.md) plus the selected brand evals
+when checking the exact result; report missing inputs/checks as unavailable.
 
-**Key change from earlier versions of this skill:** the publish source-of-truth moved from local disk files to backend `content_variations` rows. The skill no longer scans `./aeko-artifacts/`, no longer reads `.meta.json`, no longer parses HTML for product IDs. Every payload field comes from the stored row. This means the skill works cross-machine, cross-session, and from any authoring flow that calls `aeko_save_content_variation` — not just `/aeko-create-content`.
+Publish one backend-saved variation for an exact action `item_id`, or remove that item's aeko.shop post.
+Mirror the user's language; keep IDs, URLs, destination slugs, tool names, and commands ASCII.
 
-## Marketer-facing output contract
+If invoked from a schedule, routine, cron wrapper, or any context without a present user, stop immediately.
+There is no `non_interactive` bypass. Every publish, overwrite, draft creation, and unpublish requires a fresh
+same-turn human confirmation after the complete risk block.
 
-This is a publish flow, so be explicit before any publish call: destination, live-vs-draft status, what changes,
-risk, and undo/revision path. Never publish automatically after listing rows; require the user to pick/confirm.
+## Truth and capability boundaries
 
-Language: mirror the user's chat language for user-facing steps, summaries, questions, confirmations, and risk/undo copy.
-Keep slash commands, IDs, file paths, destination slugs such as `aeko_shop`, schema keys, and tool names in English/ASCII.
+- Backend `content_variations` rows—not local artifacts—are the publish source. Their stored title,
+  `body_html`/`body_markdown`, and metadata snapshots are sent onward as stored. Product snapshot name,
+  price, and availability are **not** re-joined against live store products before publish.
+- The list response deliberately omits raw bodies. Say that before confirmation; never imply the human saw
+  copy this skill cannot display. Require the user to affirm they reviewed the chosen variation in the
+  authoring flow/dashboard.
+- `aeko_shop` is a live public post. `own_store_blog` creates/updates an AEKO-owned draft row only and never
+  calls Cafe24/Shopify CMS.
+- If a required tool is absent from the current session, stop and name it. MCP wrappers return failures as
+  strings; do not describe model-side `try/except` or `MethodNotFound` handling.
 
-> **Backend prerequisite.** This skill requires `aeko_list_content_variations` and `aeko_publish_content_variation`. If either is missing from the current MCP session, the user's connector is stale or unavailable; Step 0 explains that plainly before any publish prompt. The companion tool `aeko_save_content_variation` is called by `/aeko-create-content`; this skill never calls it directly.
+Require `item-id`. If missing, route to `/aeko-action-center <domain_id> content` or
+`/aeko-create-content <item_id>` and stop.
 
-## Input
+## Step 1 — inspect every relevant row and the live-post state
 
-- `item-id` (required) — `$1`. If missing, stop and point the user to `/aeko-action-center <domain_id> content` to discover the item, or to `/aeko-create-content <item_id>` if drafts don't exist yet.
+Call all three, each with `limit=50`:
 
-## Step 0 — Backend availability preflight
-
-Wrap the first MCP call in a try/except. If Step 1's `aeko_list_content_variations` call raises `MethodNotFound` / "tool not found" / equivalent, stop and explain in the user's language that the AEKO MCP connector is stale or unavailable. Tell them to reconnect the AEKO connector or retry after the hosted connector is redeployed. Saved drafts are preserved; no re-drafting is needed.
-
-Apply the same try/except pattern around Step 6's `aeko_publish_content_variation` call.
-
-## Step 1 — Fetch saved variations for the item
-
-Call:
-
-```
+```text
 aeko_list_content_variations(item_id=<item_id>)
+aeko_list_content_variations(item_id=<item_id>, destination="aeko_shop", status="published")
+aeko_list_content_variations(item_id=<item_id>, destination="own_store_blog", status="published")
 ```
 
-Three branches on the returned row count:
+The destination/status queries prevent a newly saved row from hiding an older published row. Zero rows
+stops with `/aeko-create-content <item_id>`. Present selectable saved/failed rows by destination, newest
+first, with exact `variation_id`, title, created time, status, and metadata summary. Single-select only.
 
-### 1.a — Zero rows (no saved variations)
+When **any** aeko.shop row is published, resolve the stored live handle before offering another publish:
+call `aeko_publish_content_variation` on that already-published row only. The backend's published-row branch
+is an idempotent stored-result lookup and must return its stored `aeko_shop_url` and `post_id` without
+rendering. If the row was not already `published`, do not use this lookup. If the URL/post ID is missing or
+the lookup fails, block overwrite because the live target cannot be named.
 
-Stop with a user-language actionable message:
+If a selected row itself is already published, offer to show that stored result or enter the unpublish flow;
+never pretend re-publishing the same row refreshes the page.
 
-- EN:
-  ```
-  No saved variations for <item_id>.
+## Step 2 — preview the exact effect
 
-  To publish via this skill:
-    1) Run /aeko-create-content <item_id>
-    2) When asked "Save N publishable variation(s) to AEKO backend?", answer Y.
-       Both aeko_shop and own_store_blog drafts get saved if they were generated.
+Load this brand's applicable rules/evals before confirmation. A saved row is not proof those
+checks passed. The current list API hides raw bodies: do not report a fresh body-level eval
+from flags, a title, or an unbound local file. For a required brand check, require an exact-version
+validation receipt bound to the selected stored payload or a supported read of that payload.
+If neither is available, mark `brand_eval_unverifiable` and stop publication; return to the
+authoring flow for a reviewable draft. A user's review affirmation remains required but does
+not manufacture an automated validation receipt. Unpublish still follows its separate flow.
 
-  If you used a different authoring flow, make sure it called
-  aeko_save_content_variation under this item_id.
-  ```
-- KO:
-  ```
-  <item_id>에 저장된 변형본이 없습니다.
+Build the plan only from list/lookup responses:
 
-  이 스킬로 게시하려면:
-    1) /aeko-create-content <item_id> 실행
-    2) "N개의 게시 가능한 변형본을 AEKO 백엔드에 저장할까요?"에 Y로 답변하세요.
-       aeko_shop과 own_store_blog 초안이 모두 생성되었다면 함께 저장됩니다.
-
-  다른 작성 플로우를 사용한 경우, 해당 플로우가 동일 item_id로
-  aeko_save_content_variation를 호출했는지 확인해 주세요.
-  ```
-
-Exit 0; no error.
-
-### 1.b — Single row
-
-Auto-pick. Skip directly to Step 5 (confirm) with the row's `variation_id` and `destination`.
-
-### 1.c — Multiple rows (e.g., both `aeko_shop` and `own_store_blog`, or two `aeko_shop` versions)
-
-Present a numbered list grouped by destination, newest-first. Show `variation_id` (short prefix), `title`, `created_at`, `status`:
-
-```
-Saved variations for <item_id>:
-
-aeko_shop (M)
-  1) <variation_id_prefix>  — <title>  · <created_at>  · status=<status>
-  2) <variation_id_prefix>  — <title>  · <created_at>  · status=<status>
-
-own_store_blog (N)
-  3) <variation_id_prefix>  — <title>  · <created_at>  · status=<status>
-
-Pick a number to publish (or `cancel`):
-```
-
-Parse the reply to a single `variation_id`. (Multi-publish — picking more than one row in one shot — is a v2 follow-up; v1 is single-select. If the user wants to publish two destinations, they re-run this skill.)
-
-If the user picks a row whose `status == 'published'`, tell them it is already published and ask: `This variation is already published. Show stored publish result? [Y/n]`. Default `Y` → continue to Step 6 so the backend returns the stored `aeko_shop_url`/`post_id` or `draft_id` without creating duplicates. `n` → exit silently.
-
-## Step 5 — Confirm
-
-Print a one-block summary built from the row's `meta_summary` and other list-response fields. No local file reads — every field is from the stored row.
-
-```
+```text
 Publish plan
-  Where it goes:       <"aeko.shop live post" or "own-store blog draft row">
-  What will publish:   <variation.title>
-  Current status:      <variation.status>
-  Hero image:          <yes|no>
-  Product callouts:    <featured_products_count>
-
-Risk
-  <aeko_shop: This can update the live aeko.shop post for this item.>
-  <own_store_blog: This creates/updates an AEKO-owned draft, not the live store.>
-
-Undo / revise
-  Draft: edit the saved variation, then publish again.
-  Already live: regenerate a new variation with /aeko-create-content <item_id>, then publish it to overwrite.
+  Variation:       <variation_id> · <title>
+  Destination:     <aeko_shop live | own_store_blog AEKO draft>
+  Stored body:     HTML=<yes/no> · Markdown=<yes/no>
+  Body preview:    unavailable — this MCP release does not expose raw variation bodies
+  Hero snapshot:   <yes/no/unknown>
+  Requested product snapshots: <metadata count or unknown; not a verified linked count>
 ```
 
-Ask for confirmation in the user's chat language:
+When the exact requested featured-product count is zero, add:
 
-- EN: `Proceed with publish? [y/N]`
-- KO: `게시할까요? [y/N]`
-
-If declined → stop without sending anything. Skip this prompt only when an explicit `non_interactive` flag is passed by a caller (forward-compat; no such caller exists today).
-
-## Step 6 — Publish
-
-Wrap the call in the same try/except pattern as Step 0 (catch `MethodNotFound`):
-
-```
-aeko_publish_content_variation(
-    item_id=<item_id>,
-    variation_id=<variation_id>,
-)
+```text
+Catalog side effect
+  The publisher will select up to 12 recently updated store products and mark/link them as featured.
+  This can change as the catalog changes; a text-only post does not mean zero product links.
 ```
 
-The backend route reads the variation row server-side and branches on `destination`. The skill sends only `item_id` for item/variation matching — server is the source of truth for publish payload fields.
+Offer cancellation and `/aeko-create-content`/draft editing to specify exact products. Do not report this
+requested count as the number actually linked: snapshots lacking a name can be dropped, and the publish
+response returns no product count. If the requested count is unavailable rather than zero, block publish
+until the draft is re-saved with inspectable metadata; never guess whether the 12-product fallback will run.
 
-If the call fails:
+### First live publish
 
-- **`MethodNotFound` / tool unregistered** → emit the Step 0 stale-connector message and exit 0.
-- **4xx** — surface the backend message verbatim. Common cases:
-  - `403` Pro+ tier gate failed (enforced by `publisher.enforce_publish_gate`) — common for `aeko_shop`; rare for `own_store_blog` (no tier gate on draft creation).
-  - `409` business gate — `aeko_shop` only. Either `brand.aeko_shop_disabled = true` (per-brand opt-out) or an aeko.shop-side gate passed through with its detail. The variation stays `saved`. **Important:** for Pro/Enterprise accounts the publish entitlement is granted automatically *inside the same publish request*, so if the user still sees `brand is not on an active publishing tier`, the automatic grant was blocked (the brand's entitlement is owned by aeko.shop billing — e.g. it was claimed via self-verify). Do NOT advise re-running for this case — it will fail identically; tell the user to contact support. The `aeko_shop_disabled` case also has no self-serve toggle today — contact support as well. Surface the backend detail verbatim (with a Korean gloss when the chat is in Korean).
-  - `429` Rate-limited (>10 aeko.shop publishes / hour per brand).
-  - `502` Upstream aeko-shop error — re-run after the upstream recovers. Idempotent: re-running on the same `variation_id` is safe.
-  - `422` Adapter validation (e.g., `body_html` or `meta.og_description` missing for `aeko_shop` — this should be caught at save time, but if it slipped through, the variation needs to be re-saved with the missing field).
-- **`503` Service not configured** — the backend can't produce a clickable post URL (`AEKO_SHOP_PUBLIC_URL` unset). This is a **deployment-side** issue, **not retriable by the user**: surface the backend message and tell the user to contact support; do NOT advise re-running (it will fail identically until an operator fixes the config). The variation stays `saved`.
-- **5xx / network** (excluding the 503 above) → surface error + tell the user the publish was not recorded. Re-running is safe (idempotent).
+State that the row becomes a public aeko.shop post and that stored product snapshots may update the public
+catalog verbatim. Require both (a) the user says they reviewed the draft and (b) exact confirmation:
 
-On any failure, the variation row stays in its current state — tier/disabled/rate-limit failures leave it as `saved` (retriable); 422 and 502 may flip to `failed` server-side with `last_error` populated. Already-published rows return a normal success response with stored handles.
-
-## Step 7 — Report
-
-On success or an already-published stored-result response, print the report in the user's chat language:
-
-### For `destination == 'aeko_shop'`:
-
-EN:
-```
-Published to aeko.shop:    <aeko_shop_url>
-Post ID:                   <post_id>
-Variation:                 <variation_id>
-Status:                    published
-Featured products:         <N> linked to your live catalog
-Structured data:           Article + Product schemas regenerated at render time —
-                           ChatGPT / Claude / Perplexity / Gemini can cite the post
-                           and the linked products directly from the rendered page.
+```text
+PUBLISH <variation_id> TO AEKO.SHOP
 ```
 
-KO:
-```
-aeko.shop에 게시 완료:      <aeko_shop_url>
-포스트 ID:                  <post_id>
-변형본:                     <variation_id>
-상태:                       published
-연결된 상품:                실시간 카탈로그 <N>개 연결
-구조화 데이터:              Article + Product 스키마가 렌더링 시점에 재생성되어
-                            ChatGPT / Claude / Perplexity / Gemini가 본 포스트와
-                            연결된 상품을 직접 인용할 수 있습니다.
-```
+### Live overwrite
 
-**Do NOT nudge users to https://aeko.shop/connect-brand for now.** The only working claim path there is self-verify, which hands the brand's publish entitlement to aeko.shop billing (quota 0) — and the app-side automatic grant never overwrites billing-owned entitlements, so completing it would permanently 409-block this skill's publishing for the brand. Reinstate the soft "claim your brand" nudge only after the app-domains connect flow (account-lookup) ships or entitlement source precedence is decided. (Suspended 2026-06-11; original nudge copy lives in git history.)
+When any row for the item is already live, put this in the confirmation block—not elsewhere:
 
-### For `destination == 'own_store_blog'`:
-
-EN:
-```
-Saved as AEKO content draft:  <draft_id>
-Variation:                    <variation_id>
-Status:                       published (draft row created in aeko_content_drafts)
-
-This is a draft only — AEKO never auto-pushes to Cafe24 / Shopify CMS / your
-connected store. Push from the AEKO dashboard, or wait for the future
-auto-connector to land.
+```text
+LIVE OVERWRITE
+  Existing URL: <exact aeko_shop_url>
+  Existing post ID: <post_id>
+  Replacement variation: <variation_id> · <title>
+  NO VERSION HISTORY: the prior rendered title, body, hero, slug, and PostProduct links are deleted/
+                      overwritten and cannot be recovered through AEKO.
+  Body preview unavailable: confirm only if you reviewed this exact variation elsewhere.
 ```
 
-KO:
+Require `OVERWRITE <exact_aeko_shop_url> WITH <variation_id>`. A general “yes” is insufficient.
+
+### Own-store draft
+
+State that this writes an AEKO draft, not the live store. Require
+`CREATE OWN STORE DRAFT <variation_id>` before the call.
+
+## Step 3 — publish once
+
+Only after the exact same-turn confirmation call:
+
+```text
+aeko_publish_content_variation(item_id=<item_id>, variation_id=<variation_id>)
 ```
-AEKO 콘텐츠 드래프트로 저장됨:  <draft_id>
-변형본:                         <variation_id>
-상태:                           게시 완료 (aeko_content_drafts에 드래프트 행 생성)
 
-이는 드래프트일 뿐 — AEKO는 Cafe24 / Shopify CMS / 연결된 스토어로 자동
-게시하지 않습니다. AEKO 대시보드에서 직접 게시하거나, 자동 커넥터 출시를
-기다려 주세요.
+The backend row is the payload source, but not an independent truth source for product snapshot fields.
+Never fabricate a URL, post ID, draft ID, status, or linked-product count.
+
+## Unpublish — destructive takedown
+
+Use only when the user explicitly asks to remove the exact live post. Start from the tenant-scoped variation
+list and stored live-result lookup above. Derive, never accept free-form, `source_content_id` as
+`aeko-item:<item_id>`; never unpublish an arbitrary supplied source ID.
+
+Show:
+
+```text
+UNPUBLISH PLAN
+  Live URL: <exact stored URL>
+  Post ID: <post_id>
+  Source content ID: aeko-item:<item_id>
+  Effect: hides/removes the public aeko.shop post
+  Recovery caveat: content_variations.status remains published. Re-publishing the same variation returns
+                   the stored (now dead) URL and does not restore the post. Restoration requires saving and
+                   publishing a NEW variation for this item.
 ```
 
-If publish failed → hard stop with the backend error. The action item's completion state was already set by `/aeko-create-content`; this skill does not modify it.
+Require `UNPUBLISH aeko-item:<item_id> FROM <exact_url>`, then call
+`aeko_unpublish_content(source_content_id="aeko-item:<item_id>", item_id=<item_id>)`. Report only the tool's
+result and ask the merchant to verify the URL is no longer public. The backend's missing brand-scope
+authorization is a filed security defect; the exact owned-item derivation is an instruction-level
+mitigation, not a server guarantee.
 
-## Editing or updating a post
+## Error handling that matches MCP output
 
-There are two distinct edit paths depending on whether the variation has been published yet:
+The MCP client now preserves 409/422/429/502/503 labels when the backend does not provide richer detail.
+Prefer exact detail text:
 
-- **Edit a draft (not yet published).** Use `aeko_update_content_variation(variation_id, title?, body_html?, body_markdown?, metadata?)` to change a saved variation in place — tweak the body, fix `og_description`, swap the hero, add/adjust `featured_products` — without saving a whole new variation. Only the fields you pass change. The backend re-checks the `aeko_shop` contract on the merged result (non-empty `body_html`; valid `metadata` with `og_description` and an absolute-https `hero_image_url`) and returns 422 if it would break. A variation left in `failed` state is reset to `saved` on a successful edit so you can retry publish. Then publish as normal.
+- missing tool → stop; reconnect/redeploy the connector, then retry after the tool is present;
+- 403/tier detail → aeko.shop requires Pro+; own-store draft does not use that public tier gate;
+- 409 `aeko_shop_disabled` → stop and contact support because no self-serve toggle exists;
+- 409 inactive publishing-tier detail → the publish route creates/grants entitlement in the same request;
+  re-list and retry once. If it repeats, report the exact detail and escalate—do not claim billing ownership;
+- 422/missing body or metadata → edit/re-save the draft; do not retry unchanged;
+- 429 → wait for the stated window;
+- 502 with `Unknown product_source_id` → permanent payload problem; repair exact featured product IDs, do
+  not retry unchanged;
+- other 502, 500, or network failure → public state may be uncertain because aeko.shop can commit before the
+  AEKO response fails. Verify the known URL/storefront before republishing; never say “not recorded”;
+- 503/configuration detail → operator deployment issue; do not retry until fixed.
 
-- **Edit an already-published post.** aeko.shop posts are upserted by `source_content_id`, which is scoped to the **action item** (`aeko-item:{item_id}`) — so every variation of that item maps to the *same* live post. To change a published post, **re-run `/aeko-create-content <item_id>` to regenerate (this saves a NEW variation) and publish it**: because the key is item-scoped, publishing the new variation **overwrites the same live post in place** — the page re-renders, images/featured-products/JSON-LD regenerate, and a changed slug emits a 308 redirect from the old URL. This never creates a `…-2 / …-3` duplicate.
-  - **Re-publishing the *same* already-published variation is a no-op:** the backend returns the stored URL/post_id without re-rendering (it does not pick up edits). To push a change you must publish a *new* variation for the item — not re-publish the old one.
-  - **`aeko_update_content_variation` works only on a *not-yet-published* draft** (it returns 409 on a published variation). So the "edit then publish" path applies to drafts; for an already-live post, regenerate + publish.
+On ambiguous failure, do not claim the variation stayed saved or that the post is absent.
 
-> **No version history.** Variations are not snapshotted/recoverable after publish — re-publishing overwrites the live post and the previous rendered version is not retained. If you need to keep the prior copy, save it before overwriting. Published variations themselves are immutable via `aeko_update_content_variation` (returns 409); edit happens by re-publishing, not by mutating the published row.
+## Success report
 
-## Error paths
+For `aeko_shop`, print only structured response values: URL, post ID, variation ID, and status. Print
+`Featured products linked: unavailable — publish response does not return a count.` For `own_store_blog`,
+print draft ID/variation/status and repeat that it is an AEKO draft only.
 
-- Missing MCP tools (`MethodNotFound` at Step 1 or Step 6) → emit Step 0 stale-connector message; exit 0.
-- Zero saved variations → emit Step 1.a actionable message; exit 0.
-- User cancels at Step 1.c picker → exit 0 silently.
-- User declines at Step 5 → exit 0 silently.
-- Backend publish 4xx (tier / disabled / 422) → surface backend message; do not retry.
-- Backend publish 5xx / network → surface; instruct re-run; rely on idempotency.
+## Editing and overwrite semantics
 
-## Hard rules
+- A saved/failed draft may be edited with `aeko_update_content_variation`; metadata replacement must include
+  the complete metadata object. Require a same-turn exact before/after confirmation for that write.
+- Published variations are immutable through update. Every variation of one item uses
+  `source_content_id=aeko-item:<item_id>`, so publishing a **new** variation overwrites the one live post and
+  replaces its title/body/hero/slug and deletes/rebuilds all PostProduct rows.
+- Re-publishing the same published variation is a no-op stored-result lookup.
+- No version history exists. Save any required prior copy outside this skill before overwrite.
 
-- **Backend rows are the source of truth.** This skill never reads local `./aeko-artifacts/` files. The variation row's `body_html` / `body_markdown` / `metadata` ARE the publish payload — whatever is stored is what gets published.
-- **Single-select.** v1 publishes one `variation_id` per invocation. Multi-publish is deferred; users who want to publish both `aeko_shop` and `own_store_blog` simply re-run this skill.
-- **Never modifies the variation row from the skill.** Status transitions (`saved` → `published`, `saved` → `failed`) happen server-side inside the publish route's transaction.
-- **Never auto-posts to external stores.** `own_store_blog` creates an AEKO-owned draft only. No Cafe24, no Shopify CMS, no third-party APIs are called by this skill or by the backend route. The future auto-connector (separate ticket) will push from `aeko_content_drafts`.
-- **Never widens `allowed-tools`** to include disk reads, browser-bridge tools, or external-channel APIs.
-- **Idempotent.** Re-running on the same `(item_id, variation_id)` is safe — backend returns stored URL/draft_id on already-published rows without creating duplicates.
-- **Never read prose to extract machine values** — `post_id`, `aeko_shop_url`, `draft_id`, `status` come only from the structured MCP response.
+## Never
 
-## What this skill never does
-
-- Never writes to Tistory, Naver Blog, Instagram, TikTok, YouTube, or any external channel directly.
-- Never reads or writes local `./aeko-artifacts/` files.
-- Never modifies the variation row from the skill (status flips are server-side).
-- Never modifies the originating action item's completion state (that was set by `/aeko-create-content`).
-- Never publishes a variation that wasn't saved via `aeko_save_content_variation` — the stored row is the source.
-- Never invents URLs or post IDs — those come from the MCP response, or the call failed.
-- Never calls Cafe24 / Shopify CMS live publish APIs for `own_store_blog` — that destination is draft-only.
+- Never publishes or unpublishes unattended or from an earlier/synthetic confirmation.
+- Never claims the human saw a raw body this MCP cannot return.
+- Never calls Cafe24/Shopify live APIs for `own_store_blog`.
+- Never fabricates handles/counts or treats requested product snapshots as verified links.
+- Never says a failed publish definitely made no public change.
+- Never hides the arbitrary-product fallback, overwrite loss, or stale-status behavior after unpublish.

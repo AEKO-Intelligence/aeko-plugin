@@ -14,13 +14,17 @@ Drop your brand's preferred PDP HTML structure, JSON-LD field choices, or verifi
 
 > example file (if present) > recipe defaults > Plan/content context
 
-The hard contract in `references/recipes/responsive-html-contract.md` (mobile-first, no JS, no action buttons, semantic tags only, citability baseline) **always applies** — examples can't relax it.
+The hard contract in `references/recipes/responsive-html-contract.md` (mobile-first, no JS, no action
+buttons, semantic tags only, citability baseline) **always applies to newly authored AEKO HTML** — examples
+can't relax it. It never licenses edits to a byte-preserved merchant prefix.
 
 ## What NOT to put here
 
 - **No PII** — strip customer names, real phone numbers, internal SKUs you don't want indexed.
-- **No external action links** — `<a href>` and `<button>` are forbidden in PDP output regardless of what your example contains. The skill strips them.
-- **No JavaScript** — same rule.
+- **No external action links in new HTML** — `<a href>` and `<button>` in an example are ignored; the skill
+  does not reproduce them in newly authored sections. It never strips them from preserved merchant HTML.
+- **No JavaScript in new HTML** — same scope; existing merchant scripts are preserved under
+  `preserve_existing`.
 
 ## Verifying it worked
 

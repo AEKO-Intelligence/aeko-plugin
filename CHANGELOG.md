@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.29.3 — Brand-aware ad drafting and correction (unreleased)
+
+- Add `/aeko-create-ad-copy` with accepted skill/eval/Wiki loading, scoped brand guidance,
+  output correction, and a separate explicit lasting-feedback contract.
+- Bundle ad-copy quality checks and publish the reviewed 27-command trusted catalog.
+- Keep generation, eval results, feedback records, accepted package versions and delivery
+  receipts distinct across hosted and portable clients.
+
+## 0.29.2 — Accepted package discovery and trusted catalog (unreleased)
+
+- Require clients to discover and load the accepted skill, eval, wiki, and support bytes after
+  OAuth instead of treating authentication as package loading.
+- Add all 26 canonical command packages to one bounded, self-contained trusted upstream catalog
+  built from explicit public-file allowlists with per-file and aggregate SHA-256 provenance.
+- Document the exact nine legacy backend automation documents and vendor the reviewed catalog for
+  explicit backend default reconciliation without runtime source fetching.
+- Keep prompt/Context/view and content-idea listing lightweight, but load exact accepted-package
+  guidance before those skills author new text or start an authored-content handoff.
+- Keep local export projections tied to their original document/version/digest and wiki authority
+  metadata. The full Responses/MCP runner, contextual chat executor, and GitHub App remain separate.
+
+## 0.29.1 — Portable brand execution foundation (2026-09-07)
+
+- Preserve whole-job prompts and scoped brand rules/evals across drafting and loop handoffs.
+- Bound ad/content evidence; require explicit reviewed ad creative, remove schedule auto-approval,
+  and reserve synthetic reviews for isolated regressions.
+- Document portable document files, manual/automatic update seams, and private-corpus exclusions;
+  automatic updater and multi-stage hosted execution remain unimplemented here.
+- Match content-idea guidance to existing sibling MCP wrappers while checking live deployments.
+- Recheck publish-time brand evidence honestly when stored bodies are unavailable; retain account,
+  platform, and mutation gates. Add local release validation and synthetic regression scenarios.
+
+
 All notable changes to the AEKO plugin (skills + manifests). This repo ships skills only; backend
 tool changes live in [`aeko-mcp`](https://github.com/AEKO-Intelligence/aeko-mcp).
 
@@ -7,11 +40,83 @@ The plugin follows [Semantic Versioning](https://semver.org/). All five manifest
 across `.claude-plugin/`, `.codex-plugin/`, and `gemini-extension.json` are kept in sync so that
 version-keyed host caches refresh on update.
 
+## [0.29.0] — 2026-08-11
+
+### First skill catalog
+
+- Ships 26 active, job-focused skills with no compatibility-only commands in the catalog.
+- `/aeko-start` and `/aeko-connect` provide a complete zero-account tour and capability slot board without
+  probing AEKO authentication or hardcoding install-specific MCP names.
+- `/aeko-site-audit`, `/aeko-pdp-audit`, and `/aeko-pdp-build` provide the free audit-to-paste-ready-PDP path.
+  The audit/build URL paths share a bounded raw-HTTP fetcher that reads head markup, JSON-LD, lazy images,
+  discovery files, and live per-crawler responses without writing.
+- `/aeko-ads-review` provides one honest four-platform glance: Meta, TikTok, and Google Ads use the customer's
+  own connectors for free; OpenAI Ads uses AEKO and contributes spend/efficiency while unavailable conversion
+  and ROAS cells remain dashed. `/aeko-openai-ads-reporting` provides account-gated OpenAI Ads depth.
+- `/aeko-message-audit` deduplicates literal paid claims by spend and optionally checks owned backing and
+  answer-engine echoes without treating creative as instructions.
+- `/aeko-ga4` reads the customer's own official GA4 connector for free and offers the five-tool AEKO GA4 join
+  as an optional account-backed path.
+- `/aeko-ai-visibility`, `/aeko-source-analysis`, `/aeko-competitor-analysis scope=brand|product`, and
+  `/aeko-manage-prompts mode=discover|review` cover measurement, evidence, research, Views, Contexts,
+  suggestions, quota pre-flight, and guarded untracking.
+- `/aeko-store mode=setup|reviews`, `/aeko-action-center`, `/aeko-update-pdp mode=refresh`,
+  `/aeko-create-content`, `/aeko-publish-content`, and `/aeko-fix-technical` provide guarded store/content
+  execution with the existing confirmation, audit, rollback, and evidence rules.
+- `/aeko-openai-compose-ads`, `/aeko-openai-budget-shift`, and `/aeko-openai-guardrails` name their OpenAI Ads
+  scope explicitly and preserve paused-first creation, dry-run/caps/confirmation, entity-state coverage,
+  automation history, and the account-wide emergency stop.
+- `/aeko-weekly-report` composes provenance-carrying normalized rows without direct MCP calls.
+  `/aeko-create-loop` writes a durable Notion configuration and foreground dry-run, while `/aeko-run-loop`
+  remains approvals-first and read-and-propose only.
+- `/aeko-content-ideas` declares its intended capability-gated flow and stops honestly while its backend
+  wrappers are absent.
+
+### Safety and release contracts
+
+- `/aeko-openai-guardrails` documents an account-wide emergency stop and requires fresh confirmation to
+  re-enable automation.
+- `/aeko-run-loop` no longer claims install-variable bare MCP names are an enforced deny boundary. It lists
+  no marketing write tool in `allowed-tools`, never calls one, and relies on the honest current product
+  limit: server-side executable staging does not exist.
+- `scripts/lint-release-contracts.sh` rejects any compatibility router in the unreleased catalog and rejects
+  prohibited source-analysis terminology, in addition to checking versions, fetcher-copy equality, and
+  shared audit policy.
+
+### Known external blockers
+
+- The content-idea wrappers `aeko_list_content_ideas`, `aeko_start_content_idea`, and
+  `aeko_dismiss_content_idea` do not yet exist in `aeko-mcp`, so `/aeko-content-ideas` is present but blocked.
+- Server-side staging does not yet exist, so scheduled marketing writes are unsupported; the weekly loop
+  can read evidence and approvals, deliver reports, and propose changes, but cannot execute them.
+
+## [0.28.0] — 2026-08-11
+
+### Added
+
+- `/aeko-site-audit` checks whether a public site is readable by AI, and `/aeko-pdp-audit` checks whether
+  one product page is citation-ready. Both are read-only, work without an AEKO account, preserve unknown
+  states when evidence is unavailable, and share a byte-identical severity policy.
+- `/aeko-pdp-build` turns verified product-page evidence into responsive, paste-ready HTML plus matching
+  Product and FAQPage JSON-LD without writing to a store.
+- `/aeko-ads-review` compares Meta, TikTok, and Google Ads claims from the customer's own official
+  connectors or manual exports, leads with comparable one-day click results, and reconciles claimed totals
+  against user-supplied store orders. Its OpenAI Ads row is present but AEKO-account-gated.
+- `scripts/lint-release-contracts.sh` verifies that the shared audit severity references are byte-identical
+  and that all five manifest version declarations agree.
+
+### Changed
+
+- Added the matched `/aeko-site-audit` and `/aeko-pdp-audit` entry points for site-level and product-level
+  evidence instead of exposing one ambiguous command.
+- Repositioned the Claude, Codex, and Gemini manifests around the four zero-account workflows, and bumped
+  the Claude, Codex, Gemini, and both marketplace manifest versions to `0.28.0`.
+
 ## [0.27.0] — 2026-07-24
 
 ### Added
 
-- `/aeko-ad-guardrails [domain-id]` walks a merchant through setting up an automated OpenAI Ads
+- `/aeko-openai-guardrails [domain-id]` walks a merchant through setting up an automated OpenAI Ads
   pacing rule that pauses campaigns, ad groups, or ads when spend runs too fast or CPM/CPC crosses a
   threshold. Thresholds are anchored on the merchant's observed numbers via `aeko_get_ad_insights`;
   the offered metric × window × scope combinations come from `aeko_get_ad_rule_capabilities` (spend
@@ -63,7 +168,7 @@ version-keyed host caches refresh on update.
 
 ### Added
 
-- `/aeko-check-source domain_id=<uuid> source_id=<uuid>` compares one owner-associated cited page with
+- `/aeko-source-analysis domain_id=<uuid> source_id=<uuid>` compares one owner-associated cited page with
   verified domain data, up to five associated tracked prompts/Contexts, and a paginated official-catalog
   scan capped at 1,000 products before loading up to five matching descriptions. It produces claim-level
   corrections or an outreach draft without creating an ActionItem or changing the page.
@@ -88,7 +193,7 @@ version-keyed host caches refresh on update.
 - The PDP preview is finalized and written even when there are no pending verification questions.
   Metadata-only runs skip image downloads/OCR, preserve the visible description, and send JSON-LD plus SEO
   meta through the one-call audited update.
-- `/aeko-refresh-jsonld` now reuses or creates a `json_ld` ActionItem, claims it, and uses the same token-fenced
+- `/aeko-update-pdp mode=refresh` now reuses or creates a `json_ld` ActionItem, claims it, and uses the same token-fenced
   one-call store update instead of bypassing the execution/audit contract.
 - Bumped the Claude, Codex, Gemini, and both marketplace manifests to `0.24.0`.
 
@@ -123,8 +228,8 @@ version-keyed host caches refresh on update.
 - **Retired `/aeko-brand-kit` from the active skill surface.** Removed the skill folder, onboarding catalog
   entry, README active entry, and MCP-tool dependencies from active flows.
 - **Formalized context scope.** Context applies to prompt tracking plus content/PDP optimization.
-- Updated `/aeko-find-prompts-to-track`, `/aeko-prompt-deep-dive`, and `/aeko-visibility-report` to use
-  Context for prompt discovery, tracking, segmentation, and reporting.
+- Updated `/aeko-manage-prompts`, `/aeko-source-analysis`, and `/aeko-ai-visibility` to use Context for
+  prompt discovery, tracking, segmentation, and reporting.
 - Updated `/aeko-create-content`, `/aeko-update-pdp`, and technical/competitor helpers to rely on domain,
   product, Plan.md, OCR/review evidence, and content context without requiring legacy identity metadata.
 - Bumped Claude, Codex, and Gemini manifests to `0.15.11`.
@@ -214,7 +319,7 @@ version-keyed host caches refresh on update.
   prompts are mode selection (Step 2.5) and channel/media (Step 4); inventing extra forms is barred.
 - **Korean terminology:** user-facing copy now uses **소스 분석** (source analysis) instead of **포렌식**
   (forensics), which read as crime-lab jargon to marketers. Applied to `/aeko-create-content` and
-  `/aeko-prompt-deep-dive`. "Forensics" remains an internal label in the skill docs only.
+  `/aeko-source-analysis`. "Forensics" remains an internal label in the skill docs only.
 
 ## [0.15.3] — 2026-06
 
@@ -245,7 +350,7 @@ visible content, structured product data, product feeds, entity clarity, and mea
 schema trick.
 
 ### Added
-- **AI shopping readiness.** `/aeo-audit <url> shopping` adds a product-level readiness mode for
+- **AI shopping readiness.** `/aeko-pdp-audit <url>` adds a product-level readiness workflow for
   ChatGPT Shopping / Google merchant surfaces — Product/Offer facts, reviews, shipping/returns,
   crawler access, and a feed-readiness checklist (Merchant Center / Shopify Catalog / ACP surfaced as
   readiness gaps when not directly callable).
@@ -262,13 +367,13 @@ schema trick.
   shopper can find it on the page or in connected store data. No `null`/placeholder/guessed values.
 
 ### Changed
-- **Robots/crawler policy split into visibility vs training bots.** `/aeko-fix-technical` and
-  `/aeo-audit` now separate AI search/shopping bots (`OAI-SearchBot`, `ChatGPT-User`,
+- **Robots/crawler policy split into visibility vs training bots.** `/aeko-fix-technical`,
+  `/aeko-site-audit`, and `/aeko-pdp-audit` now separate AI search/shopping bots (`OAI-SearchBot`, `ChatGPT-User`,
   `Claude-SearchBot`, `Claude-User`, `PerplexityBot`, `Perplexity-User`, `Googlebot`,
   `Storebot-Google`, `Bingbot`) from training/data bots (`GPTBot`, `ClaudeBot`, `Google-Extended`,
   `CCBot`, `Bytespider`, `Applebot-Extended`). Visibility bots are allowed by default; training/data
   bots are never newly allowed without explicit merchant consent.
-- **`/aeko-refresh-jsonld` scoped to review/rating facts only.** Price, availability, shipping, and
+- **`/aeko-update-pdp mode=refresh` scoped to review/rating facts only.** Price, availability, shipping, and
   return-policy fields are explicitly excluded — they must come from authoritative store data via
   `/aeko-update-pdp`, never from heuristic page scraping.
 - `llms.txt` reframed as an optional curated agent index, not a guaranteed ranking/citation lever.
@@ -296,9 +401,8 @@ schema trick.
   the AEO writing frameworks (BLUF, PREP, Informational Gain, E-E-A-T) on a substance backbone of
   product info + real review context + tracked prompts — replacing the old "crawl the winners and
   mimic their structure" approach. A single canonical `aeo-frameworks.md` is now the source of truth,
-  consumed by `/aeko-update-pdp` and cited by `/aeo-audit`. Diagnostic skills (prompt-deep-dive,
-  visibility-report, competitor analyses) now speak the same framework vocabulary so a finding maps
-  directly to a fix.
+  consumed by `/aeko-update-pdp`. Source, visibility, and competitor analysis now speak the same framework
+  vocabulary so a finding maps directly to a fix.
 
 ## [0.13.1] — 2026-05
 

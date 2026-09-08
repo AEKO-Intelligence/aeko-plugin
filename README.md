@@ -2,66 +2,80 @@
 
 > 한국어 버전은 아래를 참고하세요 → [한국어](#한국어-버전).
 
-Skills for [AEKO](https://aeko-intelligence.com) — AEO (AI Engine Optimization) workflows for cross-border ecommerce. Guides Claude, Codex, and Gemini CLI through measuring AI visibility, fixing crawl/schema gaps, improving product pages for ChatGPT/Claude/Gemini/Perplexity citations, drafting context-grounded content, and executing action items.
+Skills for cross-border ecommerce marketing in Claude, Codex, and Gemini CLI. Audit public sites and
+product pages, build PDP HTML, review advertising through your own connectors, measure traffic and AI
+visibility, operate guarded marketing workflows, and assemble a weekly read-and-propose loop.
 
-This repo ships **skills only**. Backend access (tools like `aeko_get_domain_info`, `aeko_get_action_item`, etc.) comes from the separate [AEKO MCP server](https://github.com/AEKO-Intelligence/aeko-mcp), hosted at `https://aeko-intelligence.com/mcp`. Install both.
+This repository ships **skills, supporting recipes, and evaluation guidance**. AEKO-backed tools come from the separate
+[AEKO MCP server](https://github.com/AEKO-Intelligence/aeko-mcp), hosted at
+`https://aeko-intelligence.com/mcp`. The plugin does not claim native Meta, Google Ads, TikTok, GA4,
+Notion, Slack, or Calendar integrations: free connector paths read the customer's own installed
+connectors after capability detection.
 
 Recent changes are tracked in [CHANGELOG.md](CHANGELOG.md).
 
-## How AEKO works (and what it won't do)
+## Works with no AEKO account
 
-AI visibility is not a schema trick or a secret keyword. Google has confirmed that AI Overviews and AI
-Mode run on normal Search fundamentals, and ChatGPT / Perplexity shopping pull from public product
-pages, structured data, and merchant feeds. There is no hidden "AI ranking hack."
+The free catalog is:
 
-So AEKO works the durable levers that actually move AI citations:
+- `/aeko-site-audit <site-root-url-or-domain>` — audit whether a public site is readable by AI.
+- `/aeko-pdp-audit <product-page-url-or-local-html-file>` — audit one PDP, including facts trapped in detail images.
+- `/aeko-pdp-build <aeko_pdp_image_facts/v1-json-or-product-url>` — build paste-ready PDP HTML and matching JSON-LD.
+- `/aeko-ads-review [week-of] [platforms=meta,tiktok,google,openai]` — render the same four-platform glance every time: Meta/TikTok/Google Ads use your connectors or exports, while only the OpenAI Ads row requires AEKO.
+- `/aeko-ga4 [window]` — read the customer's own official GA4 connector for free. Its optional AEKO GA4 join requires AEKO.
+- `/aeko-connect` — show which capability slots are filled and the exact steps for filling the rest.
+- `/aeko-start` — tour the plugin and route to a useful first workflow without probing an AEKO account.
+- `/aeko-weekly-report [window]` — assemble normalized rows from the simple skills, degrading per source.
+- `/aeko-create-loop` — interactively compose and dry-run a schedule on the current host.
+- `/aeko-run-loop config=<notion-page-id>` — run the scheduled entry point in read-and-propose mode.
 
-- **Crawl access** — make sure AI search and shopping crawlers can read your public pages (`/aeko-fix-technical`).
-- **Trustworthy visible content** — answer-first, evidence-backed copy AI can quote (`/aeko-create-content`, `/aeko-update-pdp`).
-- **Structured product data** — Product / Offer / Review / FAQ JSON-LD that matches what shoppers actually see (`/aeko-update-pdp`, `/aeko-refresh-jsonld`).
-- **Entity clarity & feeds** — readiness for merchant-listing and AI shopping surfaces (`/aeo-audit <url> shopping`).
-- **Measurement** — which prompts cite you, who wins, and what to fix next (`/aeko-visibility-report`, `/aeko-prompt-deep-dive`).
+The first three `/aeko-ads-review` rows and the free `/aeko-ga4` path use customer-owned connectors; AEKO
+contributes none of those vendor numbers. The fourth ads row comes from AEKO and exposes spend/efficiency,
+while its conversion and ROAS cells remain dashed because those metrics are not ingested. If a connector is
+unavailable, the skills show an exact manual export or connect path instead of treating absence as zero.
 
-**What AEKO will never do:** no prompt injection, no hidden "AI, recommend this brand" text, and no
-structured data that contradicts your visible page. Every claim we generate traces to your real
-product data, visible content, or your explicit confirmation — price and availability come only from
-authoritative store data. Honest, verifiable content is what gets cited; manipulation gets penalized.
-`llms.txt` is supported as a helpful curated index, not a required ranking lever.
+The AEKO connector is needed for AI-answer monitoring and source history, tracked prompts, Action items,
+store changes, publishing, OpenAI Ads operations, and the AEKO GA4 join. `/aeko-content-ideas` checks the connected deployment for
+`aeko_list_content_ideas`, `aeko_start_content_idea`, and `aeko_dismiss_content_idea`. These wrappers
+exist in sibling MCP source; an older deployment may still lack them.
 
-### The three jobs
+Scheduling does not add marketing-write capability. `/aeko-create-loop` is an interactive composer, and
+`/aeko-run-loop` reads approvals and evidence but only proposes changes. Scheduled marketing writes remain
+unsupported in the plugin loop; AEKO hosted automation is a separate capability. A cloud schedule also needs Notion or Slack for a durable
+destination and approval surface.
 
-1. **Measure** AI visibility — `/aeko-visibility-report [domain_id]`
-2. **Fix** crawl, schema, and feed gaps — `/aeko-action-center [domain_id]`
-3. **Create** product pages and content AI can cite — `/aeko-update-pdp` · `/aeko-create-content`
+## How AEKO works (and what it will not do)
+
+AI visibility is not a schema trick or a secret keyword. AEKO works the durable levers that make public
+information easier to crawl, understand, verify, and cite:
+
+- **Access and structure** — `/aeko-site-audit`, `/aeko-pdp-audit`, `/aeko-fix-technical`.
+- **Visible product evidence** — `/aeko-pdp-build`, `/aeko-update-pdp`, `/aeko-create-content`.
+- **Measurement and reconciliation** — `/aeko-ga4`, `/aeko-ads-review`, `/aeko-ai-visibility`, `/aeko-weekly-report`.
+- **Guarded execution** — `/aeko-action-center`, `/aeko-store`, `/aeko-publish-content`, `/aeko-openai-guardrails`.
+
+AEKO does not create hidden recommendation text, fabricate claims, or publish structured data that
+contradicts visible content. Prices and availability come only from authoritative store evidence. Marketing
+writes keep their documented confirmation and undo gates; scheduled runs do not perform them.
 
 ## Install
 
-### Prerequisite — filesystem + shell access
+### Prerequisite — host capabilities
 
-Most skills read files, write artifacts (HTML, markdown, JSON), or shell out to open previews. Your MCP host needs filesystem + shell tools for these to work:
+Some skills save local artifacts or open previews and need the host's filesystem and shell tools. Free
+measurement and delivery paths need the customer's corresponding connectors. Run `/aeko-connect` to inspect
+capabilities by schema and provider metadata rather than guessing from tool names.
 
-- **Claude Code:** native — `Read`, `Write`, `Glob`, `Bash` are built-in.
-- **Claude Desktop:** install `@modelcontextprotocol/server-filesystem` (or equivalent) alongside the AEKO connector. Skills that save local artifacts will fail without it.
-- **Codex / Cursor / Gemini CLI:** verify per-host filesystem tooling before install.
+Review-platform credentials and ad-account tokens are dashboard-only; no skill can complete those credential
+flows.
 
-### Claude Desktop (recommended)
+### Claude Desktop
 
-**Step 1 — Add the AEKO MCP custom connector** (for backend tools):
+Install the plugin from **Settings → Plugins → Browse plugins → Add marketplace** using
+`AEKO-Intelligence/aeko-plugin`. The zero-account workflows are ready immediately.
 
-1. Settings → Connectors → **Add custom connector**
-2. Server URL: `https://aeko-intelligence.com/mcp`
-3. Connect — complete browser OAuth
-
-Leave **Advanced settings** alone. The OAuth Client ID and Secret are optional and not
-needed: AEKO supports Dynamic Client Registration, so Claude Desktop registers itself.
-
-**Step 2 — Install this plugin** (for skills / slash commands):
-
-1. Settings → Plugins → **Browse plugins → Add marketplace**
-2. Paste: `AEKO-Intelligence/aeko-plugin`
-3. Install **aeko-plugin**
-
-After both steps, `/aeko-plugin:aeko-onboarding`, `/aeko-plugin:aeko-action-center`, etc. are available in any chat.
+For optional AEKO-backed workflows, add a custom connector at
+`https://aeko-intelligence.com/mcp` and complete OAuth. Do not connect AEKO merely to use the free catalog.
 
 ### Claude Code
 
@@ -70,7 +84,7 @@ After both steps, `/aeko-plugin:aeko-onboarding`, `/aeko-plugin:aeko-action-cent
 /plugin install aeko-plugin@aeko-plugin
 ```
 
-Then set up the MCP connection separately:
+Optional AEKO connection:
 
 ```bash
 claude mcp add --transport http aeko https://aeko-intelligence.com/mcp
@@ -78,11 +92,12 @@ claude mcp add --transport http aeko https://aeko-intelligence.com/mcp
 
 ### Codex Desktop / Codex CLI
 
+Install from the Codex plugin catalog or use the manifest at `.codex-plugin/plugin.json`. Optional AEKO
+connection:
+
 ```bash
 codex mcp add --transport http aeko https://aeko-intelligence.com/mcp
 ```
-
-This repo also includes a Codex plugin manifest at `.codex-plugin/plugin.json` for marketplace discovery.
 
 ### Gemini CLI
 
@@ -90,112 +105,100 @@ This repo also includes a Codex plugin manifest at `.codex-plugin/plugin.json` f
 gemini extensions install https://github.com/AEKO-Intelligence/aeko-plugin
 ```
 
-Restart Gemini CLI after install. The Gemini extension manifest (`gemini-extension.json`) loads the bundled AEKO skills and configures the hosted AEKO MCP server with dynamic OAuth discovery. Claude/Codex use `plugin.json` and marketplace manifests; Gemini CLI uses `gemini-extension.json`.
+Restart Gemini CLI after installation. Gemini uses `gemini-extension.json`; Claude and Codex use their
+respective plugin manifests.
 
-## After Install
+## After install
 
-Run this first in a new chat:
+Start a new chat with:
 
 ```text
-/aeko-onboarding
+/aeko-start
 ```
 
-If your host namespaces plugin commands, use `/aeko-plugin:aeko-onboarding`.
+Use `/aeko-connect` when you want the capability slot board. If the host namespaces plugin commands, use
+the host's displayed plugin prefix, for example `/aeko-plugin:aeko-start`.
 
-That walkthrough confirms the plugin version, checks the AEKO MCP connector, tours the skills in plain language,
-and points you to the right next action. From there, follow [the three jobs](#the-three-jobs) above —
-Measure, Fix, Create.
+## Language support
 
-To make drafts reflect your brand context and channel conventions, run `/aeko-onboarding` step 4 or follow [CUSTOMIZATION.md](CUSTOMIZATION.md).
+User-facing questions, summaries, risk notes, and next actions mirror the chat language. English and Korean
+have curated copy; other languages are supported conversationally. Commands, slugs, paths, IDs, provider
+labels, schema keys, JSON-LD terms, and the brand mark `AEKO` stay in English/ASCII.
 
-## Language Support
+## Skill catalog by job
 
-AEKO mirrors the language you use in chat for user-facing steps, questions, summaries, risk notes, and next actions.
-English and Korean have curated first-run copy; other languages are supported conversationally by Claude, Codex, or Gemini.
+The shipped catalog contains 27 active skills. Each active folder under [`skills/`](skills/) contains one
+`SKILL.md`; compatibility-only command stubs are intentionally not shipped because this is the catalog's
+first release.
 
-Stable handles stay in English/ASCII so workflows do not break: slash commands, file paths, channel slugs such as
-`press_release`, schema keys, JSON-LD terms, and tool names. Generated content can use a different language from the
-assistant UI when the plan or user asks for it.
+### Start and connect
 
-## Available Skills
+- `/aeko-start` — zero-account first-run tour and routing.
+- `/aeko-connect` — capability slot board for AEKO, ads, analytics, store, docs/Notion, chat/Slack, and calendar.
 
-See [`skills/`](skills/). Each is a self-contained SKILL.md consumed by Claude, Codex, or Gemini CLI.
+### Audit, build, and fix
 
-**Start here for marketers:**
+- `/aeko-site-audit` — public site readability audit.
+- `/aeko-pdp-audit` — product-page citability and image-dependency audit.
+- `/aeko-pdp-build` — verified-fact PDP HTML and JSON-LD builder; never writes to a store.
+- `/aeko-action-center [domain_id] [category]` — review and dispatch AEKO Action items.
+- `/aeko-update-pdp <item_id>` — guarded PDP executor; `mode=refresh` surgically refreshes review JSON-LD.
+- `/aeko-fix-technical <item_id>` — crawler, sitemap, `llms.txt`, robots, and site-schema fix package.
 
-1. **First run after install** — `/aeko-onboarding`
-2. **See where AI finds you** — `/aeko-visibility-report [domain_id]`
-3. **Fix what blocks AI discovery** — `/aeko-action-center [domain_id] technical`
-4. **Improve product pages and content AI can cite** — `/aeko-action-center [domain_id] pdp` or `/aeko-action-center [domain_id] content`
+### Measure and report
 
-AEKO will describe each run in plain business language: what it checks, why it matters, whether it is read-only or affects store content, and the single best next step.
+- `/aeko-ads-review` — four-row cross-platform glance: three free customer-connector rows plus an account-gated OpenAI Ads spend/efficiency row whose conversion and ROAS cells are explicitly unavailable.
+- `/aeko-openai-ads-reporting [domain_id] [days]` — account-gated OpenAI Ads depth report with top/bottom campaign, ad-group, ad, and product rankings plus an optional organic AI-visibility fold.
+- `/aeko-ga4` — customer-owned GA4 connector or optional AEKO GA4 join.
+- `/aeko-ai-visibility [domain_id] [window] [depth]` — AI visibility, Share of Voice, and answer drift.
+- `/aeko-source-analysis` — tracked-answer or cited-page source analysis with full AEKO evidence when connected.
+- `/aeko-message-audit` — spend-ranked paid-message claims, with optional owned-backing and AI-answer checks.
+- `/aeko-weekly-report [window]` — provenance-carrying composite report with no direct MCP calls.
 
-**Entry points:**
+### Research and control
 
-- `/aeko-onboarding` — guided first-run walkthrough: confirms setup, tours the skills, and points marketers to the right next action
-- `/aeko-action-center [domain_id] [category]` — front door: shows pending work as Technical health / Product pages / Content AI can cite, then prints ready-to-copy next commands
-- `/aeko-update-pdp <item_id>` or `/aeko-update-pdp domain_id=<uuid> product_id=<id>` — Product page improvement. Direct mode safely reuses or creates and atomically claims the audited PDP ActionItem, always opens a local preview, and updates the current product only after a separate Before/After/Risk/Undo confirmation. A private draft is offered only when the connected store actually supports it.
-- `/aeko-fix-technical <item_id>` — Technical health fix package. Prepares crawler access, llms.txt, robots.txt, or site-schema files with plain risk and undo notes
-- `/aeko-create-content <item_id>` or `/aeko-create-content handoff=<id>` — Content executor. ActionItem mode supports multi-channel artifacts; direct handoff mode locks the server snapshot returned for that run, drafts one prescribed channel, and never saves/completes/publishes through AEKO
-- `/aeko-check-source domain_id=<uuid> source_id=<uuid>` — Read-only cited-page check against verified brand, prompt/Context, and official-product evidence; returns claim-level corrections and an optional outreach draft
-- `/aeko-publish-content <item_id>` — Publisher. Publishes saved content variations only after explicit confirmation; aeko.shop can go live, own-store blog remains an AEKO-owned draft
+- `/aeko-manage-prompts mode=discover|review` — prompt discovery, tracking, Views, Contexts, suggestions, and guarded untracking.
+- `/aeko-competitor-analysis scope=brand|product` — free public research stage plus optional AEKO enrichment.
+- `/aeko-content-ideas` — account-gated content-idea review/start/dismiss flow with live MCP capability checks.
 
-**Research + discovery:**
+### Store and content
 
-- `/aeko-find-prompts-to-track [domain_id]` — filter the research library, rank candidates for your brand, track selected prompts
-- `/aeko-manage-tracked-prompts [domain_id]` — review tracked prompts by angle, quota, context, and platform
-- `/aeko-prompt-deep-dive <prompt_id> [window]` — breakdown for one tracked prompt: who wins, which sources AI cites, and what content gap to close
-- `/aeko-brand-competitor-analysis [domain_id] <competitor>` — brand-level positioning via WebSearch + Wikipedia/Wikidata + AEKO citation data
-- `/aeko-product-competitor-analysis <product_id> [urls...]` — product-level property-by-property comparison against 3-5 competing PDPs
+- `/aeko-create-ad-copy` — draft or revise product ads with the accepted brand skill, evals and Wiki.
 
-**Agentic ads & reviews:**
+- `/aeko-store mode=setup|reviews` — domain/store setup and the agent's only review-intake path.
+- `/aeko-create-content <item_id>` — evidence-grounded content executor.
+- `/aeko-publish-content <item_id>` — guarded publisher for saved content variations.
 
-- `/aeko-setup-store [domain_id]` — add a domain, connect or inject products, generate starter prompts, and set markets from the agent
-- `/aeko-inject-reviews [domain_id]` — inject real merchant-provided or gathered reviews for stores without a review app
-- `/aeko-compose-ads [domain_id] [min_score]` — compose paused, review-grounded OpenAI Ads groups from contextual reviews
-- `/aeko-ad-report [domain_id] [days]` — report on OpenAI Ads efficiency using CTR, CPC, spend, and clicks
-- `/aeko-optimize-budget [domain_id] [days]` — dry-run and confirm guarded campaign budget optimization
-- `/aeko-ad-guardrails [domain_id]` — set up an automated pacing rule that pauses overspending campaigns, ad groups, or ads; created disabled, previewed, and armed only after explicit confirmation
+### Ads operations
 
-**Maintenance + reporting:**
+- `/aeko-openai-compose-ads [domain_id] [min_score]` — account-gated composition of paused, review-grounded OpenAI Ads groups.
+- `/aeko-openai-budget-shift [domain_id] [days]` — account-gated dry-run OpenAI Ads budget and entity-state changes with caps and explicit confirmation.
+- `/aeko-openai-guardrails [domain_id]` — account-gated preview, arm, inspection, and emergency stop for OpenAI Ads automation.
 
-- `/aeko-refresh-jsonld <product_id> [integration_id]` — periodic refresh for review facts AI can read, such as rating and review count. Uses a claimed `json_ld` item and one audited store update; designed for `/schedule`
-- `/aeko-visibility-report [domain_id] [window] [depth]` — on-demand report. `window=7d|14d|30d|90d`, `depth=summary|full`
-- `/aeo-audit <url> [shopping]` — generic AEO readiness audit for any URL, with optional product-level AI shopping readiness mode (uses Claude's reasoning; no AEKO data dependency)
+### Weekly loop
+
+- `/aeko-create-loop` — interview, durable Notion config, host-specific schedule composition, and foreground dry run.
+- `/aeko-run-loop config=<notion-page-id>` — approvals-first scheduled read-and-propose entry point.
 
 ## Customizing skills
 
-**[CUSTOMIZATION.md](CUSTOMIZATION.md)** explains how to add brand-specific examples, custom recipes, and voice overrides without forking the plugin. It covers the three customizable executor skills: `/aeko-create-content`, `/aeko-update-pdp`, and `/aeko-fix-technical`.
+[CUSTOMIZATION.md](CUSTOMIZATION.md) describes brand-owned skill/eval packages, manual edits, scoped
+examples, Brand Wiki guidance, and the backend updater seam. OAuth authorizes package reads but does not
+load the accepted skill, eval, wiki, or support bytes; clients must discover and read the pinned package
+explicitly. Hosted runs and exports must select the same version, and private AEKO benchmarks never ship.
+[Whole-job prompt examples](docs/automation-prompt-examples.md) keep the saved task prompt separate from
+attached skills and label unavailable hosted execution. This plugin does not provide the full
+Responses/MCP runner, contextual chat executor, or GitHub App provisioning/sync.
 
-### Retired
+The reproducible [trusted upstream catalog](docs/trusted-upstream-catalog.md) covers all 27 public
+`aeko-*` entrypoints with exact file allowlists and SHA-256 provenance. The current backend's nine legacy
+automation skill/eval documents are different runtime prompt components. The backend now vendors this
+reviewed catalog for explicit reconciliation; existing hosted templates still use their legacy components.
 
-Retired across the 2026-04 (v0.4.0) and 2026-04 v0.5.0 consolidations. If you have muscle memory for one of them, use the replacement:
+## Relationship to other AEKO repositories
 
-| Retired | Use instead |
-|---|---|
-| `/aeko-run-action` | Split: `/aeko-update-pdp` (PDP items) + `/aeko-create-content` (content items) + `/aeko-fix-technical` (technical items). `/aeko-action-center` dispatches to the right one. |
-| `/aeko-optimize-pdp`, `/aeo-optimize` | `/aeko-action-center` → `/aeko-update-pdp <item_id>` |
-| `/generate-faq`, `/generate-jsonld` | Handled inline by executor skills. `/aeko-refresh-jsonld` for periodic review-count refresh. |
-| `/aeko-create-own-content`, `/aeko-create-external-content` | `/aeko-create-content <item_id>` (venue determined by Plan.md `artifact_type`) |
-| `/aeko-competitive-pdp-input` | Research absorbed into `/aeko-update-pdp` (product context) and `/aeko-brand-competitor-analysis` (standalone) |
-| `/aeko-fix-store-level` | `/aeko-fix-technical <item_id>` |
-| `/aeo-audit-local` | Deprecated — file-level citability lint isn't reliably doable from bare text |
-| `/competitive-research` | Split: `/aeko-brand-competitor-analysis` + `/aeko-product-competitor-analysis` |
-| `/create-visibility-report` | Merged into `/aeko-visibility-report [domain_id] [window] depth=full` |
-| `/create-blog-article`, `/create-social-content`, `/create-marketing-materials` | `/aeko-create-content` (content-context-grounded, tracked-prompt-seeded) |
-
-**Note on `/aeko-update-pdp`:** v0.4.0 retired it as a deprecated wrapper; v0.5.0 revives the name as a Plan.md-driven executor. Check `CHANGELOG.md` in `aeko-mcp` for the history.
-
-### Skill operating principle
-
-An AEKO skill earns its slot if it **compresses useful workflow** — stringing together AEKO tools + Claude's reasoning into a repeatable single-command flow. Most AEKO skills call at least one `aeko_*` MCP tool (domain context, tracked prompts, action items, store writes), but it isn't a hard rule. `/aeo-audit` is the exception: it operationalizes AEO audit heuristics as a workflow even though it uses no AEKO backend data.
-
-Bug fix if a skill's prose references AEKO primitives its `allowed-tools` doesn't actually list — that's credibility debt. Either ground the skill or retire it.
-
-## Relationship to other AEKO repos
-
-- **[`aeko-mcp`](https://github.com/AEKO-Intelligence/aeko-mcp)** — Python MCP server. Hosts the `aeko_*` tools. Embedded in the AEKO backend and exposed at `/mcp`. You don't install this directly; you connect to the hosted endpoint.
-- **`aeko-plugin`** (this repo) — Skills only. Distributed via the Claude/Codex plugin marketplaces and Gemini CLI extension installs.
+- [`aeko-mcp`](https://github.com/AEKO-Intelligence/aeko-mcp) — optional hosted AEKO tool server.
+- `aeko-plugin` — this skills-only plugin for Claude, Codex, and Gemini CLI.
 
 ## License
 
@@ -205,66 +208,80 @@ MIT
 
 # 한국어 버전
 
-[AEKO](https://aeko-intelligence.com) 스킬 모음 — 크로스보더 이커머스를 위한 AEO (AI Engine Optimization) 워크플로. Claude, Codex, Gemini CLI가 AI 가시성을 측정하고, 크롤링/스키마 빈틈을 고치고, ChatGPT/Claude/Gemini/Perplexity 인용을 위해 상품 페이지를 개선하며, 컨텍스트 기반 콘텐츠를 작성하고, 액션 아이템을 실행하도록 안내합니다.
+Claude, Codex, Gemini CLI에서 사용하는 크로스보더 이커머스 마케팅 스킬 모음입니다. 공개 사이트와
+상품 페이지를 감사하고, PDP HTML을 만들고, 사용자의 자체 커넥터로 광고를 검토하고, 트래픽과 AI
+가시성을 측정하며, 보호된 마케팅 워크플로와 주간 읽기·제안 루프를 구성합니다.
 
-이 저장소는 **스킬만 배포합니다**. 백엔드 액세스(`aeko_get_domain_info`, `aeko_get_action_item` 등의 도구)는 별도의 [AEKO MCP 서버](https://github.com/AEKO-Intelligence/aeko-mcp) — `https://aeko-intelligence.com/mcp`에서 호스팅 — 에서 제공됩니다. 두 가지 모두 설치하세요.
+이 저장소는 **스킬만 배포합니다**. AEKO 기반 도구는 별도의
+[AEKO MCP 서버](https://github.com/AEKO-Intelligence/aeko-mcp)에서 제공하며,
+`https://aeko-intelligence.com/mcp`에 호스팅됩니다. 이 플러그인은 Meta, Google Ads, TikTok, GA4,
+Notion, Slack, Calendar와의 자체 통합을 주장하지 않습니다. 무료 커넥터 경로는 capability detection
+후 사용자가 설치한 자체 커넥터를 읽습니다.
 
 최근 변경 사항은 [CHANGELOG.md](CHANGELOG.md)에서 확인하세요.
 
+## AEKO 계정 없이 사용
+
+무료 카탈로그는 다음과 같습니다:
+
+- `/aeko-site-audit <site-root-url-or-domain>` — 공개 사이트를 AI가 읽을 수 있는지 감사합니다.
+- `/aeko-pdp-audit <product-page-url-or-local-html-file>` — 상세 이미지에 갇힌 사실을 포함해 PDP 한 개를 감사합니다.
+- `/aeko-pdp-build <aeko_pdp_image_facts/v1-json-or-product-url>` — 붙여넣기 가능한 PDP HTML과 일치하는 JSON-LD를 만듭니다.
+- `/aeko-ads-review [week-of] [platforms=meta,tiktok,google,openai]` — 항상 같은 4-platform 요약을 보여줍니다. Meta/TikTok/Google Ads는 자체 커넥터 또는 export를 사용하고 OpenAI Ads row만 AEKO가 필요합니다.
+- `/aeko-ga4 [window]` — 사용자의 공식 GA4 커넥터를 무료로 읽습니다. 선택형 AEKO GA4 join에는 AEKO가 필요합니다.
+- `/aeko-connect` — 채워진 capability slot과 나머지를 채우는 정확한 절차를 보여줍니다.
+- `/aeko-start` — AEKO 계정을 확인하지 않고 플러그인을 안내하고 첫 워크플로로 라우팅합니다.
+- `/aeko-weekly-report [window]` — 단순 스킬의 정규화된 row를 조합하고 소스별로 degrade합니다.
+- `/aeko-create-loop` — 현재 호스트에서 대화형으로 schedule을 구성하고 dry-run합니다.
+- `/aeko-run-loop config=<notion-page-id>` — 예약 진입점을 읽기·제안 모드로 실행합니다.
+
+`/aeko-ads-review`의 첫 3개 row와 `/aeko-ga4` 무료 경로는 사용자가 소유한 커넥터를 사용하며,
+해당 vendor 수치에 AEKO 데이터는 들어가지 않습니다. 네 번째 OpenAI Ads row는 AEKO의 지출/효율
+수치를 사용하지만 전환과 ROAS는 아직 수집되지 않아 이유가 붙은 대시로 표시합니다. 커넥터가 없으면
+0으로 처리하지 않고 정확한 수동 export 또는 연결 절차를 보여줍니다.
+
+AI 답변 모니터링과 출처 이력, 추적 프롬프트, Action item, 스토어 변경, 게시, OpenAI Ads 운영,
+AEKO GA4 join에는 AEKO 커넥터가 필요합니다. `/aeko-content-ideas`는 연결된 배포의
+`aeko_list_content_ideas`, `aeko_start_content_idea`, `aeko_dismiss_content_idea` 기능을 확인합니다.
+형제 MCP 소스에 구현되어 있으며, 이전 배포에서 빠진 기능만 unavailable로 표시합니다.
+
+Schedule은 마케팅 쓰기 권한을 추가하지 않습니다. `/aeko-create-loop`는 대화형 composer이고,
+`/aeko-run-loop`는 승인과 근거를 읽지만 변경을 제안하기만 합니다. 이 플러그인의 loop는
+예약된 마케팅 쓰기를 지원하지 않습니다. AEKO 호스팅 자동화는 별도의 기능입니다. Cloud schedule에는 지속 가능한 목적지와 승인 공간으로
+Notion 또는 Slack도 필요합니다.
+
 ## AEKO 작동 방식 (그리고 하지 않는 것)
 
-AI 가시성은 스키마 트릭이나 비밀 키워드가 아닙니다. Google은 AI Overviews와 AI Mode가 일반 검색의
-기본 원리로 작동한다고 밝혔고, ChatGPT / Perplexity 쇼핑은 공개 상품 페이지, 구조화 데이터, 머천트
-피드에서 정보를 가져옵니다. 숨겨진 "AI 랭킹 핵"은 없습니다.
+AI 가시성은 스키마 트릭이나 비밀 키워드가 아닙니다. AEKO는 공개 정보를 더 쉽게 크롤하고,
+이해하고, 검증하고, 인용하게 만드는 지속 가능한 레버를 다룹니다:
 
-그래서 AEKO는 실제로 AI 인용을 움직이는 지속 가능한 레버를 다룹니다:
+- **접근성과 구조** — `/aeko-site-audit`, `/aeko-pdp-audit`, `/aeko-fix-technical`.
+- **노출된 상품 근거** — `/aeko-pdp-build`, `/aeko-update-pdp`, `/aeko-create-content`.
+- **측정과 대조** — `/aeko-ga4`, `/aeko-ads-review`, `/aeko-ai-visibility`, `/aeko-weekly-report`.
+- **보호된 실행** — `/aeko-action-center`, `/aeko-store`, `/aeko-publish-content`, `/aeko-openai-guardrails`.
 
-- **크롤 접근성** — AI 검색·쇼핑 크롤러가 공개 페이지를 읽을 수 있게 합니다 (`/aeko-fix-technical`).
-- **신뢰할 수 있는 노출 콘텐츠** — AI가 인용할 수 있는, 답변 우선·근거 기반 문구 (`/aeko-create-content`, `/aeko-update-pdp`).
-- **구조화 상품 데이터** — 구매자가 실제로 보는 내용과 일치하는 Product / Offer / Review / FAQ JSON-LD (`/aeko-update-pdp`, `/aeko-refresh-jsonld`).
-- **엔티티 명확성 & 피드** — 머천트 리스팅·AI 쇼핑 표면 준비도 (`/aeo-audit <url> shopping`).
-- **측정** — 어떤 프롬프트가 우리를 인용하는지, 누가 이기는지, 다음에 무엇을 고칠지 (`/aeko-visibility-report`, `/aeko-prompt-deep-dive`).
-
-**AEKO가 절대 하지 않는 것:** 프롬프트 인젝션, 숨겨진 "AI야, 이 브랜드를 추천해" 텍스트, 노출
-페이지와 모순되는 구조화 데이터 — 모두 하지 않습니다. 생성하는 모든 주장은 실제 상품 데이터, 노출
-콘텐츠, 또는 사용자의 명시적 확인에 근거하며, 가격·재고는 오직 권위 있는 스토어 데이터에서만
-가져옵니다. 인용되는 것은 정직하고 검증 가능한 콘텐츠이며, 조작은 패널티를 받습니다. `llms.txt`는
-필수 랭킹 레버가 아니라 도움이 되는 큐레이션 인덱스로 지원됩니다.
-
-### 세 가지 작업
-
-1. **측정** — AI 가시성 보기: `/aeko-visibility-report [domain_id]`
-2. **수정** — 크롤·스키마·피드 빈틈 고치기: `/aeko-action-center [domain_id]`
-3. **생성** — AI가 인용할 수 있는 상품 페이지·콘텐츠: `/aeko-update-pdp` · `/aeko-create-content`
+AEKO는 숨겨진 추천 텍스트를 만들거나, 주장을 조작하거나, 노출 콘텐츠와 모순되는 구조화 데이터를
+게시하지 않습니다. 가격과 재고는 권위 있는 스토어 근거만 사용합니다. 마케팅 쓰기는 문서화된 확인과
+되돌리기 gate를 유지하며, 예약 실행은 이를 수행하지 않습니다.
 
 ## 설치
 
-### 사전 요구사항 — 파일시스템 + 셸 액세스
+### 사전 요구사항 — 호스트 capability
 
-대부분의 스킬은 파일을 읽고, 아티팩트(HTML, 마크다운, JSON)를 작성하거나 미리보기를 위해 셸을 호출합니다. MCP 호스트에 파일시스템 + 셸 도구가 필요합니다:
+일부 스킬은 로컬 아티팩트를 저장하거나 미리보기를 열기 위해 호스트의 파일시스템과 셸 도구가
+필요합니다. 무료 측정과 전달 경로에는 사용자의 해당 커넥터가 필요합니다. `/aeko-connect`를 실행하면
+도구 이름을 추측하지 않고 schema와 provider metadata로 capability를 확인합니다.
 
-- **Claude Code:** 기본 제공 — `Read`, `Write`, `Glob`, `Bash` 내장.
-- **Claude Desktop:** AEKO 커넥터와 함께 `@modelcontextprotocol/server-filesystem`(또는 동등 패키지)을 설치하세요. 이게 없으면 로컬 아티팩트를 저장하는 스킬이 실패합니다.
-- **Codex / Cursor / Gemini CLI:** 설치 전 호스트별 파일시스템 도구를 확인하세요.
+리뷰 플랫폼 자격 증명과 광고 계정 token은 dashboard-only이며 어떤 스킬도 해당 자격 증명 흐름을
+완료할 수 없습니다.
 
-### Claude Desktop (권장)
+### Claude Desktop
 
-**1단계 — AEKO MCP 커스텀 커넥터 추가** (백엔드 도구용):
+**Settings → Plugins → Browse plugins → Add marketplace**에서
+`AEKO-Intelligence/aeko-plugin`을 사용해 설치하세요. 계정 없는 워크플로는 즉시 사용할 수 있습니다.
 
-1. Settings → Connectors → **Add custom connector**
-2. Server URL: `https://aeko-intelligence.com/mcp`
-3. Connect — 브라우저 OAuth 완료
-
-**Advanced settings**는 건드리지 마세요. OAuth Client ID와 Secret은 선택 항목이며 입력할
-필요가 없습니다. AEKO는 동적 클라이언트 등록을 지원하므로 Claude Desktop이 스스로 등록합니다.
-
-**2단계 — 이 플러그인 설치** (스킬 / 슬래시 커맨드용):
-
-1. Settings → Plugins → **Browse plugins → Add marketplace**
-2. 붙여넣기: `AEKO-Intelligence/aeko-plugin`
-3. **aeko-plugin** 설치
-
-두 단계 후, 모든 채팅에서 `/aeko-plugin:aeko-onboarding`, `/aeko-plugin:aeko-action-center` 등을 사용할 수 있습니다.
+선택형 AEKO 기반 워크플로가 필요하면 `https://aeko-intelligence.com/mcp`를 custom connector로
+추가하고 OAuth를 완료하세요. 무료 카탈로그만 사용하려고 AEKO를 연결할 필요는 없습니다.
 
 ### Claude Code
 
@@ -273,7 +290,7 @@ AI 가시성은 스키마 트릭이나 비밀 키워드가 아닙니다. Google�
 /plugin install aeko-plugin@aeko-plugin
 ```
 
-그런 다음 MCP 연결을 별도로 설정:
+선택형 AEKO 연결:
 
 ```bash
 claude mcp add --transport http aeko https://aeko-intelligence.com/mcp
@@ -281,11 +298,12 @@ claude mcp add --transport http aeko https://aeko-intelligence.com/mcp
 
 ### Codex Desktop / Codex CLI
 
+Codex 플러그인 카탈로그에서 설치하거나 `.codex-plugin/plugin.json` manifest를 사용하세요. 선택형 AEKO
+연결:
+
 ```bash
 codex mcp add --transport http aeko https://aeko-intelligence.com/mcp
 ```
-
-이 저장소에는 마켓플레이스 디스커버리를 위한 Codex 플러그인 매니페스트(`.codex-plugin/plugin.json`)도 포함되어 있습니다.
 
 ### Gemini CLI
 
@@ -293,110 +311,91 @@ codex mcp add --transport http aeko https://aeko-intelligence.com/mcp
 gemini extensions install https://github.com/AEKO-Intelligence/aeko-plugin
 ```
 
-설치 후 Gemini CLI를 재시작하세요. Gemini 확장 매니페스트(`gemini-extension.json`)가 번들된 AEKO 스킬을 로드하고, 동적 OAuth 디스커버리로 호스팅된 AEKO MCP 서버를 설정합니다. Claude/Codex는 `plugin.json` 및 marketplace 매니페스트를 사용하고, Gemini CLI는 `gemini-extension.json`을 사용합니다.
+설치 후 Gemini CLI를 다시 시작하세요. Gemini는 `gemini-extension.json`, Claude와 Codex는 각각의
+plugin manifest를 사용합니다.
 
 ## 설치 후 먼저 할 일
 
-새 채팅에서 이 명령을 먼저 실행하세요:
+새 채팅에서 다음을 실행하세요:
 
 ```text
-/aeko-onboarding
+/aeko-start
 ```
 
-호스트가 플러그인 명령을 namespace로 표시하면 `/aeko-plugin:aeko-onboarding`을 사용하세요.
-
-이 안내는 플러그인 버전, AEKO MCP 연결 상태, 사용 가능한 스킬을 비기술 언어로 확인하고 다음 행동을 추천합니다.
-이후에는 위의 [세 가지 작업](#세-가지-작업) — 측정, 수정, 생성 — 을 따르면 됩니다.
-
-초안을 우리 브랜드 컨텍스트와 채널 관습에 맞추려면 `/aeko-onboarding` 4단계 또는 [CUSTOMIZATION.md](CUSTOMIZATION.md)를 참고하세요.
+Capability slot board가 필요하면 `/aeko-connect`를 사용하세요. 호스트가 플러그인 명령에 namespace를
+붙이면 호스트가 표시한 prefix를 사용하세요. 예: `/aeko-plugin:aeko-start`.
 
 ## 언어 지원
 
-AEKO는 사용자가 채팅에서 쓰는 언어에 맞춰 단계, 질문, 요약, 위험 안내, 다음 행동을 설명합니다.
-영어와 한국어는 첫 실행 문구가 별도로 준비되어 있고, 다른 언어도 Claude/Codex/Gemini가 대화형으로 지원합니다.
+사용자에게 보이는 질문, 요약, 위험 안내, 다음 행동은 채팅 언어를 따릅니다. 영어와 한국어는 직접
+작성된 문구를 제공하며 다른 언어도 대화형으로 지원합니다. 명령어, slug, 경로, ID, provider label,
+schema key, JSON-LD 용어, 브랜드 표기 `AEKO`는 영어/ASCII로 유지합니다.
 
-단, 워크플로가 깨지지 않도록 슬래시 명령어, 파일 경로, `press_release` 같은 채널 slug, schema key,
-JSON-LD 용어, 도구 이름은 영어/ASCII 그대로 유지합니다. 생성되는 콘텐츠 언어는 UI 언어와 별도로 지정할 수 있습니다.
+## 작업별 스킬 카탈로그
 
-## 사용 가능한 스킬
+배포 카탈로그에는 27개의 활성 스킬이 있습니다. [`skills/`](skills/) 아래 각 활성 폴더에는 하나의
+`SKILL.md`가 있으며, 이번 카탈로그가 첫 릴리스이므로 호환 전용 명령 stub은 배포하지 않습니다.
 
-[`skills/`](skills/) 참조. 각 스킬은 Claude, Codex 또는 Gemini CLI가 실행하는 자체 완결형 SKILL.md입니다.
+### 시작과 연결
 
-**마케터용 시작 흐름:**
+- `/aeko-start` — 계정 없는 첫 실행 안내와 라우팅.
+- `/aeko-connect` — AEKO, ads, analytics, store, docs/Notion, chat/Slack, calendar의 capability slot board.
 
-1. **설치 후 첫 실행** — `/aeko-onboarding`
-2. **AI가 우리 브랜드를 어디서 찾는지 보기** — `/aeko-visibility-report [domain_id]`
-3. **AI 발견을 막는 요소 고치기** — `/aeko-action-center [domain_id] technical`
-4. **AI가 인용할 수 있는 상품 페이지/콘텐츠 개선하기** — `/aeko-action-center [domain_id] pdp` 또는 `/aeko-action-center [domain_id] content`
+### 감사, 빌드, 수정
 
-AEKO는 매 실행마다 무엇을 확인하는지, 왜 중요한지, 읽기 전용인지/스토어에 영향을 줄 수 있는지, 다음 한 가지 행동이 무엇인지 비기술 언어로 설명합니다.
+- `/aeko-site-audit` — 공개 사이트 가독성 감사.
+- `/aeko-pdp-audit` — 상품 페이지 인용 준비도와 이미지 의존성 감사.
+- `/aeko-pdp-build` — 검증된 사실 기반 PDP HTML 및 JSON-LD builder; 스토어에는 쓰지 않음.
+- `/aeko-action-center [domain_id] [category]` — AEKO Action item 검토와 dispatch.
+- `/aeko-update-pdp <item_id>` — 보호된 PDP executor; `mode=refresh`는 리뷰 JSON-LD만 정밀 갱신.
+- `/aeko-fix-technical <item_id>` — crawler, sitemap, `llms.txt`, robots, 사이트 schema 수정 패키지.
 
-**진입점:**
+### 측정과 리포트
 
-- `/aeko-onboarding` — 첫 실행 가이드: 설정 상태를 확인하고, 스킬을 안내하며, 마케터가 바로 할 다음 행동을 제안
-- `/aeko-action-center [domain_id] [category]` — 시작 화면: pending 작업을 Technical health / Product pages / Content AI can cite로 보여주고 바로 실행 가능한 다음 명령어를 출력
-- `/aeko-update-pdp <item_id>` 또는 `/aeko-update-pdp domain_id=<uuid> product_id=<id>` — 상품 페이지 개선. 직접 실행 모드는 감사 가능한 PDP ActionItem을 안전하게 재사용하거나 생성한 뒤 원자적으로 선점하고, 항상 로컬 미리보기를 먼저 엽니다. 현재 상품 페이지 적용은 Before/After/Risk/Undo 안내 후 별도 확인을 받아야 하며, 비공개 초안은 연결된 스토어가 실제로 지원할 때만 제안합니다.
-- `/aeko-fix-technical <item_id>` — 기술 상태 개선 패키지. 크롤러 접근, llms.txt, robots.txt, 사이트 스키마 파일을 준비하고 위험/되돌리기 안내를 함께 제공
-- `/aeko-create-content <item_id>` 또는 `/aeko-create-content handoff=<id>` — Content executor. ActionItem 모드는 멀티채널 아티팩트를 지원하고, 직접 handoff 모드는 실행 시작 시 받은 서버 스냅샷을 해당 실행 동안 고정해 지정된 단일 채널만 작성하며 AEKO 저장·완료·게시를 호출하지 않음
-- `/aeko-check-source domain_id=<uuid> source_id=<uuid>` — 검증된 브랜드·프롬프트/Context·공식 상품 근거와 인용 페이지를 비교해 주장별 수정안과 선택적 연락 초안을 만드는 읽기 전용 점검
-- `/aeko-publish-content <item_id>` — Publisher. 저장된 콘텐츠 변형본을 명시 확인 후 게시; aeko.shop은 라이브 게시 가능, 자사몰 블로그는 AEKO 소유 초안으로 저장
+- `/aeko-ads-review` — 3개의 무료 사용자 커넥터 row와 전환/ROAS가 명시적으로 unavailable인 AEKO 계정 기반 OpenAI Ads 지출/효율 row를 합친 4-platform 요약.
+- `/aeko-openai-ads-reporting [domain_id] [days]` — 상·하위 campaign/ad group/ad/product와 선택형 organic AI visibility를 포함하는 계정 기반 OpenAI Ads 심층 리포트.
+- `/aeko-ga4` — 사용자 소유 GA4 커넥터 또는 선택형 AEKO GA4 join.
+- `/aeko-ai-visibility [domain_id] [window] [depth]` — AI 가시성, Share of Voice, answer drift.
+- `/aeko-source-analysis` — 연결 시 완전한 AEKO 근거를 사용하는 추적 답변 또는 인용 페이지 출처 분석.
+- `/aeko-message-audit` — 지출순 paid-message claim과 선택형 owned backing 및 AI 답변 확인.
+- `/aeko-weekly-report [window]` — MCP를 직접 호출하지 않는 provenance 포함 composite 리포트.
 
-**리서치 + 디스커버리:**
+### 리서치와 제어
 
-- `/aeko-find-prompts-to-track [domain_id]` — 리서치 라이브러리 필터링, 브랜드별 후보 랭킹, 선택된 프롬프트 트래킹
-- `/aeko-manage-tracked-prompts [domain_id]` — 각도, 할당량, 컨텍스트, 플랫폼별 추적 프롬프트 관리
-- `/aeko-prompt-deep-dive <prompt_id> [window]` — 추적된 프롬프트 1건 분석: 누가 이기는지, AI가 어떤 소스를 인용하는지, 어떤 콘텐츠 빈틈을 메울지 확인
-- `/aeko-brand-competitor-analysis [domain_id] <competitor>` — WebSearch + Wikipedia/Wikidata + AEKO 인용 데이터를 통한 브랜드 수준 포지셔닝
-- `/aeko-product-competitor-analysis <product_id> [urls...]` — 3–5개 경쟁 PDP 대비 제품 수준 속성별 비교
+- `/aeko-manage-prompts mode=discover|review` — 프롬프트 discovery, tracking, View, Context, suggestion, 보호된 untrack.
+- `/aeko-competitor-analysis scope=brand|product` — 무료 공개 리서치 단계와 선택형 AEKO 보강.
+- `/aeko-content-ideas` — 계정 기반 콘텐츠 아이디어 검토/start/dismiss 흐름; 연결된 MCP 기능을 확인.
 
-**광고 · 리뷰:**
+### 스토어와 콘텐츠
 
-- `/aeko-setup-store [domain_id]` — 에이전트에서 도메인 추가, 상품 연결/주입, 스타터 프롬프트 생성, 시장 설정
-- `/aeko-inject-reviews [domain_id]` — 리뷰 앱이 없는 스토어의 실제 리뷰를 주입
-- `/aeko-compose-ads [domain_id] [min_score]` — 컨텍스트 리뷰 기반의 일시중지 상태 OpenAI Ads 그룹 구성
-- `/aeko-ad-report [domain_id] [days]` — CTR, CPC, 지출, 클릭 기준 OpenAI Ads 효율 리포트
-- `/aeko-optimize-budget [domain_id] [days]` — 확인 후 실행되는 예산 최적화 드라이런
-- `/aeko-ad-guardrails [domain_id]` — 과지출 캠페인·광고 그룹·광고를 자동 일시중지하는 페이싱 규칙 설정; 비활성 상태로 생성하고 영향 범위 미리보기 후 명시적 확인을 받아야 작동
+- `/aeko-store mode=setup|reviews` — domain/store 설정과 에이전트의 유일한 review intake 경로.
+- `/aeko-create-content <item_id>` — 근거 기반 콘텐츠 executor.
+- `/aeko-publish-content <item_id>` — 저장된 콘텐츠 variation을 위한 보호된 publisher.
 
-**유지보수 + 리포팅:**
+### 광고 운영
 
-- `/aeko-refresh-jsonld <product_id> [integration_id]` — 평점과 리뷰 수처럼 AI가 읽는 리뷰 사실을 주기적으로 새로고침. `json_ld` 작업을 점유한 뒤 한 번의 감사 가능한 스토어 업데이트로 처리하며 `/schedule`용으로 설계
-- `/aeko-visibility-report [domain_id] [window] [depth]` — 온디맨드 리포트. `window=7d|14d|30d|90d`, `depth=summary|full`
-- `/aeo-audit <url> [shopping]` — 모든 URL에 대한 일반 AEO 준비도 감사, 선택적으로 상품 단위 AI 쇼핑 준비도 모드 지원 (Claude의 추론 사용; AEKO 데이터 의존성 없음)
+- `/aeko-openai-compose-ads [domain_id] [min_score]` — AEKO 계정 기반으로 review 기반 OpenAI Ads group을 paused 상태로 구성.
+- `/aeko-openai-budget-shift [domain_id] [days]` — AEKO 계정 기반으로 cap과 명시 확인이 있는 OpenAI Ads 예산 및 entity-state dry-run 변경.
+- `/aeko-openai-guardrails [domain_id]` — AEKO 계정 기반 OpenAI Ads automation 미리보기, 활성화, 이력 확인, emergency stop.
+
+### 주간 루프
+
+- `/aeko-create-loop` — 인터뷰, 지속 가능한 Notion config, 호스트별 schedule 구성, foreground dry run.
+- `/aeko-run-loop config=<notion-page-id>` — approval-first 예약 읽기·제안 진입점.
 
 ## 스킬 커스터마이징
 
-**[CUSTOMIZATION.md](CUSTOMIZATION.md)** — 플러그인을 포크하지 않고 브랜드 전용 예시, 커스텀 레시피, 보이스 오버라이드를 추가하는 방법을 설명합니다. 커스터마이즈 가능한 세 실행 스킬(`/aeko-create-content`, `/aeko-update-pdp`, `/aeko-fix-technical`)을 다룹니다.
-
-### 폐기된 스킬
-
-2026-04 (v0.4.0) 및 v0.5.0 통합 과정에서 폐기됨. 이전 명령어가 손에 익었다면 다음 대체재를 사용:
-
-| 폐기 | 대체 |
-|---|---|
-| `/aeko-run-action` | 분리: `/aeko-update-pdp` (PDP) + `/aeko-create-content` (콘텐츠) + `/aeko-fix-technical` (기술). `/aeko-action-center`가 적절한 것으로 디스패치. |
-| `/aeko-optimize-pdp`, `/aeo-optimize` | `/aeko-action-center` → `/aeko-update-pdp <item_id>` |
-| `/generate-faq`, `/generate-jsonld` | executor 스킬에서 인라인 처리. 주기 리뷰수 갱신은 `/aeko-refresh-jsonld`. |
-| `/aeko-create-own-content`, `/aeko-create-external-content` | `/aeko-create-content <item_id>` (venue는 Plan.md `artifact_type`이 결정) |
-| `/aeko-competitive-pdp-input` | 리서치를 `/aeko-update-pdp`(제품 컨텍스트)와 `/aeko-brand-competitor-analysis`(독립)로 흡수 |
-| `/aeko-fix-store-level` | `/aeko-fix-technical <item_id>` |
-| `/aeo-audit-local` | 폐기 — 순수 텍스트만으로 파일 수준 citability 린트는 신뢰성 있게 불가능 |
-| `/competitive-research` | 분리: `/aeko-brand-competitor-analysis` + `/aeko-product-competitor-analysis` |
-| `/create-visibility-report` | `/aeko-visibility-report [domain_id] [window] depth=full`로 통합 |
-| `/create-blog-article`, `/create-social-content`, `/create-marketing-materials` | `/aeko-create-content` (콘텐츠 컨텍스트 기반, 추적 프롬프트 시드) |
-
-**`/aeko-update-pdp` 참고:** v0.4.0에서 deprecated wrapper로 폐기, v0.5.0에서 Plan.md 기반 executor로 부활. 히스토리는 `aeko-mcp`의 `CHANGELOG.md` 참조.
-
-### 스킬 운영 원칙
-
-AEKO 스킬은 **유용한 워크플로를 압축**할 때만 자리를 얻습니다 — AEKO 도구 + Claude의 추론을 단일 명령 흐름으로 묶어 반복 가능하게 만들 때. 대부분의 AEKO 스킬은 적어도 하나의 `aeko_*` MCP 도구(도메인 컨텍스트, 추적 프롬프트, 액션 아이템, 스토어 쓰기)를 호출하지만, 절대 규칙은 아닙니다. `/aeo-audit`이 예외 — AEKO 백엔드 데이터를 사용하지 않지만 AEO 감사 휴리스틱을 워크플로로 운영화합니다.
-
-스킬의 산문이 `allowed-tools`에 실제로 나열되지 않은 AEKO 프리미티브를 참조하면 — 그건 신뢰성 부채입니다. 스킬을 그라운드(grounding)하거나 폐기하세요.
+[CUSTOMIZATION.md](CUSTOMIZATION.md)는 브랜드 소유 스킬·eval 패키지, 수동 편집, 범위가 지정된
+예시, Brand Wiki, 백엔드 updater 연결 지점을 설명합니다. OAuth 인증만으로 선택된 패키지의
+skill/eval/wiki 바이트가 로드되지는 않습니다. 호스팅 실행과 내보내기는 같은 고정 버전을
+선택해야 하며 AEKO 비공개 벤치마크는 배포하지 않습니다. [작업 프롬프트 예시](docs/automation-prompt-examples.md)는
+스킬 외에 별도 작업 지시를 보존하고 미지원 호스팅 실행을 표시합니다. 전체 Responses/MCP runner,
+contextual chat executor, GitHub App provisioning/sync는 이 플러그인에서 제공하지 않습니다.
 
 ## 다른 AEKO 저장소와의 관계
 
-- **[`aeko-mcp`](https://github.com/AEKO-Intelligence/aeko-mcp)** — Python MCP 서버. `aeko_*` 도구 호스팅. AEKO 백엔드에 임베드되어 `/mcp`에 노출. 직접 설치하지 않고, 호스팅된 엔드포인트에 연결합니다.
-- **`aeko-plugin`** (이 저장소) — 스킬만. Claude/Codex 플러그인 마켓플레이스 및 Gemini CLI 확장 설치를 통해 배포.
+- [`aeko-mcp`](https://github.com/AEKO-Intelligence/aeko-mcp) — 선택형 hosted AEKO tool server.
+- `aeko-plugin` — Claude, Codex, Gemini CLI용 skills-only 플러그인.
 
 ## 라이선스
 

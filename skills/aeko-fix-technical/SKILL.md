@@ -7,10 +7,15 @@ description: >
   Claude's reasoning — no prepare-* backend wrappers. Writes artifacts
   locally, surfaces a deploy checklist, marks the item complete.
 argument-hint: "<item-id>"
-allowed-tools: aeko_get_action_plan, aeko_get_domain_info, aeko_complete_action_item, Read, Write, WebFetch, WebSearch, Bash
+allowed-tools: aeko_get_action_plan, aeko_get_domain_info, aeko_complete_action_item, Read, Write, WebFetch, WebSearch, Bash, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO Fix Technical
+
+Before work, read [the brand execution contract](references/brand-execution-contract.md).
+Preserve the exact task prompt and apply only this brand's selected rules, evals, and examples.
+Use [the output evaluation rubric](references/brand-output-eval.md) plus the selected brand evals
+when checking the exact result; report missing inputs/checks as unavailable.
 
 Executor for one Technical-tab item, end-to-end: fetch Plan.md → parse frontmatter + prose → validate contract → produce artifact using embedded spec rules → write locally → mark complete. No separate backend "prepare" tools — the skill is self-contained.
 
@@ -102,7 +107,8 @@ Always load `references/recipes/deploy-checklist.md` before Step 4 — it's the 
 - `references/examples/<artifact_type>-*example*.{txt,json,md}` — brand-specific exemplar; mimic its conventions on top of recipe rules.
 - `references/style/voice-overrides.md` — domain-scoped overrides (Korean section headings, glossary, deploy notes); filter to blocks where `domain: <frontmatter.domain_id>` matches.
 
-**Precedence:** `voice-overrides` > `examples/*` > `recipes/*`. Recipe spec rules (llms.txt H1 line, robots.txt syntax, JSON-LD JSON validity) cannot be relaxed by examples — the skill fails the run if violated.
+**Precedence:** explicit task instructions and applicable brand rules/evals (surface conflicts) > scoped
+`voice-overrides` > brand examples > recipe defaults. Recipe spec rules (llms.txt H1 line, robots.txt syntax, JSON-LD JSON validity) cannot be relaxed by examples — the skill fails the run if violated.
 
 ### 3a–3d. Apply
 
@@ -132,7 +138,9 @@ aeko_complete_action_item(
 )
 ```
 
-Only call complete if every acceptance-gate check passed AND all artifacts were written. If complete errors, leave item `pending` and surface the error verbatim.
+Only call complete if every acceptance-gate check AND applicable required brand eval passed on
+the exact artifacts, the original task is satisfied, and all artifacts were written. Report missing
+eval evidence as unavailable; allow one correction, then leave the item pending. If complete errors, leave item `pending` and surface the error verbatim.
 
 ## Step 6 — User-facing summary
 
