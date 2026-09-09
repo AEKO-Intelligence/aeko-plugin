@@ -62,6 +62,7 @@ PACKAGE_ALLOWLIST = {
     ),
     "aeko-create-content": (
         "SKILL.md",
+        "references/saved-content-plan.md",
         "references/aeo-frameworks.md",
         "references/brand-execution-contract.md",
         "references/brand-output-eval.md",

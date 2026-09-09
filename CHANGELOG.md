@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.29.5] — 2026-09-09
+
+- Execute saved content-v2 plans with their selected format, destination and brand package.
+- Add exact, reviewed source revisions and external correction-request artifacts, preserving Wiki scope and later-crawl verification.
+- Claim execution before drafting; save actual artifacts and a local package/eval receipt before completing. Preserve legacy item and handoff modes.
+
 ## [0.29.4] — 2026-09-08
 
 - `/aeko-update-pdp` runs the command handoff in the user's AI platform, loads one accepted brand-package

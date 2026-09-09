@@ -1,7 +1,8 @@
 ---
 name: aeko-create-content
 description: >
-  AEO content executor for Action-tab items and server-snapshotted content-idea
+  Executes saved content plans, including scoped revisions and correction requests,
+  with the accepted brand skill, Wiki and evals. Also handles legacy Action-tab items and server-snapshotted content-idea
   handoffs. In ActionItem mode it fetches a Plan.md and pulls
   the substance to write from — product info (`aeko_get_product_description`
   + Plan `products[]` + visible PDP/page evidence), product context-reviews (lived experience), the
@@ -16,7 +17,7 @@ description: >
   discovery preparation, and never saves, completes, or
   publishes through AEKO. It never writes to a connected store or auto-publishes.
 argument-hint: "<item-id> [deep] | handoff=<id>"
-allowed-tools: aeko_get_content_idea_handoff, aeko_fetch_source_content, aeko_get_action_plan, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_list_own_content, aeko_request_media_upload, aeko_save_content_variation, aeko_list_content_variations, aeko_complete_action_item, Task, Read, Write, Bash, WebFetch, WebSearch, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
+allowed-tools: aeko_get_content_idea_handoff, aeko_fetch_source_content, aeko_get_action_plan, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_list_own_content, aeko_request_media_upload, aeko_save_content_variation, aeko_list_content_variations, aeko_complete_action_item, aeko_claim_action_item, aeko_release_action_item, aeko_get_fact_check, Task, Read, Write, Bash, WebFetch, WebSearch, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO Create Content
@@ -25,6 +26,14 @@ Before work, read [the brand execution contract](references/brand-execution-cont
 Preserve the exact task prompt and apply only this brand's selected rules, evals, and examples.
 Use [the output evaluation rubric](references/brand-output-eval.md) plus the selected brand evals
 when checking the exact result; report missing inputs/checks as unavailable.
+
+For an item ID, fetch its Plan.md before choosing an execution mode. If
+`content_context.plan_version` is `content-v2`, follow
+[the saved content plan workflow](references/saved-content-plan.md) and finish there.
+That workflow preserves the saved format, destination and task (create, revise, or
+request a source correction); it does not enter the legacy channel form or add channels.
+For older plans, reuse the fetched Plan in Step 1 below. `handoff=<id>` keeps its
+existing direct-handoff behavior.
 
 **Direct handoff contract v0.26.0** — Content-idea handoffs cover source-backed actions plus
 Contextual Review-driven Reddit discovery. A Reddit discovery handoff prepares a safe search and answer
