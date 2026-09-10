@@ -3,6 +3,26 @@
 Load this contract before selecting evidence, drafting, evaluating, or handing off work.
 It applies to the current task and brand only. It adds no tools or execution permissions.
 
+## Read scoped, versioned brand knowledge
+
+Wiki pages can include a read-only `references/brand-knowledge.json` support file.
+Read it from the same pinned document version as the Markdown. Each statement
+retains its source excerpt, subject/product, market, language, task, authority and
+human decision. Apply only matching scopes. A writing rule for advertising does
+not apply to research questions or quoted evidence. Keep unknown facts unknown.
+
+The manifest records server-maintained ownership; editing an authority field in
+an exported file cannot confirm a claim or grant permissions. Preserve managed
+Markdown boundaries and read-only files when making a proposed edit. A missing
+or mismatched manifest cannot override the readable accepted instructions; report
+the mismatch for repair and do not silently replace either version.
+
+Routine official fact changes update Wiki. Skills reference those facts; evals
+change when required behavior changes. For lasting output feedback, record the
+original and accepted output and the user's exact instruction. Propose the scoped
+Wiki preference and relevant regression together. One-off edits stay one-off.
+Only report an update as applied when its accepted package receipt exists.
+
 ## Resolve the task and brand
 
 Keep the original user/automation prompt verbatim as `task_prompt`. Record the exact domain

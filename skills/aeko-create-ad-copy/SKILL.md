@@ -21,6 +21,9 @@ An exported package can provide the same files locally through its manifest.
 Use this command's accepted guidance and applicable evals, including declared
 brand-specific support files. Read the required Wiki pages for brand voice,
 product facts and market guidance, retaining their authority and scope metadata.
+When present, read the version-matched `references/brand-knowledge.json` Wiki
+support file for statement-level product, market, language and advertising scope.
+Keep its read-only provenance and the readable page together in exports or edits.
 A draft page, a cited source or an AI observation is not an accepted brand fact.
 If a required file, eval or source is unavailable, report the missing dependency;
 do not substitute another brand's package or silently omit its rules.
@@ -60,8 +63,9 @@ delivery request and an available authorized tool before it can publish.
 
 Offer a lasting brand update only when the user wants the correction applied to
 future work. Record the rejected text, the accepted replacement, the requested
-scope and the relevant source. Propose a change to this brand's skill guidance
-and applicable eval/example, preserving existing instructions. The brand package
+scope and the relevant source. Store the lasting advertising preference in
+`voice/brand-voice`; propose its applicable eval/example and the skill's Wiki
+reference in one package, preserving existing instructions. The brand package
 changes only after its activation policy or explicit review succeeds. Report the
 recorded event, proposed change and accepted version as distinct receipts.
 If the host lacks an updater tool, present the proposed change for AEKO review or
