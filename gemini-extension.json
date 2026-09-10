@@ -1,6 +1,6 @@
 {
   "name": "aeko-plugin",
-  "version": "0.29.5",
+  "version": "0.29.6",
   "description": "AEKO skills for Gemini CLI: zero-account site and PDP audits, PDP HTML builds, connector-aware ads and GA4 measurement, connection setup, and weekly read-and-propose reporting; optional AEKO workflows add AI visibility, prompt, content, store, and guarded OpenAI Ads operations. Brand customization is portable; content ideas require live MCP capabilities, and plugin scheduled marketing writes are unsupported.",
   "mcpServers": {
     "aeko": {

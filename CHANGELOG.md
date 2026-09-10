@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.29.6] — 2026-09-10
+
+- Read version-bound Wiki statement provenance and apply product, market, language and task scopes.
+- Keep lasting ad preferences, relevant evals and skill references in the same accepted package. Preserve one-off corrections and read-only ownership on export/import.
+
 ## [0.29.5] — 2026-09-09
 
 - Execute saved content-v2 plans with their selected format, destination and brand package.
