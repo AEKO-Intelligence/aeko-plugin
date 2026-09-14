@@ -1760,7 +1760,7 @@
   "schema": "aeko-trusted-upstream-catalog-v1",
   "source": {
     "network_fetch": false,
-    "plugin_version": "0.29.6",
+    "plugin_version": "0.29.7",
     "repository": "https://github.com/AEKO-Intelligence/aeko-plugin",
     "selection": "explicit-public-file-allowlist"
   }
