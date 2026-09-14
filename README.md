@@ -148,7 +148,7 @@ first release.
 ### Measure and report
 
 - `/aeko-ads-review` — four-row cross-platform glance: three free customer-connector rows plus an account-gated OpenAI Ads spend/efficiency row whose conversion and ROAS cells are explicitly unavailable.
-- `/aeko-openai-ads-reporting [domain_id] [days]` — account-gated OpenAI Ads depth report with top/bottom campaign, ad-group, ad, and product rankings plus an optional organic AI-visibility fold.
+- `/aeko-openai-ads-reporting [domain_id] [days]` — account-gated OpenAI Ads depth report for one explicit ad account with top/bottom campaign, ad-group, ad, and product rankings, stored conversion coverage, plus an optional organic AI-visibility fold.
 - `/aeko-ga4` — customer-owned GA4 connector or optional AEKO GA4 join.
 - `/aeko-ai-visibility [domain_id] [window] [depth]` — AI visibility, Share of Voice, and answer drift.
 - `/aeko-source-analysis` — tracked-answer or cited-page source analysis with full AEKO evidence when connected.
@@ -353,7 +353,7 @@ schema key, JSON-LD 용어, 브랜드 표기 `AEKO`는 영어/ASCII로 유지합
 ### 측정과 리포트
 
 - `/aeko-ads-review` — 3개의 무료 사용자 커넥터 row와 전환/ROAS가 명시적으로 unavailable인 AEKO 계정 기반 OpenAI Ads 지출/효율 row를 합친 4-platform 요약.
-- `/aeko-openai-ads-reporting [domain_id] [days]` — 상·하위 campaign/ad group/ad/product와 선택형 organic AI visibility를 포함하는 계정 기반 OpenAI Ads 심층 리포트.
+- `/aeko-openai-ads-reporting [domain_id] [days]` — 명시적으로 선택한 광고 계정 하나의 상·하위 campaign/ad group/ad/product, 저장된 전환 coverage, 선택형 organic AI visibility를 포함하는 계정 기반 OpenAI Ads 심층 리포트.
 - `/aeko-ga4` — 사용자 소유 GA4 커넥터 또는 선택형 AEKO GA4 join.
 - `/aeko-ai-visibility [domain_id] [window] [depth]` — AI 가시성, Share of Voice, answer drift.
 - `/aeko-source-analysis` — 연결 시 완전한 AEKO 근거를 사용하는 추적 답변 또는 인용 페이지 출처 분석.

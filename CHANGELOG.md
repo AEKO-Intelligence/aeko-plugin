@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- `/aeko-openai-ads-reporting` pins one explicit ad account (auto-selected only when exactly one is
+  connected) on every supported read and reports completed account-local days without guessing a timezone.
+- Adds explicit-account product pages with feed/item identity, subset disclosure and separate carousel
+  card metrics, plus a stored conversion section with exact state, coverage and freshness and no
+  CPA/ROAS or event assumptions. Missing capabilities render as unavailable sections.
+- Requires aeko-mcp `aeko_list_ad_accounts`, `aeko_get_product_insights` and
+  `aeko_get_conversion_insights` (Unreleased after 0.23.0).
+
 ## [0.29.6] — 2026-09-10
 
 - Read version-bound Wiki statement provenance and apply product, market, language and task scopes.
