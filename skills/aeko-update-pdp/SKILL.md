@@ -315,10 +315,19 @@ Before inspecting the public page, resolve the Plan's exact `integration_id` and
 In direct mode, require the resolved domain and opaque external product ID to match both input arguments
 exactly before reading or writing that product. Never resolve an identity mismatch by title or similar URL.
 Then
-call `aeko_get_product_description(integration_id, product_id)`. Strip only the tool's surrounding markdown
-fence; bind the enclosed bytes as `current_description_html`. Never bind this variable from `WebFetch`, the
-rendered live page, or Plan prose. Record `current_description_length` and `current_description_img_count`
-from this exact value.
+call `aeko_get_product_description(integration_id, product_id)` and bind `current_description_html` from its
+exact `description_html` value:
+
+- A structured result (or the same object in the tool's JSON text) exposes `description_html` as its own
+  field. Use those bytes unchanged, and require the returned `integration_id` and `external_product_id` to
+  match the ones you requested.
+- An older deployment returns markdown with a fenced `description_html` block instead. Strip only that
+  fence and bind the enclosed bytes.
+- `null` means the store holds no description. Bind the empty string, record that the source was absent,
+  and never substitute rendered-page, preview, or Plan text for it.
+
+Never bind this variable from `WebFetch`, the rendered live page, or Plan prose. Record
+`current_description_length` and `current_description_img_count` from this exact value.
 
 For `preserve_existing`, if that base already contains `<!-- AEKO appended -->` or the legacy
 `<!-- AEKO structured content -->` marker, do not append another generated section. Resolve metadata-only
@@ -614,9 +623,10 @@ Set `delivery_mode="preview_only"`. Make no store call. Continue to Step 8.
 
 1. Resolve the exact `integration_id`, `domain_id`, and external product ID. Call
    `aeko_get_product_description(integration_id, external_product_id)` immediately before building the
-   confirmation. Bind only its fenced `description_html` as the new `current_description_html`. If it differs
+   confirmation. Bind only its exact `description_html` value, using the Step 4 binding rules, as the new
+   `current_description_html`. If it differs
    byte-for-byte from the Step 4 base, stop, rebuild the preview on the new base, and ask again.
-2. **Guaranteed recovery snapshot.** Before any mutating store call, write the exact fenced HTML bytes to
+2. **Guaranteed recovery snapshot.** Before any mutating store call, write those exact bound HTML bytes to
    `./aeko-artifacts/<domain_id>/<item_id>/before.html` without normalization. Re-read it and require exact
    length, byte equality to `current_description_html`, and the same `<img` count. If the snapshot cannot be
    proven exact, live delivery is unavailable. This file is the fallback when the backend audit cannot be
@@ -662,7 +672,7 @@ Set `delivery_mode="preview_only"`. Make no store call. Continue to Step 8.
    Any cancellation or ambiguous reply sets `delivery_mode="preview_only"`; make no store call and continue
    to Step 8.
 8. **TOCTOU gate after confirmation.** Call `aeko_get_product_description(integration_id,
-   external_product_id)` once more and compare its fenced HTML byte-for-byte with `before.html`. If it changed,
+   external_product_id)` once more and compare its exact `description_html` byte-for-byte with `before.html`. If it changed,
    do not write: save the new base separately, rebuild/re-preview, and require a fresh confirmation. Re-run
    the JSON-LD, byte-prefix, image-count, and local-reference gates on the exact final payload.
 9. Only after all gates pass, call `aeko_update_product_page(...)` **exactly once**, passing the exact
@@ -671,15 +681,31 @@ Set `delivery_mode="preview_only"`. Make no store call. Continue to Step 8.
    description/JSON-LD/tag/meta field in that
    one request. Never split one PDP update across `aeko_update_product_description`,
    `aeko_update_product_tags`, or `aeko_update_product_meta`; the single response must yield one `audit_id`
-   and one revert boundary. Parse `audit_id` and `admin_url`, then set `delivery_mode="current_product"`.
+   and one revert boundary. Read the receipt's `audit_id`, `status`, and `external_product_id`, and require
+   that product to be the one you wrote. `admin_url` is optional and is null on the current backend: print it
+   only when AEKO actually returns one, and never construct a store admin link yourself. Only
+   `status="success"` (`store_updated=true`) sets `delivery_mode="current_product"`. A `dry_run` status means
+   AEKO made no live store change: keep `delivery_mode="preview_only"`, say plainly that the store is
+   unchanged, and never report it as an applied update.
 10. On a confirmed success, call `aeko_get_product_description(integration_id, external_product_id)` and
     compare the returned HTML with the locally emulated expected backend result, including JSON-LD
     consolidation and image count. Length alone never passes verification.
-11. If the result is ambiguous (timeout/5xx after submission), do not release the claim or retry. Call
-    `aeko_list_store_writes(limit=100, offset=0)` and filter to the exact integration and external product when
-    those fields are exposed, then call `aeko_get_product_description(integration_id,
-    external_product_id)` for the actual comparison. The currently shipped list tool has no integration
-    filter parameter; never invent one. If the returned rows cannot prove the exact integration, treat
+11. A failed write is an MCP error, not a result. When its text carries an `aeko.error.v1` JSON object,
+    branch on that object's `mutation_state`:
+    - `not_attempted` or `rejected` — this request changed nothing. Report the `code`, fix the cause, and
+      only then re-run the gates from a fresh base. A claim code (`ACTION_ITEM_*`) can still mean the claim
+      is unusable; never release it just to force a retry.
+    - `unknown` — the write may have happened. Never retry and never release the claim.
+
+    Treat any failure without that JSON — an SDK argument/schema error, or an older deployment's error text —
+    as `unknown` when it follows a submitted call, and as a local failure when nothing was sent.
+
+    To reconcile an `unknown` result, call `aeko_list_store_writes(limit=100, offset=0)` and match rows on
+    their exact `store_integration_id` and `external_product_id`, paging with `next_offset` while it is not
+    null. The tool takes only `limit` and `offset`; never invent a filter parameter. Use the error's
+    `audit_id` when it carried one. Then call `aeko_get_product_description(integration_id,
+    external_product_id)` for the actual byte comparison. If the returned rows cannot prove the exact
+    integration and product, treat
     reconciliation as inconclusive and escalate rather than guessing. A `failed` audit cannot be reverted,
     even when the store may have committed, and the pinned claim prevents a corrective payload. In that
     indeterminate state the item is stuck: keep the claim, do not complete, and tell the user recovery
@@ -695,8 +721,9 @@ aeko_complete_action_item(
     artifact_paths=[<absolute paths of pdp.html, review.html, review receipt, any image files + before.html when live was attempted>],
     write_result={
         "mode": "<current_product | preview_only>",
-        "audit_id": "<from write response; null for preview_only>",
-        "admin_url": "<from write response; null otherwise>",
+        "audit_id": "<receipt audit_id; null when no write was submitted>",
+        "status": "<receipt status: success | dry_run; null when no write was submitted>",
+        "admin_url": "<receipt admin_url when AEKO returned one; null otherwise>",
     },
     execution_claim_id=execution_claim_id,
 )
@@ -716,7 +743,7 @@ Only complete if:
   Safety:        <preview file | current product page updated>
   Recovery copy: <before.html path when a live write was attempted>
   Audit ID:      <audit_id>         (revert: aeko_revert_store_write("<audit_id>"))
-  Admin URL:     <admin_url>
+  Admin URL:     <admin_url — omit this line when AEKO returned none>
   Artifact:      <pdp.html path>
   Browser review: <review.html path; actual checked widths and remaining limits>
   Brand context: <accepted package version/digest or disclosed upstream fallback; eval results>
