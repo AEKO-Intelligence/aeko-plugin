@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.29.8] — 2026-09-21
+
+- `/aeko-update-pdp` binds the source description from the structured `description_html` field (or the same
+  field in the tool's JSON text), treats a `null` description as an absent source instead of substituting
+  other text, and still accepts an older deployment's fenced markdown.
+- Reads the store-write receipt's `status` and `audit_id`, reports `dry_run` as no live store change, and
+  prints `admin_url` only when AEKO returns one rather than expecting it.
+- Branches a failed write on the `aeko.error.v1` `mutation_state`: `not_attempted` and `rejected` changed
+  nothing, while `unknown` is never retried and never releases the claim. Reconciliation matches store write
+  history rows on their exact `store_integration_id` and `external_product_id`.
+- Refresh mode follows the same source binding, receipt and reconciliation rules.
+- Compatible with both the current tool text and aeko-mcp's structured results for these reads and writes.
+
 ## [0.29.7] — 2026-09-14
 
 - `/aeko-openai-ads-reporting` pins one explicit ad account (auto-selected only when exactly one is

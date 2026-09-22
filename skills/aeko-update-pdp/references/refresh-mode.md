@@ -50,8 +50,11 @@ as store-authoritative. Plan prose that merely repeats a scraped/public number i
 
 ## Step 2 — fetch, snapshot, and parse the source description
 
-Call `aeko_get_product_description(integration_id, external_product_id)`. Strip only the surrounding tool
-fence and bind the enclosed bytes as `existing_html`. Handle token, 404, and upstream failures by releasing
+Call `aeko_get_product_description(integration_id, external_product_id)` and bind its exact
+`description_html` value as `existing_html`: use the structured field (or the same field in the tool's JSON
+text) unchanged, and strip only the surrounding fence when an older deployment returns markdown. A `null`
+description means the store holds none — bind the empty string rather than substituting other text. Handle
+token, 404, and upstream failures by releasing
 the claim only when the response proves no mutation occurred.
 
 Before any mutating store call, write those exact bytes to
@@ -130,8 +133,8 @@ Require the exact explicit live-update confirmation. Ambiguous replies mean prev
 There is no auto-approval carve-out.
 
 After confirmation, call `aeko_get_product_description(integration_id, external_product_id)` again. If its
-fenced HTML differs byte-for-byte from `before.html`, stop, rebuild the patch, and require a new preview and
-confirmation.
+exact `description_html` differs byte-for-byte from `before.html`, stop, rebuild the patch, and require a new
+preview and confirmation.
 
 Then call exactly once:
 
@@ -145,13 +148,20 @@ aeko_update_product_page(
 )
 ```
 
-This remains one store call and one audit boundary. On confirmed success, fetch the source description again
+This remains one store call and one audit boundary. Read the receipt's `status` and `audit_id`. Only
+`status="success"` applied a live change; `dry_run` means AEKO made no store change, so report the store as
+unchanged. On confirmed success, fetch the source description again
 with `aeko_get_product_description` and compare it to the locally emulated expected result; length alone does
 not verify it. Then complete the ActionItem with the returned audit ID and matching claim token.
 
-On a confirmed no-write 4xx, release the claim, surface it, and do not retry. On timeout/5xx, keep the claim
-and never retry. Call `aeko_list_store_writes(limit=100, offset=0)` and filter to the exact integration and
-product when exposed; the shipped tool has no integration filter parameter, so never invent one. Re-fetch
+A failure is an MCP error. When its text carries an `aeko.error.v1` JSON object, branch on `mutation_state`:
+`not_attempted` or `rejected` means this request wrote nothing — surface the `code` and release the claim
+only when the state proves no mutation; `unknown` means the write may have happened — keep the claim and
+never retry. Treat a failure without that JSON as `unknown` when it follows a submitted call.
+
+To reconcile an `unknown` result, call `aeko_list_store_writes(limit=100, offset=0)` and match rows on their
+exact `store_integration_id` and `external_product_id`, paging with `next_offset` while it is not null; the
+tool takes only `limit` and `offset`, so never invent a filter parameter. Re-fetch
 the exact product with `aeko_get_product_description` for comparison. If audit output cannot prove the exact
 integration, reconciliation is inconclusive.
 
