@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.29.9] — 2026-09-23
+
+- `/aeko-create-content` can put a video in an aeko.shop article. The editorial recipe's allow-list said the
+  callout variants were `info | warn | product`; the backend has also accepted `source` and `catalog-product`,
+  so every YouTube, TikTok or Instagram reference a brief supplied was being dropped from the body for want of
+  documentation. Adds the video callout pattern, the accepted URL shapes, and what each variant renders.
+- Corrects the `<figure>` attribute allow-list, which listed three of the seven attributes the sanitizer
+  accepts (`data-product-id`, `data-source-url`, `data-provider` and `data-caption` were missing).
+- Marks `catalog-product` and the `data-mention-*` anchors as **do not emit**: both key on aeko.shop's internal
+  product UUID, which this recipe never holds — it carries `source_id`. An unresolvable id renders as a plain
+  link with no card rather than an error, so the failure was silent.
+
 ## [0.29.8] — 2026-09-21
 
 - `/aeko-update-pdp` binds the source description from the structured `description_html` field (or the same

@@ -77,19 +77,26 @@ Verbatim from `aeko-shop-backend/app/sanitizer.py`. The sanitizer raises `HTTPEx
 
 - `*` (any tag): `class`
 - `a`: `href, title, rel, target, data-mention-type, data-mention-id`
-- `figure`: `role, data-variant, data-product-source-id`
+- `figure`: `role, data-variant, data-product-source-id, data-product-id, data-source-url, data-provider, data-caption`
 - `img`: `src, alt, title, width, height, loading`
 - `table`: `summary`
 - `td`: `colspan, rowspan`
 - `th`: `colspan, rowspan, scope`
 
-`data-variant` value enum: `info | warn | product` — the sanitizer rejects any other value when `role="callout"`. Only `product` has a wired frontend consumer; `info` and `warn` are reserved and not required by this recipe.
+`data-variant` value enum: `info | warn | product | catalog-product | source` — the sanitizer rejects any other value when `role="callout"`.
+
+| Variant | Frontend consumer | This recipe |
+|---|---|---|
+| `product` | Renders the figure's own contents inline | Emit — see the product callout pattern below |
+| `source` | Renders the video still with a click-to-load player | Emit — see the video callout pattern below |
+| `catalog-product` | Renders a full product card (image, price, links) | **Do not emit** — it requires aeko.shop's internal product UUID in `data-product-id`, which this recipe never has. Use `product` instead |
+| `info` / `warn` | None | Reserved; not required |
 
 **Allowed `<a href>` protocols:** `http`, `https`, `mailto`. Only link to **real URLs you were given in the brief** (`products[].outbound_url`, Plan/context links, user-supplied media). **Never invent URLs.**
 
 **Allowed `<img src>` origins:** must match `settings.allowed_image_origins ∪ {settings.media_public_base_url}` — the AEKO media CDN (today `https://aekoshop-htgrg9fha0bbfmed.z02.azurefd.net`, plus the `aekoshopmedia.blob.core.windows.net` blob origin). **Always embed the `public_url` returned by `aeko_request_media_upload` verbatim** — that is the configured origin. Any other origin (the brand's own non-AEKO domain, a hand-written `cdn.aeko.shop`) returns 400. `cdn.aeko.shop` is **not** a serving origin.
 
-`data-mention-type` / `data-mention-id` on `<a>` are allow-listed but unused by any frontend consumer today; the recipe does not emit them.
+`data-mention-type` / `data-mention-id` on `<a>` now render as a marked product link with a product card hoisted after the paragraph — but `data-mention-id` must be aeko.shop's internal product UUID, which this recipe never has (it carries `source_id`). **Do not emit them**: an id that does not resolve renders as a plain link and the card is simply absent. The publisher in the `aeko` repo resolves `@brand-slug/product-slug` tokens into these anchors; this recipe does not.
 
 ---
 
@@ -183,6 +190,48 @@ Placement:
 - **Below-the-body product cards** are rendered automatically by `aeko-shop-front` from `.meta.json` `featured_products[]` — no HTML callout is needed for the cards to appear.
 
 A product can appear twice on the rendered page — once as an inline `<figure>` callout for mid-flow AEO reinforcement, once as a "Featured products" card (the primary click target). This is intentional; the recipe **permits** but does not **require** an inline callout for every product.
+
+---
+
+## Video / source callout pattern — `aeko_shop`
+
+Embeds a YouTube, TikTok or Instagram reference the brief actually gave you.
+This is how a video reaches an aeko.shop article — a raw `<iframe>` is **not**
+in the allow-list and returns 400.
+
+```html
+<figure role="callout" data-variant="source"
+        data-source-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        data-caption="제니언니가 설명하는 피부 타입 진단">
+</figure>
+```
+
+Rules:
+
+- `role="callout"` and `data-variant="source"` are both required.
+- `data-source-url` must be a real URL **from the brief** — never invented. The
+  backend reparses it (`normalize_post_source`) and rejects anything that is not
+  a recognisable YouTube / TikTok / Instagram video URL with a 400. It also
+  rewrites the attribute to its canonical form and fills `data-provider`, so do
+  not set `data-provider` yourself.
+- Accepted YouTube shapes: `watch?v=<11>`, `youtu.be/<11>`, `/shorts/<11>`,
+  `/embed/<11>`. TikTok: `/@handle/video/<digits>`. Instagram: `/p/<id>` or
+  `/reel/<id>`.
+- `data-caption` is optional, max 1000 chars, and renders under the video. Use
+  it to say what the reader will see — it is the only text a crawler gets.
+- **Leave the figure empty.** The frontend fills it; anything you put inside is
+  redundant.
+
+What renders: a YouTube callout shows the video's still image, proxied through
+aeko.shop's own origin, with a "동영상 불러오기 · 외부 서비스 연결" button over it.
+The player itself loads only when the reader clicks — nothing contacts the
+provider before that, which is the point of the callout. TikTok and Instagram
+render as a link card without a still (their thumbnails need an authenticated
+oEmbed call).
+
+Placement: one video per article is usually enough, sitting in the H2 section it
+illustrates. A video is a source, not decoration — if the brief did not give you
+one, omit the callout rather than searching for something plausible.
 
 ---
 
