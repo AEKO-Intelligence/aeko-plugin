@@ -40,6 +40,7 @@ PACKAGE_ALLOWLIST = {
         "references/manual-inputs.md",
         "references/weekly-rows.md",
     ),
+    "aeko-automations": ("SKILL.md",),
     "aeko-ai-visibility": (
         "SKILL.md",
         "references/aeo-frameworks.md",
@@ -243,6 +244,7 @@ COMMAND_CATEGORIES = {
     "aeko-create-ad-copy": "advertising",
     "aeko-action-center": "router",
     "aeko-ads-review": "reporting",
+    "aeko-automations": "automation",
     "aeko-ai-visibility": "reporting",
     "aeko-competitor-analysis": "analysis",
     "aeko-connect": "connection",
@@ -464,9 +466,9 @@ def _validate_local_links(slug: str, records: list[dict]) -> None:
 
 
 def build_catalog() -> dict:
-    if len(PACKAGE_ALLOWLIST) != 27 or len(PACKAGE_ALLOWLIST) > MAX_DOCUMENTS:
+    if len(PACKAGE_ALLOWLIST) != 28 or len(PACKAGE_ALLOWLIST) > MAX_DOCUMENTS:
         raise ValueError(
-            "The trusted catalog must contain exactly 27 bounded entrypoints."
+            "The trusted catalog must contain exactly 28 bounded entrypoints."
         )
     if set(COMMAND_CATEGORIES) != set(PACKAGE_ALLOWLIST):
         raise ValueError("Every canonical command requires one stable category.")
@@ -571,7 +573,7 @@ def build_catalog() -> dict:
         "content_sha256": content_digest.hexdigest(),
         "relationship_note": (
             "The nine legacy backend skill/eval documents are runtime prompt components, "
-            "not the 27 customer-plugin command entrypoints. Related entries below are "
+            "not the 28 customer-plugin command entrypoints. Related entries below are "
             "workflow associations only and are not one-to-one imports."
         ),
         "legacy_backend_documents": [

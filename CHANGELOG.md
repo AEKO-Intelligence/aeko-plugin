@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.0] — 2026-09-30
+
+- Adds `/aeko-automations`, a guided customer workflow for dashboard templates: Reviews to Contexts,
+  held Contexts to Ad Drafts, and Marketing Data to Low Performers with the user's explicit CTR or CPC
+  choice. It resolves the live contract before create/run, supports one-time runs, and avoids schedules,
+  publishing, blind create retries, and idempotency-key rotation.
+
 ## [0.29.9] — 2026-09-23
 
 - `/aeko-create-content` can put a video in an aeko.shop article. The editorial recipe's allow-list said the
