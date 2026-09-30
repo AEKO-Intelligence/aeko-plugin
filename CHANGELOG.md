@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.1] — 2026-09-30
+
+- Add explicit or input-led ad-copy strategies (`auto`, `context`, `conversational`,
+  `response_informed`) with untrusted-response handling and evidence gates for comparative claims.
+- Extend ad-copy regressions for strategy selection, response prompt injection, Korean conversational
+  copy, and unsupported or bounded comparison claims; include the strategy reference in the trusted catalog.
+
 ## [0.30.0] — 2026-09-30
 
 - Adds `/aeko-automations`, a guided customer workflow for dashboard templates: Reviews to Contexts,

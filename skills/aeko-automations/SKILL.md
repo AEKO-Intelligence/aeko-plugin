@@ -79,6 +79,17 @@ specified a KPI; never infer a revenue or sales objective.
    the resolved job contract. For ad drafts, say clearly that generated ads remain **on hold** and this
    workflow does not publish them. For a performance shortlist, state whether CTR or CPC will be used.
 
+## Optional ad approach
+
+For the ad-draft template, `params.creative_strategy` may be `context` (the
+compatible default), `conversational`, or `auto`. Preserve the user's choice;
+`auto` lets the existing generation call select an eligible pinned approach for
+each item. It does not predict the best-performing ad. Do not overwrite an
+explicit skill selection saved through the dashboard. Response-informed drafts
+need the original response and comparison evidence intake in
+`/aeko-create-ad-copy`; this automation does not accept that strategy or promise
+response-level ad placement.
+
 ## Create and optionally run
 
 Create when the user explicitly asks to save/create the workflow, or explicitly asks to run a new workflow

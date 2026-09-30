@@ -25,7 +25,11 @@ MARKDOWN_LINK = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 # Every byte admitted to the catalog is named here. The builder never archives
 # a checkout, follows a symlink, or fetches a branch/tag at build or run time.
 PACKAGE_ALLOWLIST = {
-    "aeko-create-ad-copy": ("SKILL.md", "references/ad-copy-evals.md"),
+    "aeko-create-ad-copy": (
+        "SKILL.md",
+        "references/ad-copy-evals.md",
+        "references/creative-strategies.md",
+    ),
     "aeko-action-center": (
         "SKILL.md",
         "references/action-item-contract.md",
