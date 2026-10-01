@@ -1,6 +1,6 @@
 # Trusted upstream catalog
 
-The customer plugin ships 27 canonical `aeko-*` command entrypoints. The current backend seed
+The customer plugin ships 28 canonical `aeko-*` command entrypoints. The current backend seed
 defines nine older automation skill/eval documents for review classification and ad-copy runtime
 prompts. These are different catalogs. The two related workflows below share a job area, but none
 of the nine backend documents is a substitute for a customer command.
@@ -73,7 +73,7 @@ key and source package identity. Non-Markdown support files are marked read-only
 per-command package SHA-256, and a catalog content SHA-256 let a backend vendor the exact reviewed
 bytes without a runtime source checkout.
 
-The reviewed artifact currently contains 27 commands, 137 explicitly allowlisted files, and
+The reviewed artifact currently contains 28 commands, 140 explicitly allowlisted files, and
 1,169,108 source bytes. Its aggregate content digest is
 `48f56c1b9218c5ecf2e555353789d68b4c3bb68e4234ed235e7aeb1a45c88d38`; the JSON file digest is
 `44dc21f52fdb93116c88adda685a87e837625a34117243e1c484119d7390add7`. Per-command digests frame
@@ -91,7 +91,7 @@ The backend consumer now vendors and validates this exact artifact. Its implemen
 
 1. Vendor the generated JSON at a reviewed release boundary and reject an unknown schema, plugin
    version, count, bound, path, or SHA before any database write.
-2. Reconcile stable AEKO-default documents for all 27 `(skill, customer_plugin, aeko-*)`
+2. Reconcile stable AEKO-default documents for all 28 `(skill, customer_plugin, aeko-*)`
    identities through the existing trusted package validator (`trusted_files=True`,
    `metadata_writer=aeko_default`). Do not accept a model- or request-supplied checkout path.
 3. Preserve the source command slug and catalog/package/file hashes as immutable upstream
@@ -102,7 +102,7 @@ The backend consumer now vendors and validates this exact artifact. Its implemen
 5. Run this only from deployment/bootstrap reconciliation. GET routes and customer runs must not
    fetch current source, provision defaults, or silently add new commands to an accepted package.
 
-An initialized brand can therefore discover all 27 command documents in its whole package. The
+An initialized brand can therefore discover all 28 command documents in its whole package. The
 legacy hosted model classes retain their existing runtime components. The hosted MCP ad runner
 selects `aeko-create-ad-copy` from the accepted release, including its supporting files and evals.
 Other commands remain portable; listing a command does not claim a hosted executor for it.
