@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.0] — 2026-10-04
+
+- Execute saved Context Search content-v3 plans with six task recipes, original frozen evidence and protected limitations.
+- Read selected plan evidence through the new bounded MCP tool; require compatible backend/MCP capability before execution.
+- Keep image-only PDP assessment deferred until merchant-published readable text is rechecked. Draft completion never clears that state.
+- Preserve content-v2 and unversioned legacy workflows; unknown versions fail closed.
+
 ## [0.31.0] — 2026-10-04
 
 - Requires aeko-mcp 0.27.0 (Phase 5b read API). Share of Voice and answer drift now return shaped tables

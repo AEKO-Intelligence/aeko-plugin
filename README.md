@@ -402,3 +402,7 @@ contextual chat executor, GitHub App provisioning/sync는 이 플러그인에서
 ## 라이선스
 
 MIT
+
+### Context Search plans (content-v3)
+
+`/aeko-create-content <item_id>` executes the saved ad copy, PDP revision, community reply, video script, source inquiry or comparison task using frozen original evidence. It saves local artifacts and an executor receipt. This workflow requires the Context Search backend and `aeko_get_action_evidence` from the compatible MCP release; older connections cannot substitute live sources. Image-only PDPs remain unassessed until the merchant publishes readable text and AEKO rechecks it. Draft execution does not publish or update a store.

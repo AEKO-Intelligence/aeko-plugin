@@ -73,10 +73,10 @@ key and source package identity. Non-Markdown support files are marked read-only
 per-command package SHA-256, and a catalog content SHA-256 let a backend vendor the exact reviewed
 bytes without a runtime source checkout.
 
-The reviewed artifact currently contains 28 commands, 140 explicitly allowlisted files, and
-1,169,108 source bytes. Its aggregate content digest is
-`48f56c1b9218c5ecf2e555353789d68b4c3bb68e4234ed235e7aeb1a45c88d38`; the JSON file digest is
-`44dc21f52fdb93116c88adda685a87e837625a34117243e1c484119d7390add7`. Per-command digests frame
+The reviewed 0.32.0 artifact contains 28 commands, 142 explicitly allowlisted files, and
+1,253,900 source bytes. Its aggregate content digest is
+`4ecb78339787166fb40353925c2680682ac6383631afd6696843897d18f027a6`; the JSON file digest is
+`2b62bb33ee86cc36f299bc513d91a0ea4813b9d6966542988b5ae46247d7997d`. Per-command digests frame
 the actual path, file digest, and byte count, so same-size content or path substitutions change
 the command fingerprint.
 

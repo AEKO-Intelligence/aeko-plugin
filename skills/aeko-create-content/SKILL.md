@@ -17,7 +17,7 @@ description: >
   discovery preparation, and never saves, completes, or
   publishes through AEKO. It never writes to a connected store or auto-publishes.
 argument-hint: "<item-id> [deep] | handoff=<id>"
-allowed-tools: aeko_get_content_idea_handoff, aeko_fetch_source_content, aeko_get_action_plan, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_list_own_content, aeko_request_media_upload, aeko_save_content_variation, aeko_list_content_variations, aeko_complete_action_item, aeko_claim_action_item, aeko_release_action_item, aeko_get_fact_check, Task, Read, Write, Bash, WebFetch, WebSearch, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
+allowed-tools: aeko_get_content_idea_handoff, aeko_fetch_source_content, aeko_get_action_plan, aeko_get_action_evidence, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_list_own_content, aeko_request_media_upload, aeko_save_content_variation, aeko_list_content_variations, aeko_complete_action_item, aeko_claim_action_item, aeko_release_action_item, aeko_get_fact_check, Task, Read, Write, Bash, WebFetch, WebSearch, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO Create Content
@@ -28,11 +28,17 @@ Use [the output evaluation rubric](references/brand-output-eval.md) plus the sel
 when checking the exact result; report missing inputs/checks as unavailable.
 
 For an item ID, fetch its Plan.md before choosing an execution mode. If
+`content_context.plan_version` is `content-v3`, follow
+[the Context Search plan workflow](references/context-search-plan.md) and finish there.
+It executes the saved task with its frozen evidence and does not enter the legacy
+channel form, publish, or write to a store. If
 `content_context.plan_version` is `content-v2`, follow
 [the saved content plan workflow](references/saved-content-plan.md) and finish there.
 That workflow preserves the saved format, destination and task (create, revise, or
 request a source correction); it does not enter the legacy channel form or add channels.
-For older plans, reuse the fetched Plan in Step 1 below. `handoff=<id>` keeps its
+An unknown nonempty `content_context.plan_version` requires a compatible plugin;
+stop rather than treating it as a legacy plan. For plans without that version,
+reuse the fetched Plan in Step 1 below. `handoff=<id>` keeps its
 existing direct-handoff behavior.
 
 **Direct handoff contract v0.26.0** — Content-idea handoffs cover source-backed actions plus
