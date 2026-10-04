@@ -81,7 +81,8 @@ Immediately before **every** call that starts tracking—`aeko_track_prompt`,
 
 If `aeko_get_quota` fails, `aeko_get_tracked_prompts` provides an observed count only: it has no plan cap and
 cannot produce a remaining count. State that capacity could not be certified and never present the fallback
-as an adequate quota check. Never reuse an earlier quota snapshot for a later write.
+as an adequate quota check. The list is read from the light tracked-prompt index: same fields and layout,
+still the complete list, with `status` always `tracked`. Never reuse an earlier quota snapshot for a later write.
 
 Before the write, retain the tracked-prompt IDs/count and the expected variants. After every tracking call,
 call `aeko_get_tracked_prompts` again. Reconcile all result rows, the before/after count, and

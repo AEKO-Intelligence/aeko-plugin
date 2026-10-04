@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.31.0] — 2026-10-04
+
+- Requires aeko-mcp 0.27.0 (Phase 5b read API). Share of Voice and answer drift now return shaped tables
+  with totals (`showing N of brands_total brands`, `showing N of events_total events`); `/aeko-ai-visibility`
+  reports the legend lines the tools print and accepts `from_date`/`to_date` ranges.
+- Cited sources read "showing 20 of N", and `aeko_get_source_share` adds citation share by platform and
+  domain with change versus the previous period.
+- The tracked-prompt list comes from the light index: same fields, still complete, `status` always `tracked`.
+
 ## [0.30.1] — 2026-09-30
 
 - Add explicit or input-led ad-copy strategies (`auto`, `context`, `conversational`,

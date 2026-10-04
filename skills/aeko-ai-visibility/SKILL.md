@@ -6,7 +6,7 @@ description: >
   cited sources, competitors, and actions. Routes users with no tracked prompts
   to aeko-manage-prompts instead of rendering an empty report.
 argument-hint: "[domain-id] [window] [depth]"
-allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_tracked_prompts, aeko_get_visibility_summary, aeko_get_share_of_voice, aeko_get_answer_drift, Read, Write, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
+allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_tracked_prompts, aeko_get_visibility_summary, aeko_get_source_share, aeko_get_share_of_voice, aeko_get_answer_drift, Read, Write, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO AI Visibility
@@ -74,15 +74,26 @@ Call in parallel when supported and within the remaining budget; otherwise run t
   latest seven days and previous seven-day comparison. `window` is compatibility-only and is not forwarded
   to the backend; it cannot select a calendar week or a 14/30/90-day metrics window.
 - `aeko_get_visibility_summary(domain_id, scope="cited_sources")` — pages from this domain AI engines cite;
-  no selectable date range. Do not label these "new this week" without authoritative event timestamps.
+  no selectable date range. It lists the top 20 and prints "showing 20 of N", so say it is a top-20 list
+  when N is larger. Do not label these "new this week" without authoritative event timestamps.
+- `aeko_get_source_share(domain_id, from_date=<window start>, to_date=<window end>, prompt_ids=<verified selected ids or omitted>)`
+  — optional, for "which sources do AI engines cite?": citation share by platform and by cited domain with
+  the change versus the previous period of the same length. Pass `domain=<cited domain>` to see the top 20
+  or fewer URLs of that one domain on request. It returns capped summaries only, never raw citation rows.
 - `aeko_get_share_of_voice(domain_id, prompt_ids=<verified selected ids or omitted>, start_date=<window start>, end_date=<window end>)`
-  — the brand's share across tracked-prompt responses for the exact requested dates.
+  — the brand's share across tracked-prompt responses for the exact requested dates, as a ranked brand
+  table (`★` marks your brand; `from_date`/`to_date` work as aliases for the dates; `limit` up to 50). It
+  prints "showing N of brands_total brands", so say when the table is partial. The per-prompt block appears
+  only when 10 or fewer prompt ids are passed.
 - `aeko_get_answer_drift(domain_id, days=<7|14|30|90>, prompt_ids=<verified selected ids or omitted>)` — which
-  monitored answers materially changed over the requested lookback.
+  monitored answers materially changed over the requested lookback. It returns a range line, a position
+  summary ("lower is better"), a sampled trend, your brand's appear/disappear/position-change counts over
+  the returned events, and the newest `events_limit` (default 50) events with "showing N of events_total
+  events". Pass `from_date` and `to_date` together instead of `days` for an exact range.
 
 Compute ISO dates from the requested window. Do not convert Share of Voice into a made-up score or describe
-answer drift as visibility loss; report the backend definitions and denominators returned by each tool.
-`days` is a rolling lookback, not an arbitrary historical start/end. Retain each source's actual window,
+answer drift as visibility loss; report the legend lines each tool prints (the share denominator, "lower is better", and what the event counts cover) instead of restating definitions from memory.
+`days` is a rolling lookback; use `from_date`/`to_date` for an explicit range. Retain each source's actual window,
 timezone and fetch time; when exact boundaries are unavailable, say so. A weekly request never relabels
 all-time or rolling data as last Monday–Sunday. If exact-window answers are required and cannot be
 selected, mark those answers unavailable while keeping separately labeled usable observations.

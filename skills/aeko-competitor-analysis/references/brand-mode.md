@@ -45,7 +45,7 @@ or the connector is missing/returns 401, retain the complete public-signals repo
 
 1. `aeko_get_domain_info(domain_id)` to ground the "vs us" comparison using names, URLs, keywords, market,
    industry, and surfaced Context.
-2. `aeko_get_visibility_summary(domain_id, scope="cited_sources")` — surfaces pages from the user's domain AI engines cite.
+2. `aeko_get_visibility_summary(domain_id, scope="cited_sources")` — surfaces pages from the user's domain AI engines cite; it lists the top 20 and prints "showing 20 of N".
 3. Call `aeko_get_tracked_prompts` once and select at most ten relevant tracked prompts only when the job
    or returned domain-scoped evidence establishes their relation to this domain. The account-wide list's
    formatter exposes no domain ID; similarity alone cannot establish that relation. If no scoped selection
@@ -56,6 +56,7 @@ or the connector is missing/returns 401, retain the complete public-signals repo
    - Call `aeko_get_tracked_prompt(prompt_id, window=<supported job window or "30d">)` for cited-source
      analysis. Record actual response dates; do not silently broaden an explicit window.
    - Count how often the competitor's brand name appears in `responses[].mentions`.
+     The tool shows only the top 8 brands per response, so a competitor outside the top 8 reads as absent; say so.
    - Count how often the competitor's root domain appears in `responses[].citations[].domain`.
 5. Build a comparison matrix:
 
