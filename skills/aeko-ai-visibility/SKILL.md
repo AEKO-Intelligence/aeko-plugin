@@ -74,12 +74,15 @@ Call in parallel when supported and within the remaining budget; otherwise run t
   latest seven days and previous seven-day comparison. `window` is compatibility-only and is not forwarded
   to the backend; it cannot select a calendar week or a 14/30/90-day metrics window.
 - `aeko_get_visibility_summary(domain_id, scope="cited_sources")` — pages from this domain AI engines cite;
-  no selectable date range. It lists the top 20 and prints "showing 20 of N", so say it is a top-20 list
-  when N is larger. Do not label these "new this week" without authoritative event timestamps.
+  no selectable date range. The backend returns at most the top 50 cited pages and the tool lists up to 20,
+  so present it as a top list, never as the domain's total cited pages ("more may exist"). Do not label
+  these "new this week" without authoritative event timestamps.
 - `aeko_get_source_share(domain_id, from_date=<window start>, to_date=<window end>, prompt_ids=<verified selected ids or omitted>)`
   — optional, for "which sources do AI engines cite?": citation share by platform and by cited domain with
   the change versus the previous period of the same length. Pass `domain=<cited domain>` to see the top 20
-  or fewer URLs of that one domain on request. It returns capped summaries only, never raw citation rows.
+  or fewer URLs of that one domain on request; that URL list is all time, because the URL endpoint has no
+  date range, so never present its counts under the report window. It returns capped summaries only, never
+  raw citation rows.
 - `aeko_get_share_of_voice(domain_id, prompt_ids=<verified selected ids or omitted>, start_date=<window start>, end_date=<window end>)`
   — the brand's share across tracked-prompt responses for the exact requested dates, as a ranked brand
   table (`★` marks your brand; `from_date`/`to_date` work as aliases for the dates; `limit` up to 50). It
@@ -114,7 +117,7 @@ Mentions, fixed seven-day metrics: <returned count> (<its WoW trend>)
 Citations, fixed seven-day metrics: <returned count> (<its WoW trend>)
 Sentiment: <returned value with its actual definition, units and window>
 Share of Voice: <backend SOV value + denominator/peer set>
-Answer drift: <changed prompts / assessed prompts> changed in <actual drift lookback>
+Answer drift: <events_total> events in <drift range> (your brand: appear N · disappear N · position change N, over the newest N events)
 
 ## What moved this week
 

@@ -20,7 +20,8 @@ If `$1` is set, keep it as `domain_id`. Domain is optional for account-wide prom
 `aeko_get_tracked_prompts` lists the account's tracked prompts. A domain is **required** for saved-view or
 Context operations: if the user requests either and no domain is known, call `aeko_list_domains` and have
 them choose before calling `aeko_list_views` or `aeko_create_view`. The list comes from the light index:
-the same fields as before and still complete, with `status` always `tracked`.
+still complete, with `status` always `tracked`. Its reconciliation JSON block comes before the table and keys
+each row by `prompt_id` (the table's `id` column holds the same value).
 
 ## Step 2 - Quota snapshot
 

@@ -5,9 +5,13 @@
 - Requires aeko-mcp 0.27.0 (Phase 5b read API). Share of Voice and answer drift now return shaped tables
   with totals (`showing N of brands_total brands`, `showing N of events_total events`); `/aeko-ai-visibility`
   reports the legend lines the tools print and accepts `from_date`/`to_date` ranges.
-- Cited sources read "showing 20 of N", and `aeko_get_source_share` adds citation share by platform and
-  domain with change versus the previous period.
-- The tracked-prompt list comes from the light index: same fields, still complete, `status` always `tracked`.
+- Cited sources are presented as a top list (up to 20 of the top 50 the backend returns; more may exist), and
+  `aeko_get_source_share` adds citation share by platform and domain with change versus the previous period.
+  Its per-domain URL list is all time and is never reported under the report window.
+- The visibility headline reports answer drift as `events_total` events with your brand's appear, disappear
+  and position-change counts, as the drift tool prints them.
+- The tracked-prompt list comes from the light index: still complete, `status` always `tracked`, with the
+  reconciliation JSON first and keyed by `prompt_id`.
 
 ## [0.30.1] — 2026-09-30
 
