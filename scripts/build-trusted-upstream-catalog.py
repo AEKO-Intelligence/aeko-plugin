@@ -29,6 +29,7 @@ PACKAGE_ALLOWLIST = {
         "SKILL.md",
         "references/competitor-report.md",
         "references/exact-tracking.md",
+        "references/visibility-reports.md",
         "references/writing-formats.md",
     ),
     "aeko-create-ad-copy": (

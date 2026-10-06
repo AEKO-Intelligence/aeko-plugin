@@ -142,7 +142,7 @@ first release.
 - `/aeko-pdp-audit` — product-page citability and image-dependency audit.
 - `/aeko-pdp-build` — verified-fact PDP HTML and JSON-LD builder; never writes to a store.
 - `/aeko-action-center [domain_id] [category]` — review and dispatch AEKO Action items.
-- `/aeko-assistant-task <item_id>` — run one saved dashboard action from its frozen scope and return its result to AEKO; currently capability-gated to exact suggestion tracking, competitor reports and writing-format proposals.
+- `/aeko-assistant-task <item_id>` — run one saved dashboard action from its frozen scope and return its result to AEKO; currently capability-gated to exact suggestion tracking, competitor/overview/market reports and writing-format proposals.
 - `/aeko-update-pdp <item_id>` — guarded PDP executor; `mode=refresh` surgically refreshes review JSON-LD.
 - `/aeko-fix-technical <item_id>` — crawler, sitemap, `llms.txt`, robots, and site-schema fix package.
 
@@ -411,4 +411,4 @@ MIT
 
 ### Saved dashboard assistant tasks
 
-`/aeko-assistant-task <item_id>` retrieves an `assistant-task-v1` Plan.md, validates the exact scope, claims it, reads only attached bounded evidence, performs the permitted operation, saves an AEKO-readable result, and completes under the same claim. Selected Context suggestions use `aeko_track_task_suggestions` and its server-backed per-row receipt. Saved competitor reports use only attached AEKO history and return a Markdown report through `aeko_save_action_output`; they never silently fall back to public web research. Writing-format tasks save a structured proposal for review, not an active format. The menu and this command require matching backend, MCP and plugin capabilities. Opening a Claude or Codex link does not execute the task.
+`/aeko-assistant-task <item_id>` retrieves an `assistant-task-v1` Plan.md, validates the exact scope, claims it, reads only attached bounded evidence, performs the permitted operation, saves an AEKO-readable result, and completes under the same claim. Selected Context suggestions use `aeko_track_task_suggestions` and its server-backed per-row receipt. Competitor, overview and market reports use only attached AEKO history and return Markdown through `aeko_save_action_output`; a missing private sample never silently falls back to public web research. Writing-format tasks save a structured proposal for review, not an active format. The menu and this command require matching backend, MCP and plugin capabilities. Opening a Claude or Codex link does not execute the task.
