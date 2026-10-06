@@ -1,9 +1,9 @@
 {
-  "content_sha256": "6c8c091b3da27ad3c93cc351f7a881b18b8a400ad71b6a5ea21eef1810fd81fa",
+  "content_sha256": "9f5985a571b451f19753a80c4d72de37cd4a43f6a3061405b7a33a3e318e07f5",
   "counts": {
     "canonical_entrypoints": 29,
     "legacy_backend_documents": 9,
-    "source_bytes": 1269057,
+    "source_bytes": 1269217,
     "source_files": 147
   },
   "documents": [
@@ -206,15 +206,15 @@
         "size_bytes": 5244,
         "source_path": "skills/aeko-assistant-task/SKILL.md"
       },
-      "source_package_sha256": "36397309adba4d77c76e1d4f376058dc071ed3fa01698ce9ddf671f4b59b0128",
+      "source_package_sha256": "70f7e3651348b3875895be0ce1010249f539a83d37d99cf4975d097f59ee976d",
       "subkind": "customer_plugin",
       "support_files": [
         {
-          "content": "# Saved competitor report\n\nThis mode applies to `action_id=competitors.comparison_report.v1` with `assistant-task-v1`. It uses **only the frozen AEKO evidence attached to this task**. The older standalone `/aeko-competitor-analysis` public research workflow remains available for independent requests, but its WebSearch/WebFetch fallback must never run for a saved competitor report.\n\nVerify the owned brand, exact selected competitor IDs, saved view/filter, market, platforms and time window from the plan. Read each attached evidence ID within the task's row/byte limit. Include the actual sample counts, dates, source and response IDs, citation URLs where validated, and missing coverage. Compare only what the records support. Missing history is unavailable; a zero in a partial sample does not prove that a competitor was never mentioned. Do not assume competitor reviews, product facts, prices, ratings or PDP claims from visibility data. Do not turn the comparison into competitor-targeted ad copy.\n\nSave a readable Markdown report as the task's report output. Cite each used saved evidence ID in the exact `[evidence:<UUID>]` form and pass the same IDs in `evidence_ids`; the backend rejects absent, extra or unowned references. Use `schema_version=assistant-output-v1`. Report the output ID and AEKO link returned by the backend. Do not present a client-local file as a browser-downloadable result.\n",
+          "content": "# Saved competitor report\n\nThis mode applies to `action_id=competitors.comparison_report.v1` with `assistant-task-v1`. It uses **only the frozen AEKO evidence attached to this task**. The older standalone `/aeko-competitor-analysis` public research workflow remains available for independent requests, but its WebSearch/WebFetch fallback must never run for a saved competitor report.\n\nVerify the owned brand, exact selected competitor IDs, saved view/filter, market, platforms and time window from the plan. Read each attached evidence ID within the task's row/byte limit. Use the plan's `coverage` for the bounded denominator: `scanned_count`, own and per-competitor mention counts, neutral count, saved count, truncation and alias availability. These counts describe the scanned sample; if truncated, they do not establish whole-period rates or absence. Include actual sample counts, dates, source and response IDs, validated citation URLs, and missing coverage. Compare only what the records support. Do not assume competitor reviews, product facts, prices, ratings or PDP claims from visibility data. Do not turn the comparison into competitor-targeted ad copy.\n\nSave a readable Markdown report as the task's report output. Cite each used saved evidence ID in the exact `[evidence:<UUID>]` form and pass the same IDs in `evidence_ids`; the backend rejects absent, extra or unowned references. Use `schema_version=assistant-output-v1`. Report the output ID and AEKO link returned by the backend. Do not present a client-local file as a browser-downloadable result.\n",
           "editable": true,
           "path": "references/competitor-report.md",
-          "sha256": "a4833e39e58bc7942811386221ec008b20f90bfde459e52beedac735bfabee57",
-          "size_bytes": 1408,
+          "sha256": "3cf8e604a850a19f7abb200c377d6a7a7c58d336d76654ce64b8c9375a93a734",
+          "size_bytes": 1568,
           "source_path": "skills/aeko-assistant-task/references/competitor-report.md"
         },
         {
