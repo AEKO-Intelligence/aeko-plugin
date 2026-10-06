@@ -30,6 +30,7 @@ PACKAGE_ALLOWLIST = {
         "references/competitor-report.md",
         "references/context-groups.md",
         "references/exact-tracking.md",
+        "references/review-strengths.md",
         "references/visibility-reports.md",
         "references/writing-formats.md",
     ),
