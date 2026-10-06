@@ -11,7 +11,7 @@ allowed-tools: aeko_get_action_plan, aeko_list_domains, aeko_get_domain_info, ae
 
 # AEKO AI Visibility
 
-If given a saved `itm_` ID, call `aeko_get_action_plan` first. Route `assistant-task-v1` actions `visibility.overview_report.v1` and `markets.comparison_report.v1` to `/aeko-assistant-task <item_id>` for frozen evidence, coverage and an AEKO-readable returned report. Do not run the live summary below in place of the selected historical window or saved view. Unknown plan versions stop with update guidance.
+If given a saved `itm_` ID, call `aeko_get_action_plan` first. Route `assistant-task-v1` actions `visibility.overview_report.v1`, `markets.comparison_report.v1`, and `tracking.platform_responses_report.v1` to `/aeko-assistant-task <item_id>` for frozen evidence, coverage and an AEKO-readable returned report. The Tracking response report uses exact tracked Prompt IDs, not Context suggestion IDs. Do not run the live summary below in place of the selected historical window or saved view. Unknown plan versions stop with update guidance.
 
 Produces a structured AI visibility report for one domain. Output is designed to be pasted into a board / team update without further editing.
 

@@ -36,6 +36,7 @@ PACKAGE_ALLOWLIST = {
         "references/review-strengths.md",
         "references/selected-questions.md",
         "references/technical-findings.md",
+        "references/tracked-responses.md",
         "references/visibility-reports.md",
         "references/writing-formats.md",
     ),
