@@ -127,7 +127,7 @@ labels, schema keys, JSON-LD terms, and the brand mark `AEKO` stay in English/AS
 
 ## Skill catalog by job
 
-The shipped catalog contains 28 active skills. Each active folder under [`skills/`](skills/) contains one
+The shipped catalog contains 29 active skills. Each active folder under [`skills/`](skills/) contains one
 `SKILL.md`; compatibility-only command stubs are intentionally not shipped because this is the catalog's
 first release.
 
@@ -142,6 +142,7 @@ first release.
 - `/aeko-pdp-audit` — product-page citability and image-dependency audit.
 - `/aeko-pdp-build` — verified-fact PDP HTML and JSON-LD builder; never writes to a store.
 - `/aeko-action-center [domain_id] [category]` — review and dispatch AEKO Action items.
+- `/aeko-assistant-task <item_id>` — run one saved dashboard action from its frozen scope and return its result to AEKO; currently capability-gated to exact suggestion tracking, competitor/overview/market reports and writing-format proposals.
 - `/aeko-update-pdp <item_id>` — guarded PDP executor; `mode=refresh` surgically refreshes review JSON-LD.
 - `/aeko-fix-technical <item_id>` — crawler, sitemap, `llms.txt`, robots, and site-schema fix package.
 
@@ -164,6 +165,7 @@ first release.
 ### Store and content
 
 - `/aeko-create-ad-copy` — draft or revise product ads with the accepted brand skill, evals and Wiki.
+- New ad writing formats use built-in guidance; applicable approved brand restrictions still apply. Format creation does not run an ad.
 
 - `/aeko-store mode=setup|reviews` — domain/store setup and the agent's only review-intake path.
 - `/aeko-create-content <item_id>` — evidence-grounded content executor.
@@ -191,7 +193,7 @@ explicitly. Hosted runs and exports must select the same version, and private AE
 attached skills and label unavailable hosted execution. This plugin does not provide the full
 Responses/MCP runner, contextual chat executor, or GitHub App provisioning/sync.
 
-The reproducible [trusted upstream catalog](docs/trusted-upstream-catalog.md) covers all 28 public
+The reproducible [trusted upstream catalog](docs/trusted-upstream-catalog.md) covers all 29 public
 `aeko-*` entrypoints with exact file allowlists and SHA-256 provenance. The current backend's nine legacy
 automation skill/eval documents are different runtime prompt components. The backend now vendors this
 reviewed catalog for explicit reconciliation; existing hosted templates still use their legacy components.
@@ -406,3 +408,7 @@ MIT
 ### Context Search plans (content-v3)
 
 `/aeko-create-content <item_id>` executes the saved ad copy, PDP revision, community reply, video script, source inquiry or comparison task using frozen original evidence. It saves local artifacts and an executor receipt. This workflow requires the Context Search backend and `aeko_get_action_evidence` from the compatible MCP release; older connections cannot substitute live sources. Image-only PDPs remain unassessed until the merchant publishes readable text and AEKO rechecks it. Draft execution does not publish or update a store.
+
+### Saved dashboard assistant tasks
+
+`/aeko-assistant-task <item_id>` retrieves an `assistant-task-v1` Plan.md, validates the exact scope, claims it, reads only attached bounded evidence, performs the permitted operation, saves an AEKO-readable result, and completes under the same claim. Exact selected Context suggestion tracking uses `aeko_track_task_suggestions` and its server-backed per-row receipt. Saved question, competitor, overview, market, review, cached Ads/GA4 and technical findings reports use attached AEKO evidence and return cited Markdown through `aeko_save_action_output`; a missing private sample never silently falls back to public web research. Writing-format, Context-grouping and ad-rule tasks save structured proposals for review without applying formats, groups, campaigns, ads or rules. The menu and this command require matching backend, MCP and plugin capabilities. Opening a Claude or Codex link does not execute the task.

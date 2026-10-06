@@ -7,11 +7,13 @@ description: >
   folds in organic AI visibility; writes a local Markdown report; and remains read-only and
   schedulable. Use for depth on AEKO-operated OpenAI Ads, not a cross-platform glance.
 argument-hint: "[domain-id] [days] [organic=true|false]"
-allowed-tools: Read, aeko_list_domains, aeko_list_ad_accounts, aeko_list_campaigns, aeko_list_ad_groups, aeko_list_ads, aeko_get_ad_insights, aeko_get_product_insights, aeko_get_conversion_insights, aeko_get_visibility_summary, Write, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
+allowed-tools: Read, aeko_get_action_plan, aeko_list_domains, aeko_list_ad_accounts, aeko_list_campaigns, aeko_list_ad_groups, aeko_list_ads, aeko_get_ad_insights, aeko_get_product_insights, aeko_get_conversion_insights, aeko_get_visibility_summary, Write, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 disallowed-tools: Edit, Bash
 ---
 
 # AEKO OpenAI Ads Reporting
+
+If given a saved `itm_` task ID, read `aeko_get_action_plan` first. Route `assistant-task-v1` with `ads.performance_report.v1` to `/aeko-assistant-task <item_id>` for its frozen account-level cached metrics and returned AEKO report. Keep the independent deep report below for direct requests; do not replace the saved task's date range with its default days or claim campaign-level detail from an account-only sample.
 
 Use this skill when the user explicitly invokes:
 

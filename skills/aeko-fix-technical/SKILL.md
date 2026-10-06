@@ -12,6 +12,8 @@ allowed-tools: aeko_get_action_plan, aeko_get_domain_info, aeko_complete_action_
 
 # AEKO Fix Technical
 
+If given a saved `itm_` task ID, read `aeko_get_action_plan` first. Route `assistant-task-v1` with `technical.findings_plan.v1` to `/aeko-assistant-task <item_id>` for its frozen selected-product checks and AEKO-readable repair plan. That task does not authorize the file-writing, WebFetch or store-edit workflow below. Unknown plan versions need a compatible plugin.
+
 Before work, read [the brand execution contract](references/brand-execution-contract.md).
 Preserve the exact task prompt and apply only this brand's selected rules, evals, and examples.
 Use [the output evaluation rubric](references/brand-output-eval.md) plus the selected brand evals

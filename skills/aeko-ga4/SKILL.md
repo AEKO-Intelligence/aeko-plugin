@@ -6,11 +6,13 @@ description: >
   normalized traffic and impact rows, including explicit unavailable rows when
   no source is connected. Use for traffic, ecommerce impact, or GA4 setup.
 argument-hint: "[source=auto|official|aeko] [domain-id] [window]"
-allowed-tools: ToolSearch, Read, aeko_list_domains, aeko_get_ga4_status, aeko_list_ga4_properties, aeko_select_ga4_property, aeko_sync_ga4, aeko_get_measure, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
+allowed-tools: ToolSearch, Read, aeko_get_action_plan, aeko_list_domains, aeko_get_ga4_status, aeko_list_ga4_properties, aeko_select_ga4_property, aeko_sync_ga4, aeko_get_measure, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 disallowed-tools: Write, Edit, Bash
 ---
 
 # AEKO GA4
+
+If given a saved `itm_` task ID, read `aeko_get_action_plan` before the live-source workflow. Route `assistant-task-v1` with `measure.ga4_report.v1` to `/aeko-assistant-task <item_id>` so it uses the frozen property, date range, cached evidence and AEKO-readable report output. An unknown plan version needs a compatible plugin; do not replace a saved historical scope with a fresh GA4 query.
 
 Answer: **What traffic arrived, and what impact can we verify?** Keep the customer's official GA4
 connector and AEKO's GA4 join as separate provenance rungs. Never make the free connector path test,

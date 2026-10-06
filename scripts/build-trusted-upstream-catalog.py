@@ -25,6 +25,21 @@ MARKDOWN_LINK = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 # Every byte admitted to the catalog is named here. The builder never archives
 # a checkout, follows a symlink, or fetches a branch/tag at build or run time.
 PACKAGE_ALLOWLIST = {
+    "aeko-assistant-task": (
+        "SKILL.md",
+        "references/ad-rule-proposal.md",
+        "references/cached-metrics.md",
+        "references/competitor-report.md",
+        "references/context-groups.md",
+        "references/context-questions.md",
+        "references/exact-tracking.md",
+        "references/review-strengths.md",
+        "references/selected-questions.md",
+        "references/technical-findings.md",
+        "references/tracked-responses.md",
+        "references/visibility-reports.md",
+        "references/writing-formats.md",
+    ),
     "aeko-create-ad-copy": (
         "SKILL.md",
         "references/ad-copy-evals.md",
@@ -246,6 +261,7 @@ LEGACY_RELATIONSHIPS = {
 # feedback targets; the remaining commands still carry a stable category and an
 # empty dependency closure for catalog discovery.
 COMMAND_CATEGORIES = {
+    "aeko-assistant-task": "orchestration",
     "aeko-create-ad-copy": "advertising",
     "aeko-action-center": "router",
     "aeko-ads-review": "reporting",
@@ -471,9 +487,9 @@ def _validate_local_links(slug: str, records: list[dict]) -> None:
 
 
 def build_catalog() -> dict:
-    if len(PACKAGE_ALLOWLIST) != 28 or len(PACKAGE_ALLOWLIST) > MAX_DOCUMENTS:
+    if len(PACKAGE_ALLOWLIST) != 29 or len(PACKAGE_ALLOWLIST) > MAX_DOCUMENTS:
         raise ValueError(
-            "The trusted catalog must contain exactly 28 bounded entrypoints."
+            "The trusted catalog must contain exactly 29 bounded entrypoints."
         )
     if set(COMMAND_CATEGORIES) != set(PACKAGE_ALLOWLIST):
         raise ValueError("Every canonical command requires one stable category.")
@@ -578,7 +594,7 @@ def build_catalog() -> dict:
         "content_sha256": content_digest.hexdigest(),
         "relationship_note": (
             "The nine legacy backend skill/eval documents are runtime prompt components, "
-            "not the 28 customer-plugin command entrypoints. Related entries below are "
+            "not the 29 customer-plugin command entrypoints. Related entries below are "
             "workflow associations only and are not one-to-one imports."
         ),
         "legacy_backend_documents": [

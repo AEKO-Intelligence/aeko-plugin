@@ -6,10 +6,12 @@ description: >
   cited sources, competitors, and actions. Routes users with no tracked prompts
   to aeko-manage-prompts instead of rendering an empty report.
 argument-hint: "[domain-id] [window] [depth]"
-allowed-tools: aeko_list_domains, aeko_get_domain_info, aeko_get_tracked_prompts, aeko_get_visibility_summary, aeko_get_source_share, aeko_get_share_of_voice, aeko_get_answer_drift, Read, Write, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
+allowed-tools: aeko_get_action_plan, aeko_list_domains, aeko_get_domain_info, aeko_get_tracked_prompts, aeko_get_visibility_summary, aeko_get_source_share, aeko_get_share_of_voice, aeko_get_answer_drift, Read, Write, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO AI Visibility
+
+If given a saved `itm_` ID, call `aeko_get_action_plan` first. Route `assistant-task-v1` actions `visibility.overview_report.v1`, `markets.comparison_report.v1`, and `tracking.platform_responses_report.v1` to `/aeko-assistant-task <item_id>` for frozen evidence, coverage and an AEKO-readable returned report. The Tracking response report uses exact tracked Prompt IDs, not Context suggestion IDs. Do not run the live summary below in place of the selected historical window or saved view. Unknown plan versions stop with update guidance.
 
 Produces a structured AI visibility report for one domain. Output is designed to be pasted into a board / team update without further editing.
 

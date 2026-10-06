@@ -5,27 +5,32 @@ description: Draft or revise product ad copy using supplied contexts and accepte
 
 # Create ad copy
 
+The current `assistant-task-v1` catalog includes analysis, exact tracking, and a review-only ad writing-format proposal; it does not authorize ad generation. If a saved `itm_` task ID is supplied, route it to `/aeko-assistant-task <item_id>` for version and action validation before any drafting. A comparison report is never an instruction to make a competitor ad. A future ad task must specify its own output contract, source evidence and writing format/version.
+
+For a newly selected writing format, use its exact ID/version and title/description instructions. Built-ins `기본형` and `대화형` are writing formats, separate from the creative strategy keys `situation_question` and `conversational` used on older drafts; keep those older meanings intact. New users can draft with built-in instructions and checks without first creating Wiki or eval documents. If this brand already has applicable approved restrictions or a pinned accepted package, load and honor the exact scoped version. Missing optional customization is not an error. A format definition or draft never authorizes upload, campaign activation or spend.
+
 Produce useful ad copy for the requested product, market and language. Keep the
 user's Automation Prompt separate from this reusable skill: it defines the job,
 while the accepted brand package defines the brand's rules and evidence.
 
 ## Load the brand's accepted instructions
 
-In AEKO, consume the run's pinned skill, evals, support files and Brand Wiki;
-never switch to a newer release halfway through a run. In an external AI client,
-use the authenticated `aeko_get_active_brand_package` tool to select this command,
+For existing hosted runs with a pinned package, consume the run's pinned skill,
+evals, support files and Brand Wiki; never switch to a newer release halfway
+through a run. In an external AI client, use the authenticated
+`aeko_get_active_brand_package` tool when an accepted package is available,
 then `aeko_get_brand_package_version` and `aeko_read_brand_package_file` to read
 the exact accepted versions. Read every required chunk before generating.
 An exported package can provide the same files locally through its manifest.
 
-Use this command's accepted guidance and applicable evals, including declared
-brand-specific support files. Read the required Wiki pages for brand voice,
+When a package is present, use this command's accepted guidance and applicable
+evals, including declared brand-specific support files. Read the required Wiki pages for brand voice,
 product facts and market guidance, retaining their authority and scope metadata.
 When present, read the version-matched `references/brand-knowledge.json` Wiki
 support file for statement-level product, market, language and advertising scope.
 Keep its read-only provenance and the readable page together in exports or edits.
 A draft page, a cited source or an AI observation is not an accepted brand fact.
-If a required file, eval or source is unavailable, report the missing dependency;
+If a pinned required file, eval or source is unavailable, report the missing dependency;
 do not substitute another brand's package or silently omit its rules.
 
 ## Draft or revise
