@@ -27,6 +27,7 @@ MARKDOWN_LINK = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 PACKAGE_ALLOWLIST = {
     "aeko-assistant-task": (
         "SKILL.md",
+        "references/cached-metrics.md",
         "references/competitor-report.md",
         "references/context-groups.md",
         "references/exact-tracking.md",

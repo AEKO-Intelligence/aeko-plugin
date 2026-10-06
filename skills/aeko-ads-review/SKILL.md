@@ -7,11 +7,13 @@ description: >
   orders. The customer's official connectors provide the first three free
   rows; the account-gated OpenAI Ads row comes from AEKO.
 argument-hint: "[week-of] [platforms=meta,tiktok,google,openai] [domain-id=<id>] [timezone=<IANA>] [report_mode=interactive|weekly]"
-allowed-tools: Read, Glob, ToolSearch, aeko_list_domains, aeko_get_ad_account_status, aeko_get_ad_insights, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
+allowed-tools: Read, Glob, ToolSearch, aeko_get_action_plan, aeko_list_domains, aeko_get_ad_account_status, aeko_get_ad_insights, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 disallowed-tools: Write, Edit, Bash
 ---
 
 # AEKO Ads Review
+
+If given a saved `itm_` task ID, read `aeko_get_action_plan` first. Route `assistant-task-v1` with `ads.performance_report.v1` to `/aeko-assistant-task <item_id>` for the selected account, period and cached evidence. That report covers AEKO's OpenAI Ads account metrics only; do not add Meta, TikTok or Google rows from the independent connector workflow below. Unknown plan versions need a compatible plugin.
 
 Answer: **How are my ads doing, and what's wasting money?** This is a read-only cross-platform glance. Its
 final interactive answer leads with one scannable table, even though the workflow may ask one compact

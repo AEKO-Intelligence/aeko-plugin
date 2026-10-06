@@ -5,7 +5,7 @@ description: Draft or revise product ad copy using supplied contexts and accepte
 
 # Create ad copy
 
-The first `assistant-task-v1` catalog supports exact prompt tracking and competitor reports; it does not authorize ad generation. If a saved `itm_` task ID is supplied, route it to `/aeko-assistant-task <item_id>` for version and action validation before any drafting. A comparison report is never an instruction to make a competitor ad. A future ad task must specify its own output contract, source evidence and writing format/version.
+The current `assistant-task-v1` catalog includes analysis, exact tracking, and a review-only ad writing-format proposal; it does not authorize ad generation. If a saved `itm_` task ID is supplied, route it to `/aeko-assistant-task <item_id>` for version and action validation before any drafting. A comparison report is never an instruction to make a competitor ad. A future ad task must specify its own output contract, source evidence and writing format/version.
 
 For a newly selected writing format, use its exact ID/version and title/description instructions. Built-ins `기본형` and `대화형` are writing formats, separate from the creative strategy keys `situation_question` and `conversational` used on older drafts; keep those older meanings intact. New users can draft with built-in instructions and checks without first creating Wiki or eval documents. If this brand already has applicable approved restrictions or a pinned accepted package, load and honor the exact scoped version. Missing optional customization is not an error. A format definition or draft never authorizes upload, campaign activation or spend.
 
