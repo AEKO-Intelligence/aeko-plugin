@@ -6,10 +6,12 @@ description: >
   prompts. Use for prompt quota, tracking changes, review-suggested questions,
   saved views, or Context curation. Writes require explicit selection and gates.
 argument-hint: "[mode=discover|review|suggested|contexts] [domain-id]"
-allowed-tools: Read, aeko_list_domains, aeko_get_domain_info, aeko_search_research_prompts, aeko_track_prompt, aeko_get_tracked_prompts, aeko_get_quota, aeko_get_current_markets, aeko_list_contexts, aeko_create_context, aeko_update_context, aeko_archive_context, aeko_create_contexts_from_reviews, aeko_list_views, aeko_create_view, aeko_add_prompts_to_view, aeko_untrack_prompt, aeko_list_review_integrations, aeko_list_review_products, aeko_get_suggested_prompts, aeko_track_suggested_prompt, aeko_track_suggested_prompts, aeko_dismiss_suggested_prompt, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
+allowed-tools: Read, aeko_get_action_plan, aeko_list_domains, aeko_get_domain_info, aeko_search_research_prompts, aeko_track_prompt, aeko_get_tracked_prompts, aeko_get_quota, aeko_get_current_markets, aeko_list_contexts, aeko_create_context, aeko_update_context, aeko_archive_context, aeko_create_contexts_from_reviews, aeko_list_views, aeko_create_view, aeko_add_prompts_to_view, aeko_untrack_prompt, aeko_list_review_integrations, aeko_list_review_products, aeko_get_suggested_prompts, aeko_track_suggested_prompt, aeko_track_suggested_prompts, aeko_dismiss_suggested_prompt, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO Manage Prompts
+
+If the argument is a saved `itm_` ID, call `aeko_get_action_plan` first. Route `assistant-task-v1` with `tracking.suggested_prompts.bulk_track.v1` to `/aeko-assistant-task <item_id>`. That workflow uses the exact task-fenced Context suggestion batch and its server receipt. The older `aeko_track_suggested_prompts` tool chooses the top review suggestion per review; it cannot implement an arbitrary selected Context row batch. Unknown versions stop with update guidance. Independent interactive modes below keep their existing gates.
 
 Own the complete prompt lifecycle without weakening destructive gates. Explain tracked prompts as questions
 AEKO re-asks to AI engines; explain Contexts as curated, source-backed grounding memories.

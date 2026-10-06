@@ -11,8 +11,8 @@ description: >
   citable content via proven AEO frameworks (BLUF, PREP, Informational Gain,
   E-E-A-T). Optional `+ competitive context` mode adds the tracked-prompt
   snapshot's current AI answer + cited snippets for a gap/contrarian angle
-  (no crawling; takes longer). Saves local artifacts; auto-saves aeko.shop
-  publish variations to the AEKO backend. In `handoff=<id>` mode it performs
+  (no crawling; takes longer). Saves local artifacts; saves explicitly selected
+  owned-channel draft variations to the AEKO backend. In `handoff=<id>` mode it performs
   only the snapshot's prescribed channel action, including review-driven Reddit
   discovery preparation, and never saves, completes, or
   publishes through AEKO. It never writes to a connected store or auto-publishes.
@@ -21,6 +21,8 @@ allowed-tools: aeko_get_content_idea_handoff, aeko_fetch_source_content, aeko_ge
 ---
 
 # AEKO Create Content
+
+When given an `itm_` ID, retrieve its Plan.md and inspect the version before this skill's older content flow. An `assistant-task-v1` plan must run through `/aeko-assistant-task <item_id>` and its saved output contract. Do not translate it into content-v2/v3 or add an AEKO Shop destination. Unknown plan versions stop with update guidance.
 
 Before work, read [the brand execution contract](references/brand-execution-contract.md).
 Preserve the exact task prompt and apply only this brand's selected rules, evals, and examples.
@@ -83,8 +85,8 @@ EN-market brands equally; the slug is ASCII (`press_release`), the KO label stay
 
 In standard mode, executes one Action-tab content item end-to-end: fetch Plan.md → pull product/review/prompt substance →
 pick mode → confirm channels + media → **fan out parallel per-channel drafters** that write framework-driven
-artifacts for the content context → verify (re-checking publish-blocking gates) → auto-save `aeko_shop`
-publish variations → mark complete only after required saves succeed.
+artifacts for the content context → verify (re-checking publish-blocking gates) → save only selected
+owned-channel draft variations → mark complete only after required saves succeed.
 
 Contract reference: `docs/contracts/action-item-contract.md` §3 (Plan.md), §3.2.1 (ProductRef), §6
 (completion). Pinned to contract minor `v1.5`; tolerant of legacy Plans where `brand_kit_id` appears,
@@ -494,14 +496,16 @@ ignore for channel suggestion. Suggestions are a convenience for Step 4; the use
 
 ## Step 4 — Channel, owned examples & media selection (interactive)
 
-### 4.0 Auto-add aeko.shop + own-store for tenant brands
-aeko.shop is AEKO's canonical destination. Prepend `aeko_shop` to the pre-checked set unless
-Plan/context explicitly disables it (`aeko_shop_disabled`, `aeko_shop: disabled`, or equivalent).
-Missing/malformed flags mean include it. Append `own_store_blog` to the offered set. Both are backend-saved draft targets; this
-skill never writes to the connected store.
+### 4.0 Offer owned draft destinations
+Offer `own_store_blog` as an owned draft destination when supported. Keep the existing
+`aeko_shop` destination available only when the user or saved legacy Plan explicitly
+selected it; never pre-check or add it from brand identity, missing flags, or a generic
+content request. Both are backend-saved draft targets; this skill never writes to the
+connected store.
 
 ### 4-Form-1 Channel selection
-Issue ONE elicitation form. Pre-check `suggested_channels[]` (from Step 3b) + `aeko_shop` + `own_store_blog`;
+Issue ONE elicitation form. Pre-check supported `suggested_channels[]` (from Step 3b) that the saved task permits;
+offer `own_store_blog` without pre-checking it and show `aeko_shop` only when explicitly requested;
 offer addon toggles: `press_release`, `magazine`, `instagram`, `tiktok`, `youtube`, `naver_blog`, `tistory`,
 `reddit`, `other:<ascii_name>` (free-form `<name>` + optional reference URL/description; reject non-ASCII
 `<name>`). Selecting `aeko_shop` is consent to backend-save after drafting. Use the §8.0 localized labels.

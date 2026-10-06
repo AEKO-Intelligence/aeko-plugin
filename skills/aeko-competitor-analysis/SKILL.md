@@ -6,10 +6,12 @@ description: >
   skill adds tracked-prompt citations, visibility, domain, and official product
   evidence. Use for brand positioning or PDP comparison matrices.
 argument-hint: "scope=brand [domain-id] <competitor> | scope=product <product-id-or-url> [competitor-urls...]"
-allowed-tools: Read, aeko_list_domains, aeko_get_domain_info, aeko_get_product_description, aeko_list_store_integrations, aeko_search_research_prompts, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_get_visibility_summary, WebSearch, WebFetch, Write, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
+allowed-tools: Read, aeko_get_action_plan, aeko_list_domains, aeko_get_domain_info, aeko_get_product_description, aeko_list_store_integrations, aeko_search_research_prompts, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_get_visibility_summary, WebSearch, WebFetch, Write, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO Competitor Analysis
+
+If invoked with a saved `itm_` ID, call `aeko_get_action_plan` first. For `assistant-task-v1` and `competitors.comparison_report.v1`, execute through `/aeko-assistant-task <item_id>` and its saved-evidence-only competitor reference. Never run the public WebSearch/WebFetch stage or substitute a live page for missing private history in that mode. Unknown plan versions stop with update guidance. The public-first workflow below applies only to independent `scope=brand|product` requests without a saved assistant task.
 
 Compare either a competitor brand's positioning or one product against comparable PDPs. Always preserve
 the public research half when AEKO is absent or returns 401; the connected layer adds private measurement

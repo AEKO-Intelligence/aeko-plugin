@@ -1,0 +1,7 @@
+# Exact selected suggestion tracking
+
+This mode applies only to `action_id=tracking.suggested_prompts.bulk_track.v1` with an explicit saved list of Context suggestion triples: `context_id`, `suggested_prompt_id`, and exact `prompt`. Confirm the selected questions and requested platform × market variants against the plan. Empty, page-only and all-matching selections do not authorize a tracking write.
+
+Immediately before the write, read quota and selected markets. Show the requested variant count; never treat the visible question count as the quota cost. Call `aeko_track_task_suggestions` with the saved `item_id`, active `claim_id`, exact rows, platforms and countries. The backend validates them against the immutable plan and current access and returns per-row receipts. Use those receipts, including skipped, failed and duplicate outcomes; do not author a success summary from the original selection. A repeat call with the same claim returns the persisted receipt; it does not retry failed rows. To retry confirmed unapplied rows, verify their current state and save a new task with only those exact rows. The older `aeko_track_suggested_prompts` tool filters reviews and chooses the top suggestion per review, so it cannot implement this mode.
+
+The tracking tool persists the domain-backed receipt as the task output. Complete only if the backend accepts that receipt. Partial success remains partial in AEKO and in the final message.

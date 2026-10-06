@@ -6,13 +6,15 @@ description: >
   generation) and prints ready-to-copy commands that route the user to
   `/aeko-fix-technical`, `/aeko-update-pdp`, or `/aeko-create-content`.
   Pure dispatcher — never executes items itself.
-argument-hint: "[domain-id] [category]"
-allowed-tools: aeko_list_action_items, aeko_list_technical_items, aeko_get_domain_info, aeko_list_domains, Read
+argument-hint: "[domain-id] [category] | <item_id>"
+allowed-tools: aeko_list_action_items, aeko_list_technical_items, aeko_get_action_plan, aeko_get_domain_info, aeko_list_domains, Read
 ---
 
 # AEKO Action Center
 
 Router for three execution categories: **Technical fixes**, **상품 페이지 개선 (PDP update)**, and **Content generation**. You help the user pick one pending item and hand off to the correct executor skill. You do NOT generate artifacts, call write-back tools, or mark items complete.
+
+If the argument is an `itm_` ID, first call `aeko_get_action_plan` and inspect its version. An `assistant-task-v1` plan belongs to `/aeko-assistant-task <item_id>`; hand off that exact command and keep its saved domain/scope. This router must not execute it or reinterpret it as an older content/PDP item. Unknown versions stop with update guidance. For ordinary queue listing, continue below.
 
 Contract reference: `references/action-item-contract.md` (included in this package).
 
@@ -161,7 +163,7 @@ row for that kind with `metrics: {item_count: 0}`; do not omit the kind.
 
 ## What this skill never does
 
-- Never calls `aeko_get_action_plan` — that belongs to the executor skills.
+- Calls `aeko_get_action_plan` only to route a supplied `itm_` ID by version; executor skills own further plan use.
 - Never calls `aeko_complete_action_item` or any write-back tool.
 - Never executes the item. Always stops at routing.
 - Never displays `execution_class` raw to the user — always translate to the category label (Technical health / Product pages / Content AI can cite).
