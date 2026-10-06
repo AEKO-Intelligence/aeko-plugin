@@ -7,10 +7,12 @@ description: >
   disarming first, and confirm-gates both directions of the account-wide switch.
   Bounded by hourly reporting; entity resume is always a separate server-gated action.
 argument-hint: "[domain-id]"
-allowed-tools: Read, aeko_list_domains, aeko_list_campaigns, aeko_list_ad_groups, aeko_list_ads, aeko_get_ad_insights, aeko_list_ad_rules, aeko_get_ad_rule, aeko_get_ad_rule_capabilities, aeko_validate_ad_rule, aeko_create_ad_rule, aeko_update_ad_rule, aeko_delete_ad_rule, aeko_preview_ad_rule, aeko_set_ad_rule_enabled, aeko_set_ad_automation_enabled, aeko_list_ad_rule_executions, aeko_list_ad_rule_runs, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
+allowed-tools: Read, aeko_get_action_plan, aeko_list_domains, aeko_list_campaigns, aeko_list_ad_groups, aeko_list_ads, aeko_get_ad_insights, aeko_list_ad_rules, aeko_get_ad_rule, aeko_get_ad_rule_capabilities, aeko_validate_ad_rule, aeko_create_ad_rule, aeko_update_ad_rule, aeko_delete_ad_rule, aeko_preview_ad_rule, aeko_set_ad_rule_enabled, aeko_set_ad_automation_enabled, aeko_list_ad_rule_executions, aeko_list_ad_rule_runs, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO OpenAI Guardrails
+
+If given a saved `itm_` task ID, read `aeko_get_action_plan` first. Route `assistant-task-v1` with `ads.rule_change_proposal.v1` to `/aeko-assistant-task <item_id>` for a frozen-rule, review-only structured proposal. It must not call the live rule-create, update, enable, delete or account-switch tools below. Unknown plan versions need a compatible plugin.
 
 Set up or manage rules that automatically pause OpenAI Ads entities when merchant-defined pacing or cost
 limits are crossed. This skill never operates Meta, TikTok, or Google Ads.

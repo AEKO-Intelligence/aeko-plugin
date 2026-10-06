@@ -11,7 +11,7 @@ allowed-tools: Read, aeko_get_action_plan, aeko_list_domains, aeko_get_domain_in
 
 # AEKO Competitor Analysis
 
-If invoked with a saved `itm_` ID, call `aeko_get_action_plan` first. For `assistant-task-v1` and `competitors.comparison_report.v1`, execute through `/aeko-assistant-task <item_id>` and its saved-evidence-only competitor reference. Never run the public WebSearch/WebFetch stage or substitute a live page for missing private history in that mode. Unknown plan versions stop with update guidance. The public-first workflow below applies only to independent `scope=brand|product` requests without a saved assistant task.
+If invoked with a saved `itm_` ID, call `aeko_get_action_plan` first. For `assistant-task-v1` and `competitors.comparison_report.v1`, `competitors.question_gaps_report.v1`, or `competitors.source_patterns_report.v1`, execute through `/aeko-assistant-task <item_id>` and its saved-evidence-only competitor reference. Never run the public WebSearch/WebFetch stage or substitute a live page for missing private history in that mode. Unknown plan versions stop with update guidance. The public-first workflow below applies only to independent `scope=brand|product` requests without a saved assistant task.
 
 Compare either a competitor brand's positioning or one product against comparable PDPs. Always preserve
 the public research half when AEKO is absent or returns 401; the connected layer adds private measurement

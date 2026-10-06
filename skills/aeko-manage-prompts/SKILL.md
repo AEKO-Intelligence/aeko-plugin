@@ -11,7 +11,7 @@ allowed-tools: Read, aeko_get_action_plan, aeko_list_domains, aeko_get_domain_in
 
 # AEKO Manage Prompts
 
-If the argument is a saved `itm_` ID, call `aeko_get_action_plan` first. Route `assistant-task-v1` with `tracking.suggested_prompts.bulk_track.v1` or `contexts.group_proposal.v1` to `/aeko-assistant-task <item_id>`. Tracking uses the exact task-fenced Context suggestion batch and its server receipt; grouping uses only the selected frozen Contexts and returns a proposal for review. The older `aeko_track_suggested_prompts` tool chooses the top review suggestion per review; it cannot implement an arbitrary selected Context row batch. Unknown versions stop with update guidance. Independent interactive modes below keep their existing gates.
+If the argument is a saved `itm_` ID, call `aeko_get_action_plan` first. Route `assistant-task-v1` with `tracking.suggested_prompts.bulk_track.v1`, `tracking.selected_questions_report.v1`, `contexts.group_proposal.v1`, or `contexts.related_questions_report.v1` to `/aeko-assistant-task <item_id>`. The tracking write uses the exact task-fenced Context suggestion batch and its server receipt; the other actions analyze only their selected frozen evidence and save reviewable results. The older `aeko_track_suggested_prompts` tool chooses the top review suggestion per review; it cannot implement an arbitrary selected Context row batch. Unknown versions stop with update guidance. Independent interactive modes below keep their existing gates.
 
 Own the complete prompt lifecycle without weakening destructive gates. Explain tracked prompts as questions
 AEKO re-asks to AI engines; explain Contexts as curated, source-backed grounding memories.

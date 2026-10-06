@@ -3,7 +3,7 @@
 ## [0.33.0] — 2026-10-06 (release candidate)
 
 - Add `/aeko-assistant-task <item_id>` for versioned saved dashboard work: retrieve, validate, claim, read bounded evidence, execute the exact selected operation, persist the result, and complete under the same claim.
-- Saved competitor, overview, market, selected-review, OpenAI Ads performance and GA4 referral reports use only the task's private frozen evidence and return readable AEKO outputs. Exact Context suggestion tracking uses the task-fenced batch receipt, distinct from the older review-top-suggestion tool. Ad writing-format and selected Context-group tasks save structured proposals for review, without applying formats or groups.
+- Fifteen saved actions include selected-question, competitor, visibility, review, cached Ads/GA4 and technical reports grounded in frozen evidence. Exact Context suggestion tracking uses the task-fenced batch receipt, distinct from the older review-top-suggestion tool. Writing-format, Context-group and ad-rule tasks save structured proposals for review without applying them.
 - Route saved assistant tasks from related skills before their legacy/public modes. New content requests do not preselect or auto-add AEKO Shop. Ad writing formats use built-in guidance and scoped approved brand constraints without mandatory Wiki/eval initialization.
 - Backend capability gates and coordinated MCP/plugin release are required before the new command is advertised as executable.
 
