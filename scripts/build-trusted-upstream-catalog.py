@@ -28,6 +28,7 @@ PACKAGE_ALLOWLIST = {
     "aeko-assistant-task": (
         "SKILL.md",
         "references/competitor-report.md",
+        "references/context-groups.md",
         "references/exact-tracking.md",
         "references/visibility-reports.md",
         "references/writing-formats.md",
