@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.33.5] — 2026-10-21
+
+- Codex listing fields meet OpenAI's directory limits: a 30-character `shortDescription`, three plain-language `defaultPrompt` entries without slash syntax, and a description that no longer says "for Codex" (the listing also shows in ChatGPT).
+- `/aeko-create-content` description trimmed to 1,018 characters (limit 1,024) without dropping its routing modes.
+- README: the Codex connection command is `codex mcp add aeko --url https://aeko-intelligence.com/mcp`; the old `--transport` flag does not exist in the Codex CLI.
+
 ## [0.33.4] — 2026-10-21
 
 - Fix the privacy policy and terms links in both plugin manifests and the README: `/en/privacy` and `/en/terms` return 404, so they now point to `https://aeko-intelligence.com/privacy` and `https://aeko-intelligence.com/terms`.

@@ -1,21 +1,18 @@
 ---
 name: aeko-create-content
 description: >
-  Executes saved content plans, including scoped revisions and correction requests,
-  with the accepted brand skill, Wiki and evals. Also handles legacy Action-tab items and server-snapshotted content-idea
-  handoffs. In ActionItem mode it fetches a Plan.md and pulls
-  the substance to write from — product info (`aeko_get_product_description`
-  + Plan `products[]` + visible PDP/page evidence), product context-reviews (lived experience), the
-  tracked prompts the brand wants to be cited for, and the Plan's content context — then
-  fans out per-channel drafters IN PARALLEL, each writing genuinely original,
-  citable content via proven AEO frameworks (BLUF, PREP, Informational Gain,
-  E-E-A-T). Optional `+ competitive context` mode adds the tracked-prompt
-  snapshot's current AI answer + cited snippets for a gap/contrarian angle
-  (no crawling; takes longer). Saves local artifacts; saves explicitly selected
-  owned-channel draft variations to the AEKO backend. In `handoff=<id>` mode it performs
-  only the snapshot's prescribed channel action, including review-driven Reddit
-  discovery preparation, and never saves, completes, or
-  publishes through AEKO. It never writes to a connected store or auto-publishes.
+  Executes saved content plans, including revisions and corrections, with the accepted
+  brand skill, Wiki and evals. Also handles legacy Action-tab items and
+  server-snapshotted content-idea handoffs. In ActionItem mode it fetches a Plan.md and gathers
+  what to write from: product info and visible page evidence, product context-reviews, the
+  tracked prompts the brand wants to be cited for, and the Plan's content context. It then runs
+  per-channel drafters in parallel, each writing original, citable content with AEO frameworks
+  (BLUF, PREP, Informational Gain, E-E-A-T). Optional `+ competitive context` mode adds the
+  tracked prompt's current AI answer and cited snippets for a gap angle (no crawling). Saves
+  local artifacts, and saves selected owned-channel drafts to AEKO. In
+  `handoff=<id>` mode it performs only the snapshot's prescribed channel action, including
+  review-driven Reddit discovery preparation, and never saves, completes, or publishes through
+  AEKO. It never writes to a connected store or auto-publishes.
 argument-hint: "<item-id> [deep] | handoff=<id>"
 allowed-tools: aeko_get_content_idea_handoff, aeko_fetch_source_content, aeko_get_action_plan, aeko_get_action_evidence, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_resolve_prompts_by_text, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_list_own_content, aeko_request_media_upload, aeko_save_content_variation, aeko_list_content_variations, aeko_complete_action_item, aeko_claim_action_item, aeko_release_action_item, aeko_get_fact_check, Task, Read, Edit(./aeko-artifacts/**), aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
