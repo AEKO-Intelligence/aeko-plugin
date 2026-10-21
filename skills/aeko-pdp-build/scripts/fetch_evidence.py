@@ -86,7 +86,7 @@ PRICE_TOKEN_RE = re.compile(
 POLICY_HEADING_RE = re.compile(
     r"(?:상품\s*결제\s*(?:정보|안내)|결제\s*(?:정보|안내)|배송\s*(?:정보|안내)|상품\s*배송\s*정보|"
     r"교환\s*(?:및|/)\s*반품|반품\s*(?:및|/)\s*교환|환불\s*안내|서비스\s*문의|고객\s*지원|"
-    r"payment\s*(?:information|details)|shipping\s*(?:information|delivery|policy)|delivery\s*information|"
+    r"payment\s*(?:information|details)|(?:shipping)\s*(?:information|delivery|policy)|delivery\s*information|"
     r"exchanges?\s*(?:&|and)\s*returns?|returns?\s*(?:and|&)\s*refunds?|return\s*policy|refund\s*policy|"
     r"customer\s*service|service\s*inquir(?:y|ies)|support|contact\s*us)",
     re.IGNORECASE,
