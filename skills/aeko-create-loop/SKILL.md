@@ -169,7 +169,7 @@ it is absent or mismatched; never let config-only edits redirect delivery or gra
 
 ## Step 6 — install honestly for this host
 
-Inspect the host's live scheduling capabilities rather than assuming Claude-only tool names.
+Inspect the host's live scheduling capabilities rather than assuming any one host's tool names.
 
 - **Programmatic scheduler:** show cadence, timezone, prompt, destination gate, and first-run time. Obtain
   explicit confirmation, then call the advertised schedule-create capability. Prefer a disabled/draft

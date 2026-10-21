@@ -113,19 +113,20 @@ connect an account. The zero-account tour must complete even when no AEKO server
 
 ### 3.1 Plugin version (local)
 
-Locate the installed `plugin.json`. Try Glob in this priority order:
+Locate the installed plugin manifest. Every AEKO manifest (`.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `gemini-extension.json`) carries the same `name` and `version`, so any one of them answers this check. Install locations are host-specific; try the options that apply to the current host, in this order:
 
-1. `**/.claude-plugin/plugin.json` rooted at the user's plugin install dirs. Common Claude Desktop / Claude Code paths to check (use whichever returns a file):
+1. **On Claude Desktop / Claude Code**, Glob `**/.claude-plugin/plugin.json` under the usual install dirs (use whichever returns a file):
    - `~/.claude/plugins/**/.claude-plugin/plugin.json`
    - `~/Library/Application Support/Claude/plugins/**/.claude-plugin/plugin.json`
    - `~/Library/Application Support/Claude/Claude Extensions/**/.claude-plugin/plugin.json`
-2. If the user has the source repo cloned (developer install): `**/aeko-plugin/.claude-plugin/plugin.json`.
+2. **On any host, for a developer install** (the user has the source repo cloned): `**/aeko-plugin/.claude-plugin/plugin.json`.
+3. **On other hosts (Codex, Gemini CLI, and others)**, there is no fixed install path to search. If the host shows where this `SKILL.md` was loaded from, look in that plugin root (the folder that contains `skills/aeko-start/`) for one of the manifests above. Otherwise, ask the user for the install path.
 
-For each candidate `plugin.json`, `Read` it and check `name == "aeko-plugin"`. Pick the first match. If multiple match, prefer the path the user just invoked from (the SKILL.md that's running lives next to its plugin's `.claude-plugin/`).
+For each candidate manifest, `Read` it and check `name == "aeko-plugin"`. Pick the first match. If multiple match, prefer the one under the same plugin root as the running SKILL.md.
 
-Read `version` and `skills` fields. List `<skills_dir>` to count installed skill folders.
+Read the `version` field, plus `skills` when the manifest has one. List `<skills_dir>` to count installed skill folders.
 
-If no `plugin.json` is found after Glob:
+If no manifest is found:
 - Tell the user the plugin manifest wasn't located on disk and skip this probe (it does not block Step 4 — the customize step works as long as the user can identify their install path).
 - Ask the user to share the plugin's install path if they want a definitive version readout.
 
@@ -196,13 +197,13 @@ If the user picks (1) or (2), proceed to §4.3. If (3) or (4), Read the existing
 
 For "add an example" / "add a recipe modeled on a real post":
 
-**Tier A — `/chrome` bridge active** (Claude for Chrome connected this session):
+**Tier A — host browser bridge** (only if the host offers a bridge to the user's own signed-in browser, for example Claude for Chrome via `/chrome`, and it is connected this session):
 
-Detect by checking for any indicator that the Chrome bridge is wired up. If unsure, ask the user once: "Is `/chrome` connected on this session?"
+Detect by checking for any indicator that such a browser bridge is wired up. If the host has no browser bridge, skip to Tier B. If unsure, ask the user once: "Is a browser bridge (for example `/chrome`) connected in this session?"
 
 If yes: ask the user to authorize navigation to **one specific domain** (e.g. `instagram.com/<their-handle>`, `blog.naver.com/<their-handle>`). On their `yes`, navigate via the bridge using their authenticated session, pull the 1–3 most recent posts, and normalize each into a `references/examples/<channel>-<slug>-example.md` file.
 
-**One-domain-per-confirmation gate.** Never navigate to a second domain without re-asking. The bridge runs against the user's full Chrome session, so silent roaming is unacceptable. If the user wants three platforms scraped, ask three separate times.
+**One-domain-per-confirmation gate.** Never navigate to a second domain without re-asking. The bridge runs against the user's full browser session, so silent roaming is unacceptable. If the user wants three platforms scraped, ask three separate times.
 
 **Read-only contract.** Never click compose, never fill a post form, never publish — even when the bridge is connected. Publishing belongs to `/aeko-publish-content` (live aeko.shop posts or AEKO-owned store-blog drafts only; Tistory/Naver Blog remain manual handoffs) and remains out of scope here for user-owned channels.
 
@@ -274,9 +275,9 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 
 - Never edits the AEKO source repository (`github.com/AEKO-Intelligence/aeko-plugin`). All customization writes target the selected **brand-owned working package**.
 - Never executes `/aeko-update-pdp`, `/aeko-create-content`, `/aeko-fix-technical`, or any other executor on the user's behalf. Start stops at the suggested-next-step line.
-- Never publishes content — even when the `/chrome` bridge is connected. Compose forms and publish buttons are out of scope; AEKO-owned publishing lives in `/aeko-publish-content`.
+- Never publishes content — even when a browser bridge (such as `/chrome`) is connected. Compose forms and publish buttons are out of scope; AEKO-owned publishing lives in `/aeko-publish-content`.
 - Never calls an AEKO MCP tool, probes authentication, or turns a missing account into an error.
-- Never roams authenticated sites silently. Every domain navigated via the `/chrome` bridge gets one explicit user confirmation.
+- Never roams authenticated sites silently. Every domain navigated via a browser bridge gets one explicit user confirmation.
 
 ---
 
@@ -284,9 +285,9 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 
 | Failure | Behavior |
 |---|---|
-| `plugin.json` not found anywhere via Glob | Skip the version line; ask the user to share their install path if they want a definitive readout. Phase 4 still runs — ask the user to confirm the plugin path before any Write. |
+| No plugin manifest found (Glob returned nothing, or the host has no known install path) | Skip the version line; ask the user to share their install path if they want a definitive readout. Phase 4 still runs — ask the user to confirm the plugin path before any Write. |
 | User pastes a URL that 404s in Tier B | Tell them, fall back to Tier C (paste raw content). |
-| `/chrome` bridge missing when user expected it | Tell them how to install Claude for Chrome + connect `/chrome`, then offer to retry Tier A or fall through to Tier B. |
+| Browser bridge missing when user expected it | If the host supports one (for example Claude for Chrome + `/chrome` on Claude Code), tell them how to install and connect it; if the host has none, say so. Then offer to retry Tier A or fall through to Tier B. |
 | Write would overwrite an existing file | Show a diff and ask. Never silently overwrite. |
 | User says `skip` / `not now` at any prompt | Move to Phase 5 cleanly. |
 
@@ -336,7 +337,7 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 
 ### 3단계 — 설치 상태 점검
 
-1. **플러그인 버전 (로컬).** 설치된 `plugin.json`을 Glob으로 찾아 `version`, `skills` 필드를 읽습니다. 검색 경로 우선순위는 영문 가이드의 §3.1과 동일합니다.
+1. **플러그인 버전 (로컬).** 설치된 플러그인 매니페스트를 찾아 `version` 필드(있으면 `skills` 필드도)를 읽습니다. 설치 경로는 호스트마다 다릅니다. Claude Desktop·Claude Code에서는 영문 가이드 §3.1의 경로를 Glob으로 확인하고, Codex·Gemini CLI 같은 다른 호스트에서는 이 스킬이 로드된 위치를 알 수 있으면 그 플러그인 폴더에서 찾고, 알 수 없으면 사용자에게 설치 경로를 물어봅니다.
 2. **계정 없는 상태 블록.** `무료 워크플로: 준비됨 · AEKO 계정 불필요`,
    `AEKO 연결: 선택 사항 · 확인하지 않음`을 표시합니다.
 3. **선택형 심화.** 네 가지 무료 워크플로를 먼저 안내한 뒤, 사용자가 원할 때만 AEKO 연결이
@@ -352,7 +353,7 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 1. **현재 파일 트리 보여주기** — `references/recipes`, `references/examples`, `references/style`을 Glob으로 나열하고 각 폴더의 역할을 설명합니다.
 2. **무엇을 추가/수정할지 묻기** — 새 레시피 추가, 예시 추가, 음성 톤 오버라이드, 기존 파일 편집 중 선택.
 3. **예시 출처 — 우선순위 3계층:**
-   - **A — `/chrome` 브릿지 사용**: Claude for Chrome이 연결되어 있고 사용자가 동의하면, 사용자의 인증된 세션으로 단일 도메인 1개에 한정해 최근 게시물 1–3개를 읽어와 `references/examples/<채널>-<slug>-example.md`로 저장합니다. **도메인 1개당 사용자 명시 동의 필수.** 절대 게시·작성 폼 클릭 없이 읽기 전용으로만 동작합니다.
+   - **A — 브라우저 브릿지 (호스트가 제공할 때만)**: 호스트가 사용자의 로그인된 브라우저에 연결하는 기능(예: Claude for Chrome의 `/chrome`)을 제공하고 이 세션에 연결되어 있다면, 사용자 동의를 받은 뒤 그 세션으로 도메인 1개에서만 최근 게시물 1–3개를 읽어와 `references/examples/<채널>-<slug>-example.md`로 저장합니다. 이런 기능이 없는 호스트라면 B로 넘어갑니다. **도메인 1개당 사용자 명시 동의 필수.** 작성 폼을 누르거나 게시하지 않고 읽기만 합니다.
    - **B — 공개 URL 붙여넣기**: 사용자가 URL을 주면 `WebFetch`로 가져옵니다. 네이버 블로그·티스토리는 잘 됩니다. 인스타그램·틱톡 비디오 페이지는 페이로드가 빈약하면 C로 폴백.
    - **C — 본문 직접 붙여넣기**: 사용자가 글을 직접 붙여 넣으면 채널·날짜 헤더를 한 줄 추가해 그대로 저장.
 4. **저장 + 확인** — 같은 폴더의 기존 파일 1–2개를 Read해 구조/헤딩 스타일/태그 형식을 맞춘 뒤, 사용자에게 경로를 확인받고 **선택된 브랜드 소유 작업 패키지**에만 Write합니다. 설치 캐시를 유일한 저장소로 쓰지 않습니다. AEKO 저장소에는 절대 쓰지 않습니다. 동일 파일이 이미 있으면 3-way 차이점을 보여주고 묻습니다.
@@ -370,9 +371,9 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 
 - AEKO 소스 저장소 수정 — 모든 Write는 사용자의 로컬 설치 경로에만.
 - 다른 실행 스킬을 사용자 대신 실행 — 5단계 마무리 안내까지만.
-- 콘텐츠 게시 — `/chrome` 브릿지가 연결되어 있어도 작성 폼 클릭·게시는 본 스킬 범위 밖. AEKO 자체 채널(aeko.shop / Tistory / Naver Blog) 게시는 `/aeko-publish-content`.
+- 콘텐츠 게시 — 브라우저 브릿지(`/chrome` 등)가 연결되어 있어도 작성 폼 클릭·게시는 본 스킬 범위 밖. AEKO 자체 채널(aeko.shop / Tistory / Naver Blog) 게시는 `/aeko-publish-content`.
 - AEKO MCP 호출 또는 인증 상태 검사 — 계정 연결은 선택 사항이며 이 스킬의 게이트가 아닙니다.
-- `/chrome` 브릿지에서 사용자 동의 없이 다른 도메인으로 이동 — 도메인당 1회 동의 원칙.
+- 브라우저 브릿지로 사용자 동의 없이 다른 도메인으로 이동 — 도메인당 1회 동의 원칙.
 
 ### 에러와 복구
 

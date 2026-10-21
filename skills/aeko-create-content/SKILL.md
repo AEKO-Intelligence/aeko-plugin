@@ -130,11 +130,16 @@ ActionItem flow.
 
 ### H0 — Load only direct-mode tools
 
-Before any other tool use, issue exactly one deferred-tool search:
+Before any other tool use, make `aeko_get_content_idea_handoff`, `aeko_fetch_source_content`, and the
+host's file read/write tools (`Read`, `Write` in Claude Code) available together. When the host defers tool
+schemas, resolve them through its tool discovery in exactly one batched request. In Claude Code that is a
+single `ToolSearch` call:
 
 ```text
 ToolSearch(query="select:aeko_get_content_idea_handoff,aeko_fetch_source_content,Read,Write", max_results=6)
 ```
+
+When the host already exposes these tools, call them directly.
 
 Do not load the ActionItem lifecycle, content-variation, store-write, publishing, prompt-discovery, or
 channel-picker tools in this mode.
@@ -345,7 +350,11 @@ publish handoff.
 
 The remaining steps apply only when the input is an ActionItem ID.
 
-Issue exactly ONE `ToolSearch` call before any other tool use:
+Before any other tool use, make every tool named in the `select:` list below available in ONE batch. When
+the host defers tool schemas, resolve them through its tool discovery in exactly one request; in Claude
+Code that is a single `ToolSearch` call. `Task`, `WebFetch`, and `WebSearch` are Claude Code names; on
+other hosts use the equivalent delegation, web-fetch, and web-search tools. When the host already exposes
+the tools, call them directly.
 
 ```
 ToolSearch(query="select:aeko_get_action_plan,aeko_get_product_description,aeko_list_review_integrations,aeko_get_product_reviews,aeko_resolve_prompts_by_text,aeko_get_tracked_prompts,aeko_get_tracked_prompt,aeko_list_own_content,aeko_request_media_upload,aeko_save_content_variation,aeko_list_content_variations,aeko_complete_action_item,Task,WebFetch,WebSearch", max_results=20)
@@ -573,9 +582,9 @@ Never drop the original task prompt or required evals to fit a delegated brief.
 - `aeko_shop_publish_slug` — meaningful **English** slug per **§A**, for the aeko.shop `.meta.json`.
 
 ### 5.2 Build one brief per selected channel and spawn drafters in ONE message
-When delegation is available and permitted, spawn a `Task` (general-purpose) drafter for each
-selected channel **in a single message** (so they run concurrently). Otherwise use the same briefs
-sequentially in this host. Each drafter's prompt instructs it to:
+When delegation is available and permitted, spawn one general-purpose drafter subagent per selected
+channel through the host's delegation tool (a `Task` in Claude Code), all **in a single message** (so they
+run concurrently). Otherwise use the same briefs sequentially in this host. Each drafter's prompt instructs it to:
 > Read `skills/aeko-create-content/references/drafter-instructions.md` and
 > `skills/aeko-create-content/references/aeo-frameworks.md` (and, for editorial/HTML channels,
 > `skills/aeko-create-content/references/recipes/editorial-html-jsonld.md`; for channels with a recipe,
@@ -730,9 +739,9 @@ This skill never publishes. Gated on `saved_variations`:
 - Non-empty but no `aeko_shop` → print the plain `Publish: /aeko-publish-content <item_id>` line.
 - Empty → omit the publish line; the §8 checklist is the only post-creation guidance.
 
-Optional: if a Chrome bridge is detected, append one hint that `/chrome` can help post client-managed
-channels. Hard rules: never invoke/simulate `/aeko-publish-content`; never widen `allowed-tools` to browser
-or external-posting APIs; the only publish-side capability is `aeko_request_media_upload` for aeko_shop media.
+Optional: if the host exposes a browser bridge to the user's own browser (for example `/chrome` with Claude
+for Chrome), append one hint that it can help post client-managed channels. Hard rules: never
+invoke/simulate `/aeko-publish-content`; never widen `allowed-tools` to browser or external-posting APIs; the only publish-side capability is `aeko_request_media_upload` for aeko_shop media.
 
 ---
 

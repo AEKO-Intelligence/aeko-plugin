@@ -79,8 +79,10 @@ per sweep (10 per drill). Hitting a cap makes affected coverage `partial` and mu
 
 ## Step 1 — resolve and disambiguate ad connectors
 
-Use `ToolSearch`. Inspect only the registry evidence the host exposes: name, description, input schema,
-optional output schema, and annotations; then use call results and structured errors. Resolve by semantic
+Search the host's live tool registry through its tool discovery (`ToolSearch` in Claude Code); on hosts
+that expose every tool up front, read that tool list directly. Inspect only the registry evidence the host
+exposes: name, description, input schema, optional output schema, and annotations; then use call results
+and structured errors. Resolve by semantic
 capability, never equality/prefix/substring matching on namespaced MCP tool names. Accept only a read-only
 official-provider capability for account-scoped bounded reporting plus creative fields. A browser, scraper,
 warehouse, search tool, or custom lookalike is not a substitute.

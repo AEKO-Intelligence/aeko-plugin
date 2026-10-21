@@ -4,7 +4,7 @@ description: >
   Executor for Technical-tab items (`execution_class=technical_artifact`).
   Fetches a Plan.md, generates llms.txt / robots.txt patches / JSON-LD
   structured data / bundled technical fixes using embedded spec rules and
-  Claude's reasoning — no prepare-* backend wrappers. Writes artifacts
+  the model's reasoning — no prepare-* backend wrappers. Writes artifacts
   locally, surfaces a deploy checklist, marks the item complete.
 argument-hint: "<item-id>"
 allowed-tools: aeko_get_action_plan, aeko_get_domain_info, aeko_complete_action_item, Read, Edit(./aeko-artifacts/**), aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
@@ -78,7 +78,7 @@ Never echo the raw frontmatter to the user.
 ### Copy templates (user's chat language)
 
 - **Tier gate** — same template as `/aeko-update-pdp`.
-- **Minor-version advisory** — KO: "이 가이드는 계약 v<plan_minor> 기준입니다. 현재 스킬은 v1.2 — `/plugin update aeko`." / EN: "This plan uses contract v<plan_minor>; this skill is on v1.2 — run `/plugin update aeko`."
+- **Minor-version advisory** — KO: "이 가이드는 계약 v<plan_minor> 기준입니다. 현재 스킬은 v1.2이니 사용 중인 AI 플랫폼에서 AEKO 플러그인을 업데이트해 주세요." / EN: "This plan uses contract v<plan_minor>; this skill is on v1.2 — update the AEKO plugin in your AI platform."
 
 ## Step 2 — Resolve domain/context
 
@@ -92,7 +92,7 @@ Each branch uses **embedded spec rules** loaded from `references/recipes/` inste
 
 ### 3.0 Load references (per-artifact, on-demand)
 
-Anthropic progressive-disclosure pattern — recipe detail loads only when its branch runs.
+Progressive disclosure — recipe detail loads only when its branch runs.
 
 For the dispatched `frontmatter.artifact_type`:
 

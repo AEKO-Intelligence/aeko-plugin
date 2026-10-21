@@ -47,7 +47,7 @@ The skill reads these notes too — they steer it more reliably than abstract st
 
 ## What NOT to put here
 
-- **No PII** — strip names, addresses, order numbers, internal SKUs. The skill reads these files into Claude's context.
+- **No PII** — strip names, addresses, order numbers, internal SKUs. The skill reads these files into the model's context.
 - **No competitor content you don't have rights to** — examples should be your own work. The skill never copies verbatim from examples (style is mimicked, not text), but the file itself sits in your install.
 - **No URLs you want cited** — example URLs are loaded as *style reference only* and are NOT carried into the artifact body. The drafter only links to real URLs from the brief (product `outbound_url`, Plan/context URLs, user-supplied media) — it never invents URLs.
 - **Image placeholders are fine** — example files can contain `[Image]` markers as part of demonstrating your post format. The artifact's hard-gate scanner only checks the generated artifact body, not your example file.

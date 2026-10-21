@@ -30,13 +30,18 @@ and source association.
 
 ## Step 0 — Load tools once
 
-Before any tool call, issue exactly one deferred-tool search:
+Before any other tool call, make these tools available together: `aeko_fetch_source_content`,
+`aeko_get_domain_info`, `aeko_get_tracked_prompt`, `aeko_list_contexts`, `aeko_list_store_products`,
+`aeko_get_product_description`, and `WebFetch` (or the host's web-fetch equivalent). When the host defers
+tool schemas, resolve them through its tool discovery in exactly one batched request. In Claude Code that
+is a single `ToolSearch` call:
 
 ```text
 ToolSearch(query="select:aeko_fetch_source_content,aeko_get_domain_info,aeko_get_tracked_prompt,aeko_list_contexts,aeko_list_store_products,aeko_get_product_description,WebFetch", max_results=8)
 ```
 
-Do not load or call ActionItem, store-write, completion, or publishing tools.
+When the host already exposes these tools, call them directly. Do not load or call ActionItem, store-write,
+completion, or publishing tools.
 
 ## Step 1 — Load the cited page
 

@@ -95,10 +95,12 @@ scheduled config/input for the exact window; otherwise emit it as unavailable.
 
 ## Step 2 — detect capabilities from evidence the host exposes
 
-Use `ToolSearch` before resolving any dynamic connector. Inspect only evidence the live registry actually
-provides: tool name, description, input schema, optional output schema, and annotations. Then use the call
-outcome and structured error text. Do **not** require or invent provider records, transport metadata,
-authorization timestamps, expiry timestamps, saved-connector history, or reauthorization URLs.
+Before resolving any dynamic connector, search the host's live tool registry through its tool discovery
+(`ToolSearch` in Claude Code); on hosts that expose every tool up front, read that tool list directly.
+Inspect only evidence the live registry actually provides: tool name, description, input schema, optional
+output schema, and annotations. Then use the call outcome and structured error text. Do **not** require or
+invent provider records, transport metadata, authorization timestamps, expiry timestamps, saved-connector
+history, or reauthorization URLs.
 
 Resolve by semantic capability, never equality/prefix/substring/regex matching on `mcp__<server>__<tool>`;
 the server segment varies by installation. A candidate qualifies only when its exposed description/schema

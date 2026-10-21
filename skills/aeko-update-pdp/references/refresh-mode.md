@@ -5,11 +5,15 @@ Surgical JSON-LD update flow. Refresh mode patches **ONLY**
 the current tool surface does not load authoritative review bodies, authors, and dates, so doing so would
 invite fabricated reviews. Every non-JSON-LD byte and every sibling schema field must remain unchanged.
 
-Before any tool call, issue exactly one deferred-tool search:
+Before any other tool call, make every tool named in the `select:` list below available together (for
+`WebFetch`, the host's web-fetch equivalent). When the host defers tool schemas, resolve them through its
+tool discovery in exactly one batched request. In Claude Code that is a single `ToolSearch` call:
 
 ```text
 ToolSearch(query="select:aeko_list_action_items,aeko_create_action_item,aeko_claim_action_item,aeko_release_action_item,aeko_get_action_plan,aeko_get_product_description,aeko_update_product_page,aeko_list_store_integrations,aeko_list_store_writes,aeko_revert_store_write,aeko_complete_action_item,WebFetch", max_results=16)
 ```
+
+When the host already exposes these tools, call them directly.
 
 ## Marketer-facing contract
 
