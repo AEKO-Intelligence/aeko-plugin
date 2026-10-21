@@ -250,8 +250,8 @@ only for a named, bounded, fully fetched checked-source set whose relevant pixel
 
 ## Step 5 — check domain-scoped monitored answers
 
-Call `aeko_get_tracked_prompts()` only after selecting the AEKO domain. It returns prompts across the user's
-domains, so retain a prompt only when returned evidence explicitly links its `domain_id` or verified Context
+Call `aeko_get_tracked_prompts(search=<product or claim words>)` only after selecting the AEKO domain. It
+returns one page of prompts across the user's domains, so retain a prompt only when returned evidence explicitly links its `domain_id` or verified Context
 to the selected domain. If the tool exposes no such linkage, set Echoed to `unavailable: tracked prompts
 could not be domain-filtered`; do not choose by semantic similarity alone.
 

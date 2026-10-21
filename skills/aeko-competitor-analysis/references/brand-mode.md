@@ -46,7 +46,8 @@ or the connector is missing/returns 401, retain the complete public-signals repo
 1. `aeko_get_domain_info(domain_id)` to ground the "vs us" comparison using names, URLs, keywords, market,
    industry, and surfaced Context.
 2. `aeko_get_visibility_summary(domain_id, scope="cited_sources")` — surfaces pages from the user's domain AI engines cite; it lists up to 20 of the top 50 the backend returns, so more may exist.
-3. Call `aeko_get_tracked_prompts` once and select at most ten relevant tracked prompts only when the job
+3. Call `aeko_get_tracked_prompts` once, with `search` set to brand, product or category words when they
+   narrow the list (it returns one page), and select at most ten relevant tracked prompts only when the job
    or returned domain-scoped evidence establishes their relation to this domain. The account-wide list's
    formatter exposes no domain ID; similarity alone cannot establish that relation. If no scoped selection
    is available, mark the prompt comparison unavailable and keep public/domain-level findings. If the tracked

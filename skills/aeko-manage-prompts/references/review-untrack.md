@@ -19,8 +19,8 @@ Language: mirror the user's chat language for user-facing explanations, confirma
 If `$1` is set, keep it as `domain_id`. Domain is optional for account-wide prompt review because
 `aeko_get_tracked_prompts` lists the account's tracked prompts. A domain is **required** for saved-view or
 Context operations: if the user requests either and no domain is known, call `aeko_list_domains` and have
-them choose before calling `aeko_list_views` or `aeko_create_view`. The list comes from the light index:
-still complete, with `status` always `tracked`. Its reconciliation JSON block comes before the table and keys
+them choose before calling `aeko_list_views` or `aeko_create_view`. The list comes from the light index one
+page at a time (the header gives the total and the next `offset`), with `status` always `tracked`. Its reconciliation JSON block comes before the table and keys
 each row by `prompt_id` (the table's `id` column holds the same value).
 
 ## Step 2 - Quota snapshot
@@ -34,15 +34,17 @@ Report:
 - package/tier if present
 
 If the returned limit is `null`, report unlimited. If quota is unavailable, continue with
-`aeko_get_tracked_prompts`, but label its count as an observation only: that tool exposes no cap, so no
+`aeko_get_tracked_prompts`, but label its header total as an observation only: that tool exposes no cap, so no
 remaining value can be calculated.
 
 ## Step 3 - Pull prompts and angle catalogs
 
-Call `aeko_get_tracked_prompts`.
+Call `aeko_get_tracked_prompts`, then repeat it with the header's next `offset` until the header says
+"Last page". When the user wants only part of the list, narrow it with `search`, `ai_platform`, `country` or
+`context_id` instead. State how many prompts the review covers out of the header total.
 
 If `domain_id` is known, also call:
-- `aeko_list_contexts(domain_id=domain_id)`
+- `aeko_list_contexts(domain_id=domain_id, context_ids=[Context IDs on the retained prompts])` (at most 100 per call)
 - `aeko_list_views(domain_id=domain_id)`
 
 Use those catalogs only to make IDs human-readable. The tracked-prompt list is authoritative.

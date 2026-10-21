@@ -81,16 +81,18 @@ Immediately before **every** call that starts tracking—`aeko_track_prompt`,
    calling the write. HTTP 402 is the backend's quota response; surface its `would_add` and `remaining`
    values with the package/limits from the fresh quota result. Do not mislabel it as 403.
 
-If `aeko_get_quota` fails, `aeko_get_tracked_prompts` provides an observed count only: it has no plan cap and
-cannot produce a remaining count. State that capacity could not be certified and never present the fallback
-as an adequate quota check. The list is read from the light tracked-prompt index: still the complete list,
-with `status` always `tracked`; its reconciliation JSON comes first and keys each row by `prompt_id`. Never
-reuse an earlier quota snapshot for a later write.
+If `aeko_get_quota` fails, the `Tracked prompts:` total in the `aeko_get_tracked_prompts` header is an
+observed count only: it has no plan cap and cannot produce a remaining count. State that capacity could not
+be certified and never present the fallback as an adequate quota check. The tool reads the light
+tracked-prompt index one page at a time (the header gives the total and the next `offset`), with `status`
+always `tracked`; its reconciliation JSON comes first and keys each row by `prompt_id`. Never reuse an
+earlier quota snapshot for a later write.
 
-Before the write, retain the tracked-prompt IDs/count and the expected variants. After every tracking call,
-call `aeko_get_tracked_prompts` again. Reconcile all result rows, the before/after count, and
-`summary.failed` / `summary.view_assignment_failed`; any missing expected variant or view assignment is a
-partial result, never a clean success.
+Before the write, retain the tracked-prompt total and the expected variants. After every tracking call,
+call `aeko_get_tracked_prompts(prompt_ids=[every returned tracked_prompt_id])`. Reconcile all result rows,
+the IDs the header lists as not tracked, the before/after total, and `summary.failed` /
+`summary.view_assignment_failed`; any missing expected variant or view assignment is a partial result,
+never a clean success.
 
 ## Destructive isolation
 
