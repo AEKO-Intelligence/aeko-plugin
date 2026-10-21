@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.33.3] — 2026-10-21
+
+- Remove the bundled icon's file path from this changelog. The plugin directory holds any version whose text files name a bundled image path in code formatting.
+- Clear the directory's download-and-execute warning: the bundled fetcher's policy-heading regex wraps one alternative in a non-capturing group (same matches), and `/aeko-update-pdp` describes its image-save fallback without a literal download command.
+
 ## [0.33.2] — 2026-10-21
 
 - Claude manifest declares the hosted AEKO MCP server (`aeko`, `https://aeko-intelligence.com/mcp`), the same URL as the AEKO connector listing, so people with both see one set of tools. It stays idle until the user signs in; the free catalog never calls it.
@@ -14,7 +19,7 @@ Claude plugin directory submission fixes. No workflow behavior changes; tools th
 - Drop `WebFetch`/`WebSearch` pre-approval; these skills fetch arbitrary customer or competitor URLs, so no domain scope fits.
 - Name the exact child skills (`Skill(aeko-plugin:<skill> *)`) for `/aeko-weekly-report`, `/aeko-run-loop`, `/aeko-create-loop`, and `/aeko-pdp-build`.
 - Stop committing the generated `catalog/trusted-upstream-catalog.json` (over the directory's 256 KiB file limit; the backend vendors its own copy). `build-trusted-upstream-catalog.py --validate` now backs the release lint.
-- Add the AEKO mark as `.claude-plugin/icon.png` for the directory listing.
+- Add the AEKO mark as the directory listing icon.
 
 ## [0.33.0] — 2026-10-06 (release candidate)
 

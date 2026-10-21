@@ -375,7 +375,7 @@ If `image_strategy != rebuild_with_local`:
      is unknown, not small, and remains eligible; this is the common Cafe24 detail-image shape.
    - Skip URLs matching thumbnail patterns (`/thumb/`, `_50x50`, `_100x100`, `-small`, `-thumb`).
    - Cap at 12 images per item. Log `skipped_decorative`, `skipped_thumbnail`, `skipped_overflow` counts.
-3. For each remaining image index, fetch the binary via WebFetch (or direct URL save via `Bash(curl -o ...)` if the image content-type isn't handled) and save to `./aeko-artifacts/<domain_id>/<item_id>/img/<idx>.<ext>`. Open each with native `Read` for Claude vision to OCR Korean + English text. Preserve paragraph order.
+3. For each remaining image index, fetch the binary via WebFetch (or, if WebFetch cannot return that image type, save the image file directly with the host's download tool) and save to `./aeko-artifacts/<domain_id>/<item_id>/img/<idx>.<ext>`. Open each with native `Read` for Claude vision to OCR Korean + English text. Preserve paragraph order.
 4. **Review detection pass:** scan OCR text + readable HTML for review-shaped blocks (customer quotes, star
    ratings, "리뷰 N개", structured review widgets). Build
    `reviews_payload = [{source_id, author, rating, text, date_if_present}]`, sorted by date descending and
