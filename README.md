@@ -118,7 +118,7 @@ Install from the Codex plugin catalog or use the manifest at `.codex-plugin/plug
 connection:
 
 ```bash
-codex mcp add --transport http aeko https://aeko-intelligence.com/mcp
+codex mcp add aeko --url https://aeko-intelligence.com/mcp
 ```
 
 ### Gemini CLI
@@ -350,7 +350,7 @@ Codex 플러그인 카탈로그에서 설치하거나 `.codex-plugin/plugin.json
 연결:
 
 ```bash
-codex mcp add --transport http aeko https://aeko-intelligence.com/mcp
+codex mcp add aeko --url https://aeko-intelligence.com/mcp
 ```
 
 ### Gemini CLI
