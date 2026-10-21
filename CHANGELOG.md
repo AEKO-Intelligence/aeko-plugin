@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.33.4] — 2026-10-21
+
+- Fix the privacy policy and terms links in both plugin manifests and the README: `/en/privacy` and `/en/terms` return 404, so they now point to `https://aeko-intelligence.com/privacy` and `https://aeko-intelligence.com/terms`.
+
 ## [0.33.3] — 2026-10-21
 
 - Remove the bundled icon's file path from this changelog. The plugin directory holds any version whose text files name a bundled image path in code formatting.
