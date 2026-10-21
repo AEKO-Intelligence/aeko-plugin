@@ -228,7 +228,9 @@ No revenue, CPA or ROAS is available; conversions are stored counts with the sta
 ```
 
 Return the path and a three-to-five-bullet verbal summary. Recommendations are proposals only. Point any
-user-requested budget or state follow-up to `/aeko-openai-budget-shift`; this skill never executes it.
+user-requested budget follow-up to `/aeko-openai-budget-shift`, which recommends amounts that the merchant
+applies in the AEKO dashboard (no skill or AEKO tool changes a budget), and any pause follow-up to the same
+skill's confirm-gated flow; this skill never executes either.
 
 ## Scheduling
 

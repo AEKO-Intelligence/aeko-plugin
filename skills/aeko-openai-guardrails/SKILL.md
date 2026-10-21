@@ -36,6 +36,9 @@ a present user's reply.
   `/aeko-openai-budget-shift`, whose real backend gate is `confirm_active=True`. Invoking that skill is not
   itself approval: it must run interactively, re-fetch state, show the exact IDs, and obtain fresh human
   confirmation before the server-gated resume call.
+- This skill never changes a campaign budget, and no AEKO tool does: campaign budgets are set in the AEKO
+  dashboard (Marketing → Campaigns → Manage campaigns → Edit campaign). If the merchant wants a budget
+  changed, point them there; `/aeko-openai-budget-shift` can recommend amounts but does not apply them.
 - The account-wide switch is not inherently safe in either direction. `enabled=False` removes all automated
   pacing protection; `enabled=True` resumes evaluation of every individually enabled rule.
 - No conversion/ROAS rules: the backend can observe spend, CPM, and CPC, not conversion revenue.

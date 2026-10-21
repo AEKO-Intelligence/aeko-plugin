@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.34.0] — 2026-10-21
+
+Requires aeko-mcp 0.30.0, which removed `aeko_update_campaign_budget`. Budgets are no longer set through skills or MCP: AEKO campaign budgets are set in the AEKO dashboard, and automated rules handle pausing.
+
+- `/aeko-openai-budget-shift` is read-only for budgets. It reads campaign performance and returns a ranked budget-shift recommendation (from → to, amounts, reasoning, risks) that the merchant applies in the AEKO dashboard under Marketing → Campaigns → Manage campaigns → Edit campaign → Lifetime budget. It drops the budget tool from `allowed-tools`, never says a budget was changed, reads the current budget from the campaign list's `budget_lifetime_micros`, and leaves read-only campaigns (`editable: false`) out of its moves. Its optional pause/resume flow and confirmation gates are unchanged.
+- `/aeko-run-loop`, `/aeko-openai-guardrails`, `/aeko-start`, `/aeko-openai-ads-reporting`, `/aeko-openai-compose-ads`, and the README (EN/KO) now describe budget changes as dashboard-only. Ad-rule behavior and the new-campaign starting budget in `/aeko-openai-compose-ads` are unchanged.
+- `/aeko-store mode=reviews` accepts only real reviews the merchant pastes or exports from their own store or review platform, matching `aeko_inject_reviews`. The agent-gather mode, which collected public web reviews, is removed; exported reviews with a native ID keep a stable identity across re-exports.
+- Claude manifest adds `supportUrl` (`https://aeko-intelligence.com/support`), `termsOfServiceUrl`, `repository`, and `documentationUrl` (`https://aeko-intelligence.com/en/docs/agents-setup`) for the directory listing's links. Codex manifest adds `interface.supportURL`. Both README sections gain a Support line pointing to the support page and support@aeko-intelligence.com.
+
 ## [0.33.5] — 2026-10-21
 
 - Codex listing fields meet OpenAI's directory limits: a 30-character `shortDescription`, three plain-language `defaultPrompt` entries without slash syntax, and a description that no longer says "for Codex" (the listing also shows in ChatGPT).

@@ -72,7 +72,8 @@ writes keep their documented confirmation and undo gates; scheduled runs do not 
   It does nothing until you sign in with an AEKO account, and the free catalog never calls it. Once you sign
   in, AEKO workflows send the domain, product, prompt, content, and ad data each task needs to AEKO, as the
   [privacy policy](https://aeko-intelligence.com/privacy) describes. Store, publishing, and ad changes
-  run only after you confirm them.
+  run only after you confirm them. The plugin never changes campaign budgets; you set those in the AEKO
+  dashboard.
 - **Image uploads.** If you add your own images to an AEKO Shop article, `/aeko-create-content` uploads them
   to AEKO's media storage through a one-time upload URL that the AEKO server issues.
 - **Your own connectors.** Notion, Slack, GA4, and ad-platform reads or deliveries go only through connectors
@@ -189,14 +190,14 @@ first release.
 - `/aeko-create-ad-copy` — draft or revise product ads with the accepted brand skill, evals and Wiki.
 - New ad writing formats use built-in guidance; applicable approved brand restrictions still apply. Format creation does not run an ad.
 
-- `/aeko-store mode=setup|reviews` — domain/store setup and the agent's only review-intake path.
+- `/aeko-store mode=setup|reviews` — domain/store setup and the agent's only review-intake path, for real reviews you paste or export from your own store or review platform.
 - `/aeko-create-content <item_id>` — evidence-grounded content executor.
 - `/aeko-publish-content <item_id>` — guarded publisher for saved content variations.
 
 ### Ads operations
 
 - `/aeko-openai-compose-ads [domain_id] [min_score]` — account-gated composition of paused, review-grounded OpenAI Ads groups.
-- `/aeko-openai-budget-shift [domain_id] [days]` — account-gated dry-run OpenAI Ads budget and entity-state changes with caps and explicit confirmation.
+- `/aeko-openai-budget-shift [domain_id] [days]` — account-gated, read-only budget-shift recommendations for OpenAI Ads (from → to, amounts, reasoning, risks) that you apply in the AEKO dashboard; optional pauses of wasteful entities after explicit confirmation.
 - `/aeko-openai-guardrails [domain_id]` — account-gated preview, arm, inspection, and emergency stop for OpenAI Ads automation.
 - `/aeko-automations` — guided setup and one-time runs for Reviews to Contexts, held Ad Drafts, and CTR/CPC low-performer workflows.
 
@@ -224,6 +225,11 @@ reviewed catalog for explicit reconciliation; existing hosted templates still us
 
 - [`aeko-mcp`](https://github.com/AEKO-Intelligence/aeko-mcp) — optional hosted AEKO tool server.
 - `aeko-plugin` — this skills-only plugin for Claude, Codex, and Gemini CLI.
+
+## Support
+
+Questions or problems: see the [AEKO support page](https://aeko-intelligence.com/support) or email
+support@aeko-intelligence.com.
 
 ## License
 
@@ -304,7 +310,8 @@ AEKO는 숨겨진 추천 텍스트를 만들거나, 주장을 조작하거나, �
   등록합니다. AEKO 계정으로 로그인하기 전에는 아무 일도 하지 않으며, 무료 카탈로그는 이 서버를 호출하지
   않습니다. 로그인하면 AEKO 워크플로가 작업에 필요한 도메인, 상품, 프롬프트, 콘텐츠, 광고 데이터를
   AEKO로 보냅니다. 자세한 내용은 [개인정보처리방침](https://aeko-intelligence.com/privacy)에 있습니다.
-  스토어 반영, 게시, 광고 변경은 사용자가 확인한 뒤에만 실행됩니다.
+  스토어 반영, 게시, 광고 변경은 사용자가 확인한 뒤에만 실행됩니다. 캠페인 예산은 플러그인이 바꾸지
+  않으며, AEKO 대시보드에서 직접 설정합니다.
 - **이미지 업로드.** AEKO Shop 글에 직접 이미지를 넣으면 `/aeko-create-content`가 AEKO 서버가 발급한
   일회용 업로드 URL로 AEKO 미디어 저장소에 올립니다.
 - **사용자의 커넥터.** Notion, Slack, GA4, 광고 플랫폼 데이터는 사용자가 설치한 커넥터를 통해서만,
@@ -416,14 +423,14 @@ schema key, JSON-LD 용어, 브랜드 표기 `AEKO`는 영어/ASCII로 유지합
 
 ### 스토어와 콘텐츠
 
-- `/aeko-store mode=setup|reviews` — domain/store 설정과 에이전트의 유일한 review intake 경로.
+- `/aeko-store mode=setup|reviews` — domain/store 설정과 에이전트의 유일한 review intake 경로. 직접 붙여넣거나 자기 스토어·리뷰 플랫폼에서 내보낸 실제 리뷰만 받습니다.
 - `/aeko-create-content <item_id>` — 근거 기반 콘텐츠 executor.
 - `/aeko-publish-content <item_id>` — 저장된 콘텐츠 variation을 위한 보호된 publisher.
 
 ### 광고 운영
 
 - `/aeko-openai-compose-ads [domain_id] [min_score]` — AEKO 계정 기반으로 review 기반 OpenAI Ads group을 paused 상태로 구성.
-- `/aeko-openai-budget-shift [domain_id] [days]` — AEKO 계정 기반으로 cap과 명시 확인이 있는 OpenAI Ads 예산 및 entity-state dry-run 변경.
+- `/aeko-openai-budget-shift [domain_id] [days]` — AEKO 계정 기반 OpenAI Ads 예산 이동 추천(읽기 전용: 어디서 어디로, 금액, 근거, 위험). 적용은 AEKO 대시보드에서 직접 하며, 명시 확인 후 낭비 항목 일시중지를 선택할 수 있습니다.
 - `/aeko-openai-guardrails [domain_id]` — AEKO 계정 기반 OpenAI Ads automation 미리보기, 활성화, 이력 확인, emergency stop.
 - `/aeko-automations` — 리뷰→컨텍스트, 보류 상태 광고 초안, CTR/CPC 저성과 광고 워크플로의 설정과 1회 실행 안내.
 
@@ -445,6 +452,11 @@ contextual chat executor, GitHub App provisioning/sync는 이 플러그인에서
 
 - [`aeko-mcp`](https://github.com/AEKO-Intelligence/aeko-mcp) — 선택형 hosted AEKO tool server.
 - `aeko-plugin` — Claude, Codex, Gemini CLI용 skills-only 플러그인.
+
+## 지원
+
+문의나 문제가 있으면 [AEKO 지원 페이지](https://aeko-intelligence.com/support)를 보거나
+support@aeko-intelligence.com 으로 메일을 보내 주세요.
 
 ## 라이선스
 

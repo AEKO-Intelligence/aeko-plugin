@@ -20,13 +20,14 @@ Run the weekly loop in this order: approval threads, calendar, sources, proposal
 
 **Honest scope:** scheduled marketing writes are unsupported. This skill may write the finished report and
 collaboration state to Notion/Slack; those are real delivery/state writes. It never calls or delegates a
-marketing mutation: no automation arm/disarm, budget/entity change, publish, PDP update, or Action-item
-claim/completion.
+marketing mutation: no automation arm/disarm, entity-state change, publish, PDP update, or Action-item
+claim/completion. Budgets are never changed through the plugin; AEKO sets them only in its dashboard, so a
+budget idea is reported as a recommendation for the merchant to apply there.
 
 This skill does not list AEKO marketing write tools in `allowed-tools`, but that is not an enforcement
 boundary. MCP tools are namespaced per install and the session's write surface may remain fully reachable
 and pre-approved. Lack of server-side staging does **not** prevent a direct one-call write such as enabling a
-rule, restarting automation, changing a budget, publishing content, or replacing a PDP. The only protection
+rule, restarting automation, pausing or resuming a campaign, publishing content, or replacing a PDP. The only protection
 in this release is this instruction not to discover, call, or delegate those operations. `Write`, `Edit`, and
 `Bash` remain removed only as defense in depth for local side effects.
 
@@ -128,8 +129,9 @@ Apply every gate:
 Even when all gates and an atomic receipt succeed, record only
 `fresh_interactive_review_requested` with author ID, provider message ID, proposal ID/hash, and consumed time.
 Never write any durable state whose name says or implies approved, armed, or shipped. A later interactive
-skill must re-fetch current state/performance, regenerate its dry run and diff, and obtain fresh confirmation
-in that foreground turn—matching `/aeko-openai-budget-shift`'s actual pattern.
+skill must re-fetch current state/performance, regenerate its preview and diff, and obtain fresh confirmation
+in that foreground turn—matching the pause/resume gates in `/aeko-openai-budget-shift`. An approved budget
+proposal is still only a recommendation: the merchant changes the budget in the AEKO dashboard.
 
 ## Step 2 — calendar decisions and blackouts
 
