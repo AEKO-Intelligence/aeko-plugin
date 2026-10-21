@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.35.1] — 2026-10-22
+
+Works with aeko-mcp 0.30.1, where the tracked-prompt and Context lists return one page at a time instead of the whole list. Against 0.30.0 the new arguments are ignored and behavior is unchanged.
+
+- `/aeko-manage-prompts` confirms newly tracked prompts with `aeko_get_tracked_prompts(prompt_ids=[…])` and compares the header's tracked total, instead of reading one complete list. The review flow pages through every result with `offset`, or narrows with search/platform/country/Context filters, and says how much of the list it covered. Context lookups use `search` or exact `context_ids`.
+- `/aeko-competitor-analysis` (brand and product modes) and `/aeko-message-audit` read tracked prompts with `search` set to brand, product or claim words, since one call now returns a single page.
+- `/aeko-source-analysis` cited-page mode reads only the Contexts its prompts reference, with `context_ids`.
+
 ## [0.35.0] — 2026-10-21
 
 Provider-neutral skill instructions for OpenAI's plugin directory (ChatGPT + Codex). Skills no longer assume they run in Claude; behavior is unchanged on Claude Code, Claude Desktop/Cowork, Codex, and Gemini CLI. `allowed-tools`/`disallowed-tools` frontmatter is untouched.

@@ -77,8 +77,8 @@ Use sequential calls with the same bounded IDs when parallel execution is unavai
 contextual grounding, not an exact historical source window; a stricter job window follows the shared
 contract and must remain unavailable when no authoritative matching evidence can be selected.
 
-Call `aeko_list_contexts(domain_id)` once. Retain at most five Contexts whose IDs are referenced by those
-associated prompts. If the prompt detail already contains an immutable Context snapshot, prefer that snapshot
+Call `aeko_list_contexts(domain_id, context_ids=[Context IDs referenced by those associated prompts])` once,
+and skip it when no prompt references a Context. Retain at most five of the returned Contexts. If the prompt detail already contains an immutable Context snapshot, prefer that snapshot
 for the comparison. Do not substitute unrelated Contexts simply because they belong to the same domain.
 
 If prompt or Context calls are unavailable, report the missing grounding and continue with the evidence that

@@ -33,7 +33,8 @@ Keep slash commands, IDs, file paths, channel slugs, schema keys, and tool names
 2. Call `aeko_get_product_description(integration_id, external_product_id)` for official description HTML
    and prefer it for the user's product facts. Use the integration's `domain_id` with
    `aeko_get_domain_info(domain_id)` for market/category context.
-3. Call `aeko_get_tracked_prompts` once; its list is account-wide and carries no domain ID. Select at most
+3. Call `aeko_get_tracked_prompts` once with `search` set to product or category words; it returns one page
+   of an account-wide list and carries no domain ID. Select at most
    ten prompt IDs only when the job or returned domain-scoped evidence establishes their relation to the
    selected product/domain. Otherwise omit private prompt-detail enrichment and disclose why. Use
    `aeko_search_research_prompts` only to find relevant research rows

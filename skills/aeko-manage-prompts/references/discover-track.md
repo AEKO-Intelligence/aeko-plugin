@@ -35,7 +35,7 @@ Keep slash commands, IDs, file paths, prompt metadata keys, and tool names in En
 6. Call `aeko_get_current_markets`. Its `selected_markets` list—not the domain record—is the source of
    valid tracking countries. If it is empty or unavailable, explain that account markets must be selected
    in AEKO and stop before tracking rather than guessing `KR`, `US`, or any other country.
-7. Call `aeko_list_contexts(domain_id=...)` only if the user explicitly wants Context grounding, or if the domain info/tool output indicates Context is available. Context library is Pro+; a Starter 403 is not a blocker for basic prompt tracking.
+7. Call `aeko_list_contexts(domain_id=...)` only if the user explicitly wants Context grounding, or if the domain info/tool output indicates Context is available. It returns one page, newest first; pass `search` with the product or situation words, or follow the header's next `offset`, instead of treating the first page as the whole library. Context library is Pro+; a Starter 403 is not a blocker for basic prompt tracking.
 8. Use domain fields plus the entitlement and available IDs to seed sensible defaults:
    - `country` = a real code from `aeko_get_current_markets`; ask which one if several are returned.
    - `scope` = domain's `industry` / `vertical` / `scope` field if set.
@@ -173,9 +173,10 @@ first:
   and narrow the fan-out.
 - HTTP 403 → platform or Context tier/ownership. Surface the backend detail; never call it a quota error.
 
-Immediately fetch `aeko_get_tracked_prompts` again. Confirm every successful returned `tracked_prompt_id`
-is present and compare the before/after tracked count with the pre-flight expectation, adjusted only for
-explicit `already_tracked` rows. If `summary.failed > 0`, `summary.view_assignment_failed=true`, an ID is
+Immediately call `aeko_get_tracked_prompts(prompt_ids=[every successful returned tracked_prompt_id])`.
+Confirm each ID appears (follow the header's next `offset` if it names one) and none is listed as not
+tracked, and compare the before/after `Tracked prompts:` total with the pre-flight expectation, adjusted only
+for explicit `already_tracked` rows. If `summary.failed > 0`, `summary.view_assignment_failed=true`, an ID is
 absent, or the count is short, label the operation **partial**, enumerate what landed, and do not replay the
 whole request.
 
