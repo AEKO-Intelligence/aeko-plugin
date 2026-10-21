@@ -7,7 +7,7 @@ description: >
   folds in organic AI visibility; writes a local Markdown report; and remains read-only and
   schedulable. Use for depth on AEKO-operated OpenAI Ads, not a cross-platform glance.
 argument-hint: "[domain-id] [days] [organic=true|false]"
-allowed-tools: Read, aeko_get_action_plan, aeko_list_domains, aeko_list_ad_accounts, aeko_list_campaigns, aeko_list_ad_groups, aeko_list_ads, aeko_get_ad_insights, aeko_get_product_insights, aeko_get_conversion_insights, aeko_get_visibility_summary, Write, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
+allowed-tools: Read, aeko_get_action_plan, aeko_list_domains, aeko_list_ad_accounts, aeko_list_campaigns, aeko_list_ad_groups, aeko_list_ads, aeko_get_ad_insights, aeko_get_product_insights, aeko_get_conversion_insights, aeko_get_visibility_summary, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 disallowed-tools: Edit, Bash
 ---
 

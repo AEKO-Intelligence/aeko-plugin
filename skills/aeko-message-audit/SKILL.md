@@ -7,7 +7,7 @@ description: >
   ad claims, paid-to-owned message gaps, and claims AI misses or gives to
   competitors. Requires at least one customer's official ad connector.
 argument-hint: '[days=30] [platforms=meta,google,tiktok] [timezone=<IANA>] [domain-id=<id>] [claim="<text>"]'
-allowed-tools: Read, Glob, Bash, WebFetch, ToolSearch, aeko_list_domains, aeko_get_domain_info, aeko_list_store_integrations, aeko_list_store_products, aeko_get_product_description, aeko_list_own_content, aeko_fetch_source_content, aeko_get_citability, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_get_visibility_summary, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
+allowed-tools: Read, Glob, Bash(mktemp *), Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/fetch_evidence.py *), ToolSearch, aeko_list_domains, aeko_get_domain_info, aeko_list_store_integrations, aeko_list_store_products, aeko_get_product_description, aeko_list_own_content, aeko_fetch_source_content, aeko_get_citability, aeko_get_tracked_prompts, aeko_get_tracked_prompt, aeko_get_visibility_summary, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 disallowed-tools: Write, Edit
 ---
 
@@ -201,8 +201,10 @@ the native-vision budget, also create an empty temp image directory and run only
 python3 <skill-directory>/scripts/fetch_evidence.py --mode page --content-only --image-dir <empty-absolute-temp-dir> <owned-url> > <temp-json-file>
 ```
 
-Use safely quoted arguments. The redirection is the sole pipe/file exception. Require one
-`aeko_fetch_evidence/v2` object with `mode: page`, `safety.content_only: true`, no crawler probes, and exact-host
+`<skill-directory>` is `${CLAUDE_SKILL_DIR}` on hosts that substitute it (Claude Code does); otherwise
+it is the directory containing this `SKILL.md`. Run the script by that exact path so the skill's narrowed
+Bash pre-approval applies. Use safely quoted arguments. The redirection is the sole pipe/file exception.
+Require one `aeko_fetch_evidence/v2` object with `mode: page`, `safety.content_only: true`, no crawler probes, and exact-host
 redirect/image enforcement. Read fetched `local_path` images with `Read` native vision. Do not run another
 fetcher or shell command. `WebFetch` markdown cannot replace raw HTML or pixel inspection.
 

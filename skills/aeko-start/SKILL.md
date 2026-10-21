@@ -6,7 +6,7 @@ description: >
   local customization in the selected brand-owned package. Never probes an AEKO
   account, publishes, or writes back to the AEKO source repo.
 argument-hint: none
-allowed-tools: Read, Write, Edit, Glob, Bash, WebFetch
+allowed-tools: Read, Glob
 ---
 
 # AEKO Start

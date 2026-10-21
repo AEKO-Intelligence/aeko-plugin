@@ -7,7 +7,7 @@ description: >
   merchant-provided or public-source reviews. Never accepts credentials or
   fabricates products/reviews, and confirms every live write in the same turn.
 argument-hint: "[mode=setup|reviews] [domain-id-or-url]"
-allowed-tools: aeko_list_domains, aeko_add_domain, aeko_get_domain_info, aeko_list_store_integrations, aeko_sync_store, aeko_inject_products, aeko_list_store_products, aeko_get_current_markets, aeko_update_markets, aeko_get_quota, aeko_generate_starter_prompts, aeko_accept_starter_prompts, aeko_list_review_integrations, aeko_inject_reviews, WebSearch, WebFetch, Read
+allowed-tools: aeko_list_domains, aeko_add_domain, aeko_get_domain_info, aeko_list_store_integrations, aeko_sync_store, aeko_inject_products, aeko_list_store_products, aeko_get_current_markets, aeko_update_markets, aeko_get_quota, aeko_generate_starter_prompts, aeko_accept_starter_prompts, aeko_list_review_integrations, aeko_inject_reviews, Read
 ---
 
 # AEKO Store

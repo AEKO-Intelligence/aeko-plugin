@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.33.1] — 2026-10-21
+
+Claude plugin directory submission fixes. No workflow behavior changes; tools that are no longer pre-approved still work and ask the user first.
+
+- Scope `allowed-tools`: the four fetcher skills pre-approve only `mktemp` and their bundled `python3 ${CLAUDE_SKILL_DIR}/scripts/fetch_evidence.py`; other skills drop broad `Bash`. Local report writes are pre-approved only under `./aeko-artifacts/**` via `Edit(...)`, and `/aeko-openai-ads-reporting` and `/aeko-start` no longer pre-approve writes.
+- Drop `WebFetch`/`WebSearch` pre-approval; these skills fetch arbitrary customer or competitor URLs, so no domain scope fits.
+- Name the exact child skills (`Skill(aeko-plugin:<skill> *)`) for `/aeko-weekly-report`, `/aeko-run-loop`, `/aeko-create-loop`, and `/aeko-pdp-build`.
+- Stop committing the generated `catalog/trusted-upstream-catalog.json` (over the directory's 256 KiB file limit; the backend vendors its own copy). `build-trusted-upstream-catalog.py --validate` now backs the release lint.
+- Add the AEKO mark as `.claude-plugin/icon.png` for the directory listing.
+
 ## [0.33.0] — 2026-10-06 (release candidate)
 
 - Add `/aeko-assistant-task <item_id>` for versioned saved dashboard work: retrieve, validate, claim, read bounded evidence, execute the exact selected operation, persist the result, and complete under the same claim.

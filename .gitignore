@@ -7,3 +7,7 @@ __pycache__/
 
 # skill-creator eval scratch (snapshots, fixtures, iteration outputs) — never ship with the plugin
 skills/*-workspace/
+
+# Generated trusted upstream catalog (vendored by the backend). It exceeds the plugin directory's
+# 256 KiB per-file limit, so it is built on demand and never committed.
+catalog/
