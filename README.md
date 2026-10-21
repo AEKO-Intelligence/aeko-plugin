@@ -58,6 +58,31 @@ AEKO does not create hidden recommendation text, fabricate claims, or publish st
 contradicts visible content. Prices and availability come only from authoritative store evidence. Marketing
 writes keep their documented confirmation and undo gates; scheduled runs do not perform them.
 
+## What the plugin runs, fetches, and sends
+
+- **One bundled script.** `/aeko-site-audit`, `/aeko-pdp-audit`, `/aeko-pdp-build`, and `/aeko-message-audit`
+  run `scripts/fetch_evidence.py`, a readable Python script that uses only the standard library. It sends
+  credential-free GET requests to the site you name: the page, its `robots.txt`, `llms.txt`, and
+  `sitemap.xml`, and the same page requested with AI-crawler user agents to check whether they can read it.
+  Product-detail images are downloaded only from that same host, into a temporary folder. It sends no
+  cookies, rejects redirects to other hosts, and contacts no other server.
+- **Web pages you ask about.** Research and drafting skills may read public pages and search results through
+  the host's own web tools, with the host's usual permission prompts.
+- **The AEKO MCP server.** For Claude, the plugin declares the AEKO server at `https://aeko-intelligence.com/mcp`.
+  It does nothing until you sign in with an AEKO account, and the free catalog never calls it. Once you sign
+  in, AEKO workflows send the domain, product, prompt, content, and ad data each task needs to AEKO, as the
+  [privacy policy](https://aeko-intelligence.com/en/privacy) describes. Store, publishing, and ad changes
+  run only after you confirm them.
+- **Image uploads.** If you add your own images to an AEKO Shop article, `/aeko-create-content` uploads them
+  to AEKO's media storage through a one-time upload URL that the AEKO server issues.
+- **Your own connectors.** Notion, Slack, GA4, and ad-platform reads or deliveries go only through connectors
+  you installed, and only when a workflow you started needs them.
+- **Local files.** Reports and drafts are written to your working folder, mostly under `./aeko-artifacts/`.
+  `/aeko-start` writes customization files only to a folder you confirm.
+
+The plugin has no telemetry, never asks for passwords or API keys, and does not change your permission
+settings.
+
 ## Install
 
 ### Prerequisite — host capabilities
@@ -74,8 +99,8 @@ flows.
 Install the plugin from **Settings → Plugins → Browse plugins → Add marketplace** using
 `AEKO-Intelligence/aeko-plugin`. The zero-account workflows are ready immediately.
 
-For optional AEKO-backed workflows, add a custom connector at
-`https://aeko-intelligence.com/mcp` and complete OAuth. Do not connect AEKO merely to use the free catalog.
+The plugin declares the AEKO server (`https://aeko-intelligence.com/mcp`). Sign in to it only when you
+want the AEKO-backed workflows; the free catalog never needs an AEKO account.
 
 ### Claude Code
 
@@ -84,11 +109,8 @@ For optional AEKO-backed workflows, add a custom connector at
 /plugin install aeko-plugin@aeko-plugin
 ```
 
-Optional AEKO connection:
-
-```bash
-claude mcp add --transport http aeko https://aeko-intelligence.com/mcp
-```
+The plugin declares the AEKO server as `aeko`. To use AEKO-backed workflows, run `/mcp`, select it, and
+sign in. If you added AEKO earlier with `claude mcp add`, remove that entry so the tools don't appear twice.
 
 ### Codex Desktop / Codex CLI
 
@@ -267,6 +289,31 @@ AEKO는 숨겨진 추천 텍스트를 만들거나, 주장을 조작하거나, �
 게시하지 않습니다. 가격과 재고는 권위 있는 스토어 근거만 사용합니다. 마케팅 쓰기는 문서화된 확인과
 되돌리기 gate를 유지하며, 예약 실행은 이를 수행하지 않습니다.
 
+## 플러그인이 실행하고, 가져오고, 보내는 것
+
+- **함께 들어 있는 스크립트 하나.** `/aeko-site-audit`, `/aeko-pdp-audit`, `/aeko-pdp-build`,
+  `/aeko-message-audit`는 `scripts/fetch_evidence.py`를 실행합니다. 표준 라이브러리만 쓰는 Python
+  스크립트이고 코드를 그대로 읽을 수 있습니다. 지정한 사이트에만 로그인 정보 없이 GET 요청을 보냅니다.
+  대상은 해당 페이지, `robots.txt`, `llms.txt`, `sitemap.xml`이고, AI 크롤러가 읽을 수 있는지 보려고
+  같은 페이지를 AI 크롤러 user agent로도 요청합니다. 상세 이미지는 같은 호스트에서만 임시 폴더로
+  내려받습니다. 쿠키를 보내지 않고, 다른 호스트로 가는 리다이렉트는 거부하며, 다른 서버에는 접속하지
+  않습니다.
+- **요청한 웹페이지.** 리서치·초안 스킬은 호스트의 웹 도구로 공개 페이지와 검색 결과를 읽을 수
+  있습니다. 이때 호스트의 기본 권한 확인이 그대로 적용됩니다.
+- **AEKO MCP 서버.** Claude에서는 플러그인이 `https://aeko-intelligence.com/mcp`의 AEKO 서버를
+  등록합니다. AEKO 계정으로 로그인하기 전에는 아무 일도 하지 않으며, 무료 카탈로그는 이 서버를 호출하지
+  않습니다. 로그인하면 AEKO 워크플로가 작업에 필요한 도메인, 상품, 프롬프트, 콘텐츠, 광고 데이터를
+  AEKO로 보냅니다. 자세한 내용은 [개인정보처리방침](https://aeko-intelligence.com/en/privacy)에 있습니다.
+  스토어 반영, 게시, 광고 변경은 사용자가 확인한 뒤에만 실행됩니다.
+- **이미지 업로드.** AEKO Shop 글에 직접 이미지를 넣으면 `/aeko-create-content`가 AEKO 서버가 발급한
+  일회용 업로드 URL로 AEKO 미디어 저장소에 올립니다.
+- **사용자의 커넥터.** Notion, Slack, GA4, 광고 플랫폼 데이터는 사용자가 설치한 커넥터를 통해서만,
+  사용자가 시작한 워크플로에 필요할 때만 읽거나 보냅니다.
+- **로컬 파일.** 리포트와 초안은 작업 폴더에 저장되며 대부분 `./aeko-artifacts/` 아래에 들어갑니다.
+  `/aeko-start`는 사용자가 확인한 폴더에만 커스터마이징 파일을 씁니다.
+
+플러그인은 사용 데이터를 수집하지 않고, 비밀번호나 API 키를 묻지 않으며, 권한 설정을 바꾸지 않습니다.
+
 ## 설치
 
 ### 사전 요구사항 — 호스트 capability
@@ -283,8 +330,8 @@ AEKO는 숨겨진 추천 텍스트를 만들거나, 주장을 조작하거나, �
 **Settings → Plugins → Browse plugins → Add marketplace**에서
 `AEKO-Intelligence/aeko-plugin`을 사용해 설치하세요. 계정 없는 워크플로는 즉시 사용할 수 있습니다.
 
-선택형 AEKO 기반 워크플로가 필요하면 `https://aeko-intelligence.com/mcp`를 custom connector로
-추가하고 OAuth를 완료하세요. 무료 카탈로그만 사용하려고 AEKO를 연결할 필요는 없습니다.
+플러그인이 AEKO 서버(`https://aeko-intelligence.com/mcp`)를 함께 등록합니다. AEKO 기반 워크플로가
+필요할 때만 로그인하면 되고, 무료 카탈로그는 AEKO 계정 없이 쓸 수 있습니다.
 
 ### Claude Code
 
@@ -293,11 +340,9 @@ AEKO는 숨겨진 추천 텍스트를 만들거나, 주장을 조작하거나, �
 /plugin install aeko-plugin@aeko-plugin
 ```
 
-선택형 AEKO 연결:
-
-```bash
-claude mcp add --transport http aeko https://aeko-intelligence.com/mcp
-```
+플러그인이 AEKO 서버를 `aeko`라는 이름으로 등록합니다. AEKO 기반 워크플로를 쓰려면 `/mcp`에서
+선택해 로그인하세요. 예전에 `claude mcp add`로 AEKO를 추가했다면 도구가 두 번 보이지 않도록 그 항목을
+지우세요.
 
 ### Codex Desktop / Codex CLI
 
