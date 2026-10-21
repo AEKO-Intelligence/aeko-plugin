@@ -90,10 +90,10 @@ as a markdown table; mirror header labels in `session_language`.
 | **Executors (customizable)** | `/aeko-update-pdp` | Product page improvement with shopper copy, review proof, FAQ, and AI-readable facts. |
 |  | `/aeko-create-content` | Multi-channel content grounded in product facts, reviews, tracked prompts, and content context. |
 |  | `/aeko-fix-technical` | Technical health package for crawler access, llms.txt, robots.txt, and site schema. |
-| **Agentic ads & reviews** | `/aeko-store mode=reviews` | Inject real merchant-provided or gathered reviews for stores without a review app. |
+| **Agentic ads & reviews** | `/aeko-store mode=reviews` | Inject real reviews the merchant pastes or exports from their own store or review platform, for stores without a review app. |
 |  | `/aeko-openai-compose-ads` | Account-gated composition of paused, review-grounded OpenAI Ads groups. |
 |  | `/aeko-openai-ads-reporting` | Account-gated client-ready OpenAI Ads report with optional organic AI visibility. |
-|  | `/aeko-openai-budget-shift` | Account-gated dry-run and confirmation for OpenAI Ads budget optimization. |
+|  | `/aeko-openai-budget-shift` | Account-gated, read-only OpenAI Ads budget-shift recommendations to apply in the AEKO dashboard; optional confirmed pauses. |
 |  | `/aeko-openai-guardrails` | Account-gated auto-pause rule for runaway OpenAI Ads spend; disabled until preview and confirmation. |
 | **Publish** | `/aeko-publish-content` | Publish saved content variations only after explicit confirmation. |
 | **Maintenance** | `/aeko-update-pdp mode=refresh` | Refresh review facts AI can read, such as rating and review count. |
@@ -324,10 +324,10 @@ End with the docs link (`https://aeko-intelligence.com`), mention `CUSTOMIZATION
 | **실행 (커스터마이즈 가능)** | `/aeko-update-pdp` | 구매자 문구, 리뷰 근거, FAQ, AI가 읽는 상품 사실로 상품 페이지 개선. |
 |  | `/aeko-create-content` | 상품 사실, 리뷰, 추적 프롬프트, 콘텐츠 컨텍스트 기반 멀티채널 콘텐츠 생성. |
 |  | `/aeko-fix-technical` | 크롤러 접근, llms.txt, robots.txt, 사이트 스키마를 위한 기술 상태 패키지. |
-| **광고 · 리뷰** | `/aeko-store mode=reviews` | 리뷰 앱이 없는 스토어의 실제 리뷰를 주입. |
+| **광고 · 리뷰** | `/aeko-store mode=reviews` | 리뷰 앱이 없는 스토어에 머천트가 붙여넣거나 자기 스토어·리뷰 플랫폼에서 내보낸 실제 리뷰를 주입. |
 |  | `/aeko-openai-compose-ads` | AEKO 계정 기반의 컨텍스트 리뷰 기반 OpenAI Ads 그룹 구성; 일시중지 상태로 생성. |
 |  | `/aeko-openai-ads-reporting` | AEKO 계정 기반의 고객용 OpenAI Ads 리포트; 선택형 organic AI visibility 포함. |
-|  | `/aeko-openai-budget-shift` | AEKO 계정 기반 OpenAI Ads 예산 최적화 드라이런과 명시 확인. |
+|  | `/aeko-openai-budget-shift` | AEKO 계정 기반 OpenAI Ads 예산 이동 추천(읽기 전용). 적용은 AEKO 대시보드에서; 확인 후 일시중지 선택 가능. |
 |  | `/aeko-openai-guardrails` | AEKO 계정 기반 OpenAI Ads 자동 일시중지 규칙; 미리보기와 확인 전에는 비활성. |
 | **게시** | `/aeko-publish-content` | 저장된 콘텐츠 변형본을 명시 확인 후 게시. |
 | **유지보수** | `/aeko-update-pdp mode=refresh` | 평점과 리뷰 수처럼 AI가 읽는 리뷰 사실 새로고침. |

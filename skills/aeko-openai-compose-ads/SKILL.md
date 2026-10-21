@@ -86,7 +86,9 @@ For each cluster:
 Ask (or infer): put these ad groups under an EXISTING campaign or a NEW one?
 - Existing → call `aeko_list_campaigns(domain_id)`, let the user pick a `campaign_id`.
 - New → ask for a campaign name and a lifetime budget in the account currency; convert to micros
-  (×1,000,000) for `new_campaign_budget_micros` (min 1,000,000 = 1 unit).
+  (×1,000,000) for `new_campaign_budget_micros` (min 1,000,000 = 1 unit). This sets only the new
+  campaign's starting budget. Later budget changes are made in the AEKO dashboard (Marketing → Campaigns →
+  Manage campaigns → Edit campaign); no skill changes an existing campaign's budget.
 
 ## Step 5 — Preview + confirm
 
@@ -138,7 +140,8 @@ then read back the returned `campaign.id` and use `campaign_id=` for the rest so
   Review sample/window: <bounds, selected/skipped/truncated counts>
   Brand package/evals: <versions or local hashes; pass/fail/unavailable>
   Next: review + activate in the AEKO dashboard (광고 성과) or OpenAI Ads Manager.
-        Measure with /aeko-openai-ads-reporting; rebalance budget with /aeko-openai-budget-shift.
+        Measure with /aeko-openai-ads-reporting; get budget-shift recommendations with
+        /aeko-openai-budget-shift and apply them in the AEKO dashboard.
 ```
 
 ## Error paths

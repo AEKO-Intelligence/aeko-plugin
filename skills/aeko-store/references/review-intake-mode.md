@@ -4,7 +4,13 @@ Inject verified customer statements into AEKO's credential-less manual review so
 mechanism, never a review generator. Never invent, embellish, merge, or “improve” a review. Drop anything
 whose authenticity cannot be verified; stop when no real reviews remain.
 
-This flow is Pro+ and foreground-only. Stop before gathering when the tier preflight fails, or when invoked
+Accept only real reviews the merchant owns: text they paste or attach, or an export from their own store or
+review platform. Do not search for, fetch, crawl, or scrape reviews from the web, including the merchant's
+own storefront pages, marketplaces, social posts, or third-party review sites. If the merchant asks for
+that, explain that AEKO accepts only reviews they supply, and ask for an export from their store or review
+platform instead.
+
+This flow is Pro+ and foreground-only. Stop before collecting when the tier preflight fails, or when invoked
 from a schedule, routine, cron wrapper, or context without a present user. No unattended confirmation waiver
 exists.
 
@@ -17,7 +23,7 @@ checks are instruction-level controls.
 
 1. Resolve the exact domain.
 2. Call `aeko_list_review_integrations(domain_id)` first. Its Pro+ gate is the tier preflight. On a 403, stop
-   before gathering and explain that manual injection also requires Pro+.
+   before collecting and explain that manual injection also requires Pro+.
 3. If any credentialed integration exists (`platform != manual`), stop manual injection. The same review may
    already be imported under that integration, while backend dedupe is integration-scoped; injecting it
    again under `manual` would create a second public review. Tell the merchant to sync/manage that source in
@@ -28,29 +34,31 @@ checks are instruction-level controls.
    require the merchant's exact `external_product_ref` or derive it from a supplied product URL and confirm.
    Never guess from title.
 
-## Step 2 — collect real evidence
+## Step 2 — collect real evidence from the merchant
 
-Default to at most 50 candidate reviews, five public source URLs and 64 KiB of review text per run, honoring
-lower requested limits. Gather only the selected product's records; no recursive crawl or all-history
-import. Report excluded/unreadable/capped counts without calling them an empty corpus. A required review
-window uses actual observed review timestamps; unknown dates cannot pass that filter. Do not replace a
-missing eligible review with a synthetic fixture or another product's statement.
+Default to at most 50 candidate reviews and 64 KiB of review text per run, honoring lower requested limits.
+Take only the selected product's records from what the merchant supplied. Report excluded/unreadable/capped
+counts without calling them an empty corpus. A required review window uses actual observed review
+timestamps; unknown dates cannot pass that filter. Do not replace a missing eligible review with a synthetic
+fixture or another product's statement.
 
 - `merchant-paste`: preserve verbatim text from the user's paste/file/screenshot plus rating, author, and
   date only when visible. A source URL is optional because the merchant is the source.
-- `agent-gather`: retain only a literal customer statement with a locatable public URL. Store copy,
-  influencer copy, product descriptions, and model summaries are not reviews.
+- `merchant-export`: read a review export the merchant attaches from their own store or review platform
+  (for example a CSV or JSON file). Keep each row's verbatim text and only the fields the export contains,
+  such as its native review ID, rating, author, and date.
 
-For each record keep verbatim `body`, exact `external_product_ref`, observed optional fields, `source_url`,
-and `source_method` (`web_gather` or `merchant_paste`). Never infer authenticity from prose quality.
+Store copy, influencer copy, product descriptions, Q&A answers, and model summaries are not reviews, even
+inside an export. For each record keep verbatim `body`, exact `external_product_ref`, observed optional
+fields, `source_url` only when the merchant's record includes one, and `source_method` (`merchant_paste` or
+`merchant_export`). Never infer authenticity from prose quality.
 
 ## Step 3 — deterministic IDs whose identity does not depend on a volatile URL
 
-For a gathered review, prefer a native review/comment ID and compute
-`sha256("web:" + platform + "\n" + native_id + "\n" + external_product_ref)`. If no native ID exists,
-compute `sha256("web-fallback:\n" + normalized_verbatim_body + "\n" + author + "\n" + observed_date +
-"\n" + external_product_ref)`. Keep the canonicalized URL as provenance, not as the identity input; strip
-tracking parameters and fragments.
+For an exported review with a native review ID, compute
+`sha256("export:" + platform + "\n" + native_id + "\n" + external_product_ref)`, so a later export of the
+same review keeps its identity. If the row has no native ID, use the paste formula below. Never use a URL as
+the identity input.
 
 For merchant paste, compute `sha256("paste:\n" + normalized_verbatim_body + "\n" +
 external_product_ref)`. Normalize only whitespace/Unicode for hashing; never change the stored verbatim body.
@@ -60,7 +68,8 @@ Deduplicate the proposed batch by this ID.
 
 Show exact product ID, source/method, each verbatim excerpt, and counts. State plainly:
 
-- the backend does not authenticate the source URL;
+- the backend does not verify where a review came from; by confirming, the merchant states that these are
+  real reviews they own;
 - injected rows use the manual integration and may become public on a later `aeko_sync_store` when they meet
   the public eligibility threshold;
 - this flow is blocked when a credentialed source exists to avoid duplicate public reviews.
@@ -75,5 +84,5 @@ Read `inserted`, `updated`, `skipped_unmatched`, `unmatched_refs`, `batches_comp
 unmatched ref is partial and must be named; all-unmatched stops. Classification may run afterward, but never
 describe its score as proof a review is real.
 
-Never attach to a non-selling product, fabricate, title-match an ID, bypass tier/confirmation, or inject when
-a credentialed review integration already covers the domain.
+Never collect reviews from the web, attach to a non-selling product, fabricate, title-match an ID, bypass
+tier/confirmation, or inject when a credentialed review integration already covers the domain.

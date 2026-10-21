@@ -3,9 +3,10 @@ name: aeko-store
 description: >
   Interactive AEKO domain/manual-catalog setup and Pro+ real-review intake.
   Use mode=setup for domains, dashboard-connected store sync, manual products,
-  account markets, quota, and starter prompts; use mode=reviews for verified
-  merchant-provided or public-source reviews. Never accepts credentials or
-  fabricates products/reviews, and confirms every live write in the same turn.
+  account markets, quota, and starter prompts; use mode=reviews for real reviews
+  the merchant pastes or exports from their own store or review platform (never
+  gathered from the web). Never accepts credentials or fabricates
+  products/reviews, and confirms every live write in the same turn.
 argument-hint: "[mode=setup|reviews] [domain-id-or-url]"
 allowed-tools: aeko_list_domains, aeko_add_domain, aeko_get_domain_info, aeko_list_store_integrations, aeko_sync_store, aeko_inject_products, aeko_list_store_products, aeko_get_current_markets, aeko_update_markets, aeko_get_quota, aeko_generate_starter_prompts, aeko_accept_starter_prompts, aeko_list_review_integrations, aeko_inject_reviews, Read
 ---
@@ -36,8 +37,9 @@ assess the exact proposed payload before its existing same-turn confirmation; a 
 - `mode=setup` — add/select a domain, sync a dashboard-connected Cafe24/Shopify store or inject manual products, verify
   products, set markets, inspect quota, and generate/accept starter prompts. Read
   `references/setup-mode.md` completely.
-- `mode=reviews` — collect only genuine merchant-provided or public-source reviews, normalize and preview
-  them, then inject into the manual review source. Read `references/review-intake-mode.md` completely.
+- `mode=reviews` — collect only genuine reviews the merchant pastes or exports from their own store or review
+  platform (never gathered from the web), normalize and preview them, then inject into the manual review
+  source. Read `references/review-intake-mode.md` completely.
 
 Infer reviews mode from an explicit request to import/inject reviews; otherwise default to setup. Never run
 both write flows behind one confirmation.
