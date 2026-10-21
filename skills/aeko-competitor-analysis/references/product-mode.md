@@ -89,7 +89,7 @@ Fields to compare (adapt per category — product-type-aware):
 | Certifications         | ...              | ...      |          |          |     |
 ```
 
-Use Claude's reasoning to fill each row from the fetched text. Missing data → `—` not fabrication.
+Use the model's reasoning to fill each row from the fetched text. Missing data → `—` not fabrication.
 Raw HTML/JSON-LD fields are assessed only when the fetch result actually exposes them. Converted markdown
 that omits scripts is not proof of missing schema; label those cells unassessed. Competitor review counts
 or quotes are never evidence that the user's product has those reviews or experiences.

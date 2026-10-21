@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.35.0] — 2026-10-21
+
+Provider-neutral skill instructions for OpenAI's plugin directory (ChatGPT + Codex). Skills no longer assume they run in Claude; behavior is unchanged on Claude Code, Claude Desktop/Cowork, Codex, and Gemini CLI. `allowed-tools`/`disallowed-tools` frontmatter is untouched.
+
+- Tool loading: `/aeko-create-content` (both modes), `/aeko-source-analysis` cited-page mode, and `/aeko-update-pdp mode=refresh` now say to load their named tools in one batch through the host's tool discovery when the host defers tools, and to call them directly otherwise. The exact `ToolSearch` `select:` query stays as the Claude Code form, with the same tool names. `/aeko-ads-review` and `/aeko-message-audit` search the host's live tool registry the same way instead of requiring `ToolSearch`.
+- "Claude's reasoning/context/vision" and "Claude will…" now say "the model" (`/aeko-fix-technical` description and JSON-LD recipe, `/aeko-competitor-analysis` product mode, `/aeko-create-content` examples guide, `/aeko-update-pdp` image OCR step). `/aeko-manage-prompts` discovery, `/aeko-create-loop` scheduling, and the `/aeko-fix-technical` progressive-disclosure note drop their Claude/Anthropic wording.
+- `/aeko-start` (EN/KO): the plugin-version check treats the Claude Desktop/Claude Code install paths as one host-specific option; on other hosts it checks the plugin folder the skill loaded from or asks the user for the install path, and accepts any of the three AEKO manifests. The example-sourcing Tier A is now "a host browser bridge, if the host offers one (for example Claude for Chrome via `/chrome`)", and skips to the public-URL tier when there is none.
+- `/aeko-create-content` drafter delegation names the host's delegation tool (`Task` in Claude Code), and the optional posting hint applies to any host browser bridge.
+- `/aeko-fix-technical` version advisory says to update the AEKO plugin in the user's AI platform instead of a Claude Code-only command.
+
 ## [0.34.0] — 2026-10-21
 
 Requires aeko-mcp 0.30.0, which removed `aeko_update_campaign_budget`. Budgets are no longer set through skills or MCP: AEKO campaign budgets are set in the AEKO dashboard, and automated rules handle pausing.

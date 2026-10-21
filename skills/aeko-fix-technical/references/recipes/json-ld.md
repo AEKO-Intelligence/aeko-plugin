@@ -31,4 +31,4 @@ This recipe covers **site-level / brand-level** JSON-LD (Organization, WebSite, 
 If `references/examples/json-ld-example.json` exists, treat it as a structural template:
 - Use its `@graph` shape (single block vs. array vs. graph) as the default unless `frontmatter.validation_hints` overrides.
 - Include any optional keys it surfaces (e.g., `Organization.foundingDate`, `WebSite.potentialAction.SearchAction`) when corresponding data exists in domain info or Plan/context.
-- The example file CANNOT introduce required fields the recipe doesn't validate — Claude will still emit only what schemas above mandate plus what data exists.
+- The example file CANNOT introduce required fields the recipe doesn't validate — the model still emits only what schemas above mandate plus what data exists.

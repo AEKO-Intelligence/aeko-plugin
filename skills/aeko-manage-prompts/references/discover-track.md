@@ -1,6 +1,6 @@
 # Discover and track prompts
 
-Helps the user discover research prompts worth tracking. Goal: after this skill runs, the user has 5-10 new tracked prompts relevant to their brand, without having to leave Claude and paste into the dashboard.
+Helps the user discover research prompts worth tracking. Goal: after this skill runs, the user has 5-10 new tracked prompts relevant to their brand, without leaving this AI session to paste prompts into the dashboard.
 
 ## Marketer-facing output contract
 
