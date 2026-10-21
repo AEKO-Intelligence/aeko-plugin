@@ -614,14 +614,16 @@ def _encoded(catalog: dict) -> bytes:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--check", action="store_true")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--check", action="store_true")
+    mode.add_argument("--validate", action="store_true")
     args = parser.parse_args()
     expected = _encoded(build_catalog())
     output = args.output.resolve()
-    if args.check:
-        if not output.is_file() or output.read_bytes() != expected:
-            print(f"Trusted upstream catalog is stale: {output}")
-            return 1
+    if args.check and (not output.is_file() or output.read_bytes() != expected):
+        print(f"Trusted upstream catalog is stale: {output}")
+        return 1
+    if args.check or args.validate:
         payload = json.loads(expected)
         print(
             "Trusted upstream catalog passes "

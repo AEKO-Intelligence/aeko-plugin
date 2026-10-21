@@ -5,7 +5,7 @@ description: >
   llms.txt, sitemap reachability, site-level structured data, canonical URLs,
   and hreflang. Works from a root URL or domain with no AEKO account or connector.
 argument-hint: "<site-root-url-or-domain>"
-allowed-tools: Read, Glob, Bash
+allowed-tools: Read, Glob, Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/fetch_evidence.py *)
 disallowed-tools: Write, Edit
 ---
 
@@ -47,6 +47,10 @@ Resolve `scripts/fetch_evidence.py` relative to this `SKILL.md`, then use Bash o
 ```text
 python3 <skill-directory>/scripts/fetch_evidence.py --mode site <normalized-url>
 ```
+
+`<skill-directory>` is `${CLAUDE_SKILL_DIR}` on hosts that substitute it (Claude Code does); otherwise
+it is the directory containing this `SKILL.md`. Run the script by that exact path so the skill's narrowed
+Bash pre-approval applies.
 
 Pass the normalized user target as one safely quoted positional argument. Parse its one
 `aeko_fetch_evidence/v2` JSON object from stdout and require `mode: site`. Every `site_resources` entry,

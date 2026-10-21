@@ -60,12 +60,17 @@ symlinks and unsafe paths, requires UTF-8 text, applies the backend-aligned file
 limits, and records the content plus SHA-256 provenance. It never fetches a branch, reads ignored
 workspaces or `outputs/`, or recursively archives a checkout.
 
-The generated [`catalog/trusted-upstream-catalog.json`](../catalog/trusted-upstream-catalog.json)
-is self-contained and deterministic. Rebuild and verify it with:
+The generated `catalog/trusted-upstream-catalog.json` is self-contained and deterministic. It is
+not committed: at over 1 MiB it exceeds the Claude plugin directory's 256 KiB per-file limit, and
+the plugin does not read it at runtime. Validate it, build it locally, or write it straight into
+the backend's vendored copy with:
 
 ```sh
+python scripts/build-trusted-upstream-catalog.py --validate
 python scripts/build-trusted-upstream-catalog.py
-python scripts/build-trusted-upstream-catalog.py --check
+python scripts/build-trusted-upstream-catalog.py \
+  --output ../aeko/aeko_backend/api/services/automations/catalog/trusted-upstream-catalog.json
+python scripts/build-trusted-upstream-catalog.py --check --output <vendored-copy>
 ```
 
 The artifact uses `kind=skill`, `subkind=customer_plugin`, and the canonical `aeko-*` slug as its

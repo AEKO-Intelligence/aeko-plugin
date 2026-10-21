@@ -6,7 +6,7 @@ description: >
   aeko_pdp_image_facts/v1 block or a product URL. Free and zero-account: it
   produces paste-ready output without connecting to or writing to a store.
 argument-hint: "<aeko_pdp_image_facts/v1-json-or-product-url>"
-allowed-tools: Read, Glob, Bash, WebFetch, Skill, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
+allowed-tools: Read, Glob, Bash(mktemp *), Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/fetch_evidence.py *), Skill(aeko-plugin:aeko-pdp-audit *), aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 disallowed-tools: Write, Edit
 ---
 
@@ -94,8 +94,10 @@ Pass the original `task_prompt`, verified product/site, selected brand context a
 and remaining limits with that child invocation. Keep this context separate from the fact JSON and from
 tool arguments. The child diagnoses evidence; brand wording preferences never rewrite its literal facts.
 
-1. Resolve `scripts/fetch_evidence.py` relative to this `SKILL.md`. Create one empty temporary image
-   directory with `mktemp -d` and one temporary JSON file with `mktemp`, then run only
+1. Resolve `scripts/fetch_evidence.py` relative to this `SKILL.md`. `<skill-directory>` is `${CLAUDE_SKILL_DIR}`
+   on hosts that substitute it (Claude Code does); otherwise it is the directory containing this `SKILL.md`.
+   Run the script by that exact path so the skill's narrowed Bash pre-approval applies.
+   Create one empty temporary image directory with `mktemp -d` and one temporary JSON file with `mktemp`, then run only
    `python3 <skill-directory>/scripts/fetch_evidence.py --mode page --image-dir <temporary-image-directory> <url> > <temporary-json-file>`
    with every path and the URL safely quoted. This redirection is the sole exception to the no-file-pipe
    rule: the fetcher emits a large single-line object, and the file is an ephemeral parsing aid rather than

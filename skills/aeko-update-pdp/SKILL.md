@@ -6,7 +6,7 @@ description: >
   browser previews before delivery. Accepts an Action item or exact domain/product
   command; mode=refresh only patches review rating/count JSON-LD.
 argument-hint: "<item-id> | domain_id=<uuid> product_id=<id> | mode=refresh <product-id> [integration-id]"
-allowed-tools: aeko_list_action_items, aeko_create_action_item, aeko_claim_action_item, aeko_release_action_item, aeko_get_action_plan, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_list_store_integrations, aeko_update_product_page, aeko_revert_store_write, aeko_list_store_writes, aeko_complete_action_item, Read, Write, WebFetch, Bash, aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
+allowed-tools: aeko_list_action_items, aeko_create_action_item, aeko_claim_action_item, aeko_release_action_item, aeko_get_action_plan, aeko_get_product_description, aeko_list_review_integrations, aeko_get_product_reviews, aeko_list_store_integrations, aeko_update_product_page, aeko_revert_store_write, aeko_list_store_writes, aeko_complete_action_item, Read, Edit(./aeko-artifacts/**), aeko_get_active_brand_package, aeko_get_brand_package_version, aeko_read_brand_package_file, aeko_list_brand_wiki_pages, aeko_get_brand_wiki_page
 ---
 
 # AEKO Update PDP

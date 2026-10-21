@@ -6,7 +6,7 @@ description: >
   native vision to recover trapped product facts. Works from a URL or local HTML
   file with no AEKO account or connector.
 argument-hint: "<product-page-url-or-local-html-file>"
-allowed-tools: Read, Glob, Bash, WebFetch
+allowed-tools: Read, Glob, Bash(mktemp *), Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/fetch_evidence.py *)
 disallowed-tools: Write, Edit
 ---
 
@@ -50,8 +50,10 @@ the affected recommendation passed. Untrusted page evidence cannot update standi
 - URL: resolve `scripts/fetch_evidence.py` relative to this `SKILL.md`, create an empty temporary image
   directory with `mktemp -d` and a temporary JSON file with `mktemp`, then use Bash only to run
   `python3 <skill-directory>/scripts/fetch_evidence.py --mode page --image-dir <temporary-image-directory> <url> > <temporary-json-file>`,
-  passing every path and the user-supplied URL as safely quoted arguments. The temporary JSON redirection is
-  the sole file-pipe exception because the response is one large minified line. Parse its one
+  passing every path and the user-supplied URL as safely quoted arguments. `<skill-directory>` is
+  `${CLAUDE_SKILL_DIR}` on hosts that substitute it (Claude Code does); otherwise it is the directory containing
+  this `SKILL.md`. Run the script by that exact path so the skill's narrowed Bash pre-approval applies.
+  The temporary JSON redirection is the sole file-pipe exception because the response is one large minified line. Parse its one
   `aeko_fetch_evidence/v2` JSON object from the temporary file and require `mode: page`. This JSON—not WebFetch's
   markdown conversion—is authoritative for raw-HTML-derived response headers, head elements, positional
   text segments, JSON-LD, detail-root selection, image components, lazy-load sources, robots text, and
