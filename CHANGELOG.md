@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.33.2] — 2026-10-21
+
+- Claude manifest declares the hosted AEKO MCP server (`aeko`, `https://aeko-intelligence.com/mcp`), the same URL as the AEKO connector listing, so people with both see one set of tools. It stays idle until the user signs in; the free catalog never calls it.
+- README: new "What the plugin runs, fetches, and sends" section (EN/KO) covering the bundled fetcher, web reads, the AEKO server, image uploads, the user's own connectors, and local files. Claude install steps now use the declared server instead of `claude mcp add`.
+- Set `privacyPolicyUrl` in the Claude manifest.
+
 ## [0.33.1] — 2026-10-21
 
 Claude plugin directory submission fixes. No workflow behavior changes; tools that are no longer pre-approved still work and ask the user first.

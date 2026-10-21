@@ -1,12 +1,13 @@
 {
   "name": "aeko-plugin",
-  "version": "0.33.1",
+  "version": "0.33.2",
   "description": "AEKO skills for Claude: zero-account site and PDP audits, PDP HTML builds, connector-aware ads and GA4 measurement, connection setup, weekly read-and-propose reporting, and guided manual automation templates; optional AEKO workflows add AI visibility, prompt, content, store, and guarded OpenAI Ads operations. Brand customization is portable; content ideas require live MCP capabilities, and plugin scheduled marketing writes are unsupported.",
   "author": {
     "name": "AEKO",
     "url": "https://aeko-intelligence.com"
   },
   "homepage": "https://aeko-intelligence.com",
+  "privacyPolicyUrl": "https://aeko-intelligence.com/en/privacy",
   "license": "MIT",
   "keywords": [
     "site-audit",
@@ -21,5 +22,11 @@
     "ecommerce",
     "skills"
   ],
-  "skills": "./skills/"
+  "skills": "./skills/",
+  "mcpServers": {
+    "aeko": {
+      "type": "http",
+      "url": "https://aeko-intelligence.com/mcp"
+    }
+  }
 }
