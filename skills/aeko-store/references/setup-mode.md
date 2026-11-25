@@ -1,7 +1,7 @@
 # Store setup mode
 
-Use this for AEKO domain setup, a dashboard-connected store sync, or a credential-less manual catalog.
-Mirror the user's language; keep tool names, IDs, country codes, platform values, and JSON keys ASCII.
+Use this for AEKO domain setup, connected-store sync, or a manual catalog.
+Mirror the user's language. Keep tool names, IDs, country codes, platform values and JSON keys ASCII.
 
 ## Tier and safety contract
 
@@ -10,27 +10,36 @@ Pro+ is required for review injection/integrations, Context, content recommendat
 aeko.shop publishing. Backend errors remain authoritative.
 
 This is foreground-only. Stop if invoked from a schedule, routine, cron wrapper, or without a present user.
-Never ask for an OAuth/access/refresh token: Cafe24/Shopify connection is dashboard-only because secrets must
-not traverse an agent transcript. Store sync is not a private import. It republishes the active catalog and
-eligible reviews to the merchant's public aeko.shop storefront and revalidates public discovery surfaces.
+Send the merchant to their platform's connection screen. Keep credentials out of the conversation.
+Shopify sync imports into AEKO. Cafe24 sync can also replace the public catalog and mirror eligible reviews.
 
 ## Step 1 — resolve or add the domain
 
-Call `aeko_list_domains`. Resolve an exact existing ID, or ask for the URL and call `aeko_add_domain` after a
-fresh same-turn confirmation. Then call `aeko_get_domain_info(domain_id)` and show the selected domain.
+Ask whether the store is Shopify, Cafe24, or custom/manual. For Shopify, have the merchant install or open
+AEKO from Apps in Shopify Admin and finish setup there. Call `aeko_list_store_integrations` in that workspace,
+find the confirmed Shopify store, and use its associated `domain_id`. If the store is missing, stop at the
+connection step. For Cafe24 or manual stores, call `aeko_list_domains`. Resolve an exact existing ID, or ask
+for the URL and call `aeko_add_domain` after a fresh same-turn confirmation. Then call
+`aeko_get_domain_info(domain_id)` and show the selected domain.
 
 ## Step 2 — select the store path
 
-Ask whether the store is Cafe24, Shopify, or custom/manual.
+Follow the selected platform's steps.
 
-### Cafe24 or Shopify
+### Shopify
 
-Never request or accept credentials in chat and never call `aeko_connect_store`. Direct the merchant to AEKO
-dashboard → Settings → Store Integrations to complete OAuth. After they say it is connected, call
-`aeko_list_store_integrations`, match both exact `domain_id` and platform/store identifier, and show the
-integration. If none matches, stop with the dashboard connection step.
+Show the exact domain ID and Shopify integration resolved in step 1. For a confirmed integration, explain that sync refreshes
+AEKO's products and content and can remove items that are no longer in Shopify. Ask for same-turn confirmation
+with the integration ID, then call `aeko_sync_store(integration_id)` once. Public AEKO Shop publication requires
+its own workflow.
 
-Before `aeko_sync_store`, show this risk block:
+### Cafe24
+
+Direct the merchant to AEKO Settings → Store Integrations to complete OAuth. Call `aeko_list_store_integrations`,
+match the exact domain ID and Cafe24 store, and show the integration. If no match appears, stop at the
+connection step.
+
+Before `aeko_sync_store`, show these effects:
 
 ```text
 Public sync
@@ -46,13 +55,16 @@ Require the exact fresh phrase `SYNC PUBLIC STOREFRONT <integration_id>` or the 
 retaining the exact ASCII integration ID. No earlier request or general setup confirmation counts. Then call
 `aeko_sync_store(integration_id)` once.
 
+### Verify connected-store sync
+
 Immediately call `aeko_list_store_integrations` again. Require `last_sync_status` and inspect
 `last_sync_error_message`:
 
-- success/complete → continue;
-- `partial_failure`, partial, failed, missing, or unknown → stop. State that the public catalog may already be incomplete,
-  quote the error, tell the merchant to inspect aeko.shop, and reconnect/escalate the upstream store before
-  another sync. Never print “Setup complete.”
+- Success or complete means continue. For Cafe24, verify the public catalog separately before claiming it
+  was republished.
+- Partial, failed, missing, or unknown means stop. Show the recorded error and direct Shopify merchants to the
+  AEKO app in Shopify Admin to check sync. For Cafe24, explain that the public catalog may also be incomplete
+  and direct merchants to their AEKO Shop catalog. Report setup as incomplete.
 
 ### Custom/manual
 
