@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.35.2] — 2026-11-25
+
+- Start Shopify setup in Shopify Admin, clarify store permissions, and verify catalog sync status before reporting completion.
+
 ## [0.35.1] — 2026-10-22
 
 Works with aeko-mcp 0.30.1, where the tracked-prompt and Context lists return one page at a time instead of the whole list. Against 0.30.0 the new arguments are ignored and behavior is unchanged.
